@@ -1,0 +1,245 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'circle_controller.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(CircleController)
+final circleControllerProvider = CircleControllerProvider._();
+
+final class CircleControllerProvider
+    extends $AsyncNotifierProvider<CircleController, void> {
+  CircleControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'circleControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$circleControllerHash();
+
+  @$internal
+  @override
+  CircleController create() => CircleController();
+}
+
+String _$circleControllerHash() => r'5a9b3ea415f6e967f5ba3dfcb51cf49a4a92d029';
+
+abstract class _$CircleController extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(userCircles)
+final userCirclesProvider = UserCirclesProvider._();
+
+final class UserCirclesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CircleModel>>,
+          List<CircleModel>,
+          FutureOr<List<CircleModel>>
+        >
+    with
+        $FutureModifier<List<CircleModel>>,
+        $FutureProvider<List<CircleModel>> {
+  UserCirclesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userCirclesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userCirclesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<CircleModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<CircleModel>> create(Ref ref) {
+    return userCircles(ref);
+  }
+}
+
+String _$userCirclesHash() => r'70b0bf645cd3f986b44dbd0f1b7da4e150e63fd7';
+
+@ProviderFor(circleDetails)
+final circleDetailsProvider = CircleDetailsFamily._();
+
+final class CircleDetailsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CircleModel>,
+          CircleModel,
+          Stream<CircleModel>
+        >
+    with $FutureModifier<CircleModel>, $StreamProvider<CircleModel> {
+  CircleDetailsProvider._({
+    required CircleDetailsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'circleDetailsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$circleDetailsHash();
+
+  @override
+  String toString() {
+    return r'circleDetailsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<CircleModel> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<CircleModel> create(Ref ref) {
+    final argument = this.argument as String;
+    return circleDetails(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CircleDetailsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$circleDetailsHash() => r'5c8a1cc6b144f656dd6eddb19d4215ebbe98f50e';
+
+final class CircleDetailsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<CircleModel>, String> {
+  CircleDetailsFamily._()
+    : super(
+        retry: null,
+        name: r'circleDetailsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CircleDetailsProvider call(String circleId) =>
+      CircleDetailsProvider._(argument: circleId, from: this);
+
+  @override
+  String toString() => r'circleDetailsProvider';
+}
+
+@ProviderFor(circleMembers)
+final circleMembersProvider = CircleMembersFamily._();
+
+final class CircleMembersProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<UserModel>>,
+          List<UserModel>,
+          FutureOr<List<UserModel>>
+        >
+    with $FutureModifier<List<UserModel>>, $FutureProvider<List<UserModel>> {
+  CircleMembersProvider._({
+    required CircleMembersFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'circleMembersProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$circleMembersHash();
+
+  @override
+  String toString() {
+    return r'circleMembersProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<UserModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<UserModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return circleMembers(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CircleMembersProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$circleMembersHash() => r'25b8c8f7d65454719bf084a9c590c816c3c13421';
+
+final class CircleMembersFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<UserModel>>, String> {
+  CircleMembersFamily._()
+    : super(
+        retry: null,
+        name: r'circleMembersProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CircleMembersProvider call(String circleId) =>
+      CircleMembersProvider._(argument: circleId, from: this);
+
+  @override
+  String toString() => r'circleMembersProvider';
+}
