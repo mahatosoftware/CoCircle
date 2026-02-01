@@ -12,6 +12,7 @@ abstract interface class CircleRepository {
   });
   
   Future<Either<Failure, List<CircleModel>>> getUserCircles(String userId);
+  Stream<List<CircleModel>> getUserCirclesStream(String userId);
   Future<Either<Failure, CircleModel>> getCircleById(String circleId);
   Future<Either<Failure, CircleModel>> getCircleByCode(String code);
   Future<Either<Failure, void>> requestJoin(String circleId, String userId);

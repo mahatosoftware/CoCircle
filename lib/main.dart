@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/environment.dart';
 import 'router.dart';
-// import 'firebase_options.dart'; // TODO: User needs to generate this
+import 'firebase_options_prod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,11 +20,9 @@ void main() async {
   );
 
   // Initialize Firebase
-  // TODO: Run `flutterfire configure -o lib/firebase_options_prod.dart` and uncomment below:
-  // import 'firebase_options_prod.dart';
   try {
      await Firebase.initializeApp(
-       // options: DefaultFirebaseOptions.currentPlatform,
+       options: DefaultFirebaseOptions.currentPlatform,
      );
 
      // Initialize App Check (Hybrid: Debug for local, Play Integrity for prod)
@@ -32,8 +30,9 @@ void main() async {
        androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
        appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
      );
-  } catch(e) {
+  } catch(e, stack) {
      debugPrint("Firebase init failed: $e");
+     debugPrint("Stack trace: $stack");
   }
 
   runApp(const ProviderScope(child: MyApp()));

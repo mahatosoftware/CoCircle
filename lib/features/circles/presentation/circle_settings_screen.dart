@@ -55,7 +55,46 @@ class CircleSettingsScreen extends ConsumerWidget {
                           padding: const EdgeInsets.all(24.0),
                           child: Column(
                             children: [
-                              Text(circle.name, style: Theme.of(context).textTheme.headlineSmall),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(circle.name, style: Theme.of(context).textTheme.headlineSmall),
+                                  if (isUserAdmin)
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, size: 20, color: Colors.grey),
+                                      onPressed: () {
+                                        final controller = TextEditingController(text: circle.name);
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Rename Circle'),
+                                            content: TextFormField(
+                                              controller: controller,
+                                              decoration: const InputDecoration(labelText: 'Circle Name'),
+                                              autofocus: true,
+                                            ),
+                                            actions: [
+                                              TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
+                                              TextButton(
+                                                onPressed: () {
+                                                  if (controller.text.trim().isNotEmpty) {
+                                                    ref.read(circleControllerProvider.notifier).updateCircleName(
+                                                      circle: circle,
+                                                      newName: controller.text.trim(),
+                                                      context: context,
+                                                    );
+                                                    context.pop();
+                                                  }
+                                                },
+                                                child: const Text('Save'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
                               const SizedBox(height: 8),
                               Text('Code: ${circle.code}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2)),
                               const SizedBox(height: 24),

@@ -108,6 +108,13 @@ class CircleRepositoryImpl implements CircleRepository {
   }
 
   @override
+  Stream<List<CircleModel>> getUserCirclesStream(String userId) {
+    return _circles.where('memberIds', arrayContains: userId).snapshots().map((snapshot) {
+      return snapshot.docs.map((d) => CircleModel.fromJson(d.data())).toList();
+    });
+  }
+
+  @override
   Future<Either<Failure, void>> requestJoin(String circleId, String userId) async {
      try {
        await _circles.doc(circleId).update({

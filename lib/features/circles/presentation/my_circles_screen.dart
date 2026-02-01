@@ -5,7 +5,6 @@ import 'circle_controller.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
 import '../../../../core/theme/app_pallete.dart';
-import '../../../../core/widgets/copyright_footer.dart';
 
 class MyCirclesScreen extends ConsumerWidget {
   const MyCirclesScreen({super.key});

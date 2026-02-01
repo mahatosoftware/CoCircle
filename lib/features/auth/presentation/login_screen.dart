@@ -70,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       (r) {
         if (_isSignUp) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created! Please verify your email before logging in.')),
+            const SnackBar(content: Text('Account created! Please verify your email before logging in. If you don\'t see it, check your spam folder.')),
           );
           setState(() {
             _isSignUp = false;

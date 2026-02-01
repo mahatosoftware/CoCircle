@@ -33,7 +33,7 @@ final class CircleControllerProvider
   CircleController create() => CircleController();
 }
 
-String _$circleControllerHash() => r'5a9b3ea415f6e967f5ba3dfcb51cf49a4a92d029';
+String _$circleControllerHash() => r'ff4ce7ec2f6e02448f528ddca103c67794ea02cb';
 
 abstract class _$CircleController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -61,11 +61,11 @@ final class UserCirclesProvider
         $FunctionalProvider<
           AsyncValue<List<CircleModel>>,
           List<CircleModel>,
-          FutureOr<List<CircleModel>>
+          Stream<List<CircleModel>>
         >
     with
         $FutureModifier<List<CircleModel>>,
-        $FutureProvider<List<CircleModel>> {
+        $StreamProvider<List<CircleModel>> {
   UserCirclesProvider._()
     : super(
         from: null,
@@ -82,17 +82,17 @@ final class UserCirclesProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<CircleModel>> $createElement(
+  $StreamProviderElement<List<CircleModel>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<CircleModel>> create(Ref ref) {
+  Stream<List<CircleModel>> create(Ref ref) {
     return userCircles(ref);
   }
 }
 
-String _$userCirclesHash() => r'70b0bf645cd3f986b44dbd0f1b7da4e150e63fd7';
+String _$userCirclesHash() => r'2e072d8410a32c7f92c98e46f71299ad54c7c2b2';
 
 @ProviderFor(circleDetails)
 final circleDetailsProvider = CircleDetailsFamily._();
@@ -149,7 +149,7 @@ final class CircleDetailsProvider
   }
 }
 
-String _$circleDetailsHash() => r'5c8a1cc6b144f656dd6eddb19d4215ebbe98f50e';
+String _$circleDetailsHash() => r'0b6573d28d896ab175a9dfa48900533d810648bc';
 
 final class CircleDetailsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<CircleModel>, String> {
@@ -224,7 +224,7 @@ final class CircleMembersProvider
   }
 }
 
-String _$circleMembersHash() => r'25b8c8f7d65454719bf084a9c590c816c3c13421';
+String _$circleMembersHash() => r'67d0c07c6068cb23aff97e8191742598e4932c79';
 
 final class CircleMembersFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<UserModel>>, String> {

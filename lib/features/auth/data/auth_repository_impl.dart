@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/config/environment.dart';
 import '../../../../core/errors/failure.dart';
 import '../domain/auth_repository.dart';
@@ -77,11 +77,21 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserModel>> signInWithEmailPassword({required String email, required String password}) async {
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
-      
-      if (!userCredential.user!.emailVerified) {
-        await _auth.signOut();
-        return left(Failure('Email not verified. Please check your inbox.'));
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final firebaseUser = userCredential.user;
+      if (firebaseUser != null) {
+        // Reload user to get latest verification status
+        await firebaseUser.reload();
+        
+        if (!_auth.currentUser!.emailVerified) {
+          debugPrint("Sign In: Email not verified for ${firebaseUser.email}");
+          await _auth.signOut();
+          return left(Failure('Please verify your email address to log in. If you don\'t see the email, check your spam folder.'));
+        }
       }
 
       // We assume user already exists in Firestore from SignUp
@@ -89,8 +99,11 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) return left(Failure('User data not found'));
       return right(user);
     } on FirebaseAuthException catch (e) {
+      debugPrint("Error signing in with Email: $e");
       return left(Failure(e.message ?? 'Sign in failed'));
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint("Error signing in with Email: $e");
+      debugPrint("Stack trace: $stack");
       return left(Failure(e.toString()));
     }
   }
@@ -128,10 +141,21 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
+        debugPrint("Google Sign-In: User aborted the flow");
         return left(Failure('Google Sign-In aborted'));
       }
 
+      debugPrint("Google Sign-In: Account obtained: ${googleUser.email}");
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      if (googleAuth.idToken == null && googleAuth.accessToken == null) {
+        debugPrint("Google Sign-In Error: Both idToken and accessToken are null");
+        return left(Failure('Google Sign-In failed: Missing tokens'));
+      }
+
+      debugPrint("Google Sign-In: idToken: ${googleAuth.idToken != null ? 'Present' : 'Missing'}");
+      debugPrint("Google Sign-In: accessToken: ${googleAuth.accessToken != null ? 'Present' : 'Missing'}");
+
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -140,12 +164,15 @@ class AuthRepositoryImpl implements AuthRepository {
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       final firebaseUser = userCredential.user!;
       
+      debugPrint("Google Sign-In: Firebase Auth successful for UID: ${firebaseUser.uid}");
+
       // Check if user exists, if not create
       final userDoc = await _firestore.collection('users').doc(firebaseUser.uid).get();
       
       UserModel userModel;
       
       if (!userDoc.exists) {
+        debugPrint("Google Sign-In: Creating new user document in Firestore");
         userModel = UserModel(
           uid: firebaseUser.uid,
           email: firebaseUser.email ?? '',
@@ -155,11 +182,14 @@ class AuthRepositoryImpl implements AuthRepository {
         );
         await _firestore.collection('users').doc(firebaseUser.uid).set(userModel.toJson());
       } else {
+        debugPrint("Google Sign-In: User document exists in Firestore");
         userModel = UserModel.fromJson(userDoc.data()!);
       }
       
       return right(userModel);
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint("Google Sign-In Error: $e");
+      debugPrint("Stack trace: $stack");
       return left(Failure(e.toString()));
     }
   }
@@ -237,6 +267,9 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // We must sign in to send the verification email
       final credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      
+      // Reload user to get latest verification status
+      await credential.user!.reload();
       
       if (credential.user!.emailVerified) {
          await _auth.signOut();

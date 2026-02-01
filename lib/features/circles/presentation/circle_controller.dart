@@ -44,7 +44,6 @@ class CircleController extends _$CircleController {
       (circle) {
         state = const AsyncData(null);
         showSnackBar(context, 'Circle created successfully!');
-        ref.invalidate(userCirclesProvider);
         context.pop(); // Go back to finding/my circles
       },
     );
@@ -145,15 +144,27 @@ class CircleController extends _$CircleController {
       }
     );
   }
+
+  Future<void> updateCircleName({required CircleModel circle, required String newName, required BuildContext context}) async {
+    final updatedCircle = circle.copyWith(name: newName);
+    final res = await ref.read(circleRepositoryProvider).updateCircle(updatedCircle);
+    res.fold(
+      (l) => showSnackBar(context, l.message),
+      (r) {
+        showSnackBar(context, 'Circle name updated!');
+      },
+    );
+  }
 }
 
 @riverpod
-Future<List<CircleModel>> userCircles(Ref ref) async {
-  final user = await ref.watch(authRepositoryProvider).getCurrentUser();
-  if (user == null) return [];
-  
-  final res = await ref.watch(circleRepositoryProvider).getUserCircles(user.uid);
-  return res.fold((l) => [], (r) => r);
+Stream<List<CircleModel>> userCircles(Ref ref) {
+  return ref.watch(authRepositoryProvider).authStateChanges.asyncExpand((user) {
+    if (user == null) {
+      return Stream.value([]);
+    }
+    return ref.watch(circleRepositoryProvider).getUserCirclesStream(user.uid);
+  });
 }
 
 @riverpod

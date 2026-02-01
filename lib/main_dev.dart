@@ -5,6 +5,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'core/config/environment.dart';
 import 'main.dart'; // Reuse MyApp
+import 'firebase_options_dev.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,11 +18,9 @@ void main() async {
   );
 
   // Initialize Firebase
-  // TODO: Run `flutterfire configure -o lib/firebase_options_dev.dart` and uncomment below:
-  // import 'firebase_options_dev.dart';
   try {
      await Firebase.initializeApp(
-       // options: DefaultFirebaseOptions.currentPlatform,
+       options: DefaultFirebaseOptions.currentPlatform,
      );
 
      // Initialize App Check (Hybrid: Debug for local, Play Integrity for prod)
@@ -31,8 +30,9 @@ void main() async {
      );
 
      debugPrint("Firebase Initialized for DEV with App Check");
-  } catch(e) {
+  } catch(e, stack) {
      debugPrint("Firebase init failed: $e");
+     debugPrint("Stack trace: $stack");
   }
 
   runApp(const ProviderScope(child: MyApp()));
