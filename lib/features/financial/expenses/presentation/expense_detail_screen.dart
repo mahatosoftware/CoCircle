@@ -31,9 +31,17 @@ class ExpenseDetailScreen extends ConsumerWidget {
           expenseAsync.when(
             data: (expense) => expense.category == ExpenseCategory.settlement
                 ? const SizedBox.shrink()
-                : IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => context.push('/trip/$tripId/expense/$expenseId/edit', extra: expense),
+                : Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => context.push('/trip/$tripId/expense/$expenseId/edit', extra: expense),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        onPressed: () => _showDeleteConfirmation(context, ref, expense),
+                      ),
+                    ],
                   ),
             error: (_, __) => const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
@@ -256,5 +264,35 @@ class ExpenseDetailScreen extends ConsumerWidget {
       case ExpenseCategory.misc: return Icons.receipt;
       case ExpenseCategory.settlement: return Icons.handshake;
     }
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, ExpenseModel expense) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Expense'),
+        content: Text('Are you sure you want to delete "${expense.title}"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.pop(); // Close dialog
+              ref.read(expenseControllerProvider.notifier).deleteExpense(
+                tripId: expense.tripId,
+                expenseId: expense.id,
+                title: expense.title,
+                amount: expense.amount,
+                context: context,
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 }

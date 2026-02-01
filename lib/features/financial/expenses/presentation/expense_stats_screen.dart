@@ -58,7 +58,7 @@ class ExpenseStatsView extends ConsumerWidget {
                   _buildMemberChart(memberStatsAsync, membersAsync, format),
                   const SizedBox(height: 32),
                   Text(
-                    'Expense Allocation (Member Share)',
+                    'Liability (Who Owes what)',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),

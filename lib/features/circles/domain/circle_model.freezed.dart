@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$CircleModel {
 
  String get id; String get name; String get description; String get code;// 7-char alphanumeric
- String get currency; String? get imageUrl; List<String> get memberIds; List<String> get pendingMemberIds; List<String> get adminIds; String get createdBy; DateTime get createdAt; bool get isPendingDelete;
+ String get currency; String? get imageUrl; List<String> get memberIds; List<String> get pendingMemberIds; List<String> get oneTimeCodes; List<String> get adminIds; String get createdBy; DateTime get createdAt; bool get isPendingDelete;
 /// Create a copy of CircleModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $CircleModelCopyWith<CircleModel> get copyWith => _$CircleModelCopyWithImpl<Circ
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CircleModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.code, code) || other.code == code)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&const DeepCollectionEquality().equals(other.memberIds, memberIds)&&const DeepCollectionEquality().equals(other.pendingMemberIds, pendingMemberIds)&&const DeepCollectionEquality().equals(other.adminIds, adminIds)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isPendingDelete, isPendingDelete) || other.isPendingDelete == isPendingDelete));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CircleModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.code, code) || other.code == code)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&const DeepCollectionEquality().equals(other.memberIds, memberIds)&&const DeepCollectionEquality().equals(other.pendingMemberIds, pendingMemberIds)&&const DeepCollectionEquality().equals(other.oneTimeCodes, oneTimeCodes)&&const DeepCollectionEquality().equals(other.adminIds, adminIds)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isPendingDelete, isPendingDelete) || other.isPendingDelete == isPendingDelete));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,description,code,currency,imageUrl,const DeepCollectionEquality().hash(memberIds),const DeepCollectionEquality().hash(pendingMemberIds),const DeepCollectionEquality().hash(adminIds),createdBy,createdAt,isPendingDelete);
+int get hashCode => Object.hash(runtimeType,id,name,description,code,currency,imageUrl,const DeepCollectionEquality().hash(memberIds),const DeepCollectionEquality().hash(pendingMemberIds),const DeepCollectionEquality().hash(oneTimeCodes),const DeepCollectionEquality().hash(adminIds),createdBy,createdAt,isPendingDelete);
 
 @override
 String toString() {
-  return 'CircleModel(id: $id, name: $name, description: $description, code: $code, currency: $currency, imageUrl: $imageUrl, memberIds: $memberIds, pendingMemberIds: $pendingMemberIds, adminIds: $adminIds, createdBy: $createdBy, createdAt: $createdAt, isPendingDelete: $isPendingDelete)';
+  return 'CircleModel(id: $id, name: $name, description: $description, code: $code, currency: $currency, imageUrl: $imageUrl, memberIds: $memberIds, pendingMemberIds: $pendingMemberIds, oneTimeCodes: $oneTimeCodes, adminIds: $adminIds, createdBy: $createdBy, createdAt: $createdAt, isPendingDelete: $isPendingDelete)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $CircleModelCopyWith<$Res>  {
   factory $CircleModelCopyWith(CircleModel value, $Res Function(CircleModel) _then) = _$CircleModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String description, String code, String currency, String? imageUrl, List<String> memberIds, List<String> pendingMemberIds, List<String> adminIds, String createdBy, DateTime createdAt, bool isPendingDelete
+ String id, String name, String description, String code, String currency, String? imageUrl, List<String> memberIds, List<String> pendingMemberIds, List<String> oneTimeCodes, List<String> adminIds, String createdBy, DateTime createdAt, bool isPendingDelete
 });
 
 
@@ -66,7 +66,7 @@ class _$CircleModelCopyWithImpl<$Res>
 
 /// Create a copy of CircleModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? description = null,Object? code = null,Object? currency = null,Object? imageUrl = freezed,Object? memberIds = null,Object? pendingMemberIds = null,Object? adminIds = null,Object? createdBy = null,Object? createdAt = null,Object? isPendingDelete = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? description = null,Object? code = null,Object? currency = null,Object? imageUrl = freezed,Object? memberIds = null,Object? pendingMemberIds = null,Object? oneTimeCodes = null,Object? adminIds = null,Object? createdBy = null,Object? createdAt = null,Object? isPendingDelete = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -76,6 +76,7 @@ as String,currency: null == currency ? _self.currency : currency // ignore: cast
 as String,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,memberIds: null == memberIds ? _self.memberIds : memberIds // ignore: cast_nullable_to_non_nullable
 as List<String>,pendingMemberIds: null == pendingMemberIds ? _self.pendingMemberIds : pendingMemberIds // ignore: cast_nullable_to_non_nullable
+as List<String>,oneTimeCodes: null == oneTimeCodes ? _self.oneTimeCodes : oneTimeCodes // ignore: cast_nullable_to_non_nullable
 as List<String>,adminIds: null == adminIds ? _self.adminIds : adminIds // ignore: cast_nullable_to_non_nullable
 as List<String>,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -165,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String description,  String code,  String currency,  String? imageUrl,  List<String> memberIds,  List<String> pendingMemberIds,  List<String> adminIds,  String createdBy,  DateTime createdAt,  bool isPendingDelete)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String description,  String code,  String currency,  String? imageUrl,  List<String> memberIds,  List<String> pendingMemberIds,  List<String> oneTimeCodes,  List<String> adminIds,  String createdBy,  DateTime createdAt,  bool isPendingDelete)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CircleModel() when $default != null:
-return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,_that.imageUrl,_that.memberIds,_that.pendingMemberIds,_that.adminIds,_that.createdBy,_that.createdAt,_that.isPendingDelete);case _:
+return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,_that.imageUrl,_that.memberIds,_that.pendingMemberIds,_that.oneTimeCodes,_that.adminIds,_that.createdBy,_that.createdAt,_that.isPendingDelete);case _:
   return orElse();
 
 }
@@ -186,10 +187,10 @@ return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String description,  String code,  String currency,  String? imageUrl,  List<String> memberIds,  List<String> pendingMemberIds,  List<String> adminIds,  String createdBy,  DateTime createdAt,  bool isPendingDelete)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String description,  String code,  String currency,  String? imageUrl,  List<String> memberIds,  List<String> pendingMemberIds,  List<String> oneTimeCodes,  List<String> adminIds,  String createdBy,  DateTime createdAt,  bool isPendingDelete)  $default,) {final _that = this;
 switch (_that) {
 case _CircleModel():
-return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,_that.imageUrl,_that.memberIds,_that.pendingMemberIds,_that.adminIds,_that.createdBy,_that.createdAt,_that.isPendingDelete);case _:
+return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,_that.imageUrl,_that.memberIds,_that.pendingMemberIds,_that.oneTimeCodes,_that.adminIds,_that.createdBy,_that.createdAt,_that.isPendingDelete);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +207,10 @@ return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String description,  String code,  String currency,  String? imageUrl,  List<String> memberIds,  List<String> pendingMemberIds,  List<String> adminIds,  String createdBy,  DateTime createdAt,  bool isPendingDelete)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String description,  String code,  String currency,  String? imageUrl,  List<String> memberIds,  List<String> pendingMemberIds,  List<String> oneTimeCodes,  List<String> adminIds,  String createdBy,  DateTime createdAt,  bool isPendingDelete)?  $default,) {final _that = this;
 switch (_that) {
 case _CircleModel() when $default != null:
-return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,_that.imageUrl,_that.memberIds,_that.pendingMemberIds,_that.adminIds,_that.createdBy,_that.createdAt,_that.isPendingDelete);case _:
+return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,_that.imageUrl,_that.memberIds,_that.pendingMemberIds,_that.oneTimeCodes,_that.adminIds,_that.createdBy,_that.createdAt,_that.isPendingDelete);case _:
   return null;
 
 }
@@ -221,7 +222,7 @@ return $default(_that.id,_that.name,_that.description,_that.code,_that.currency,
 @JsonSerializable()
 
 class _CircleModel implements CircleModel {
-  const _CircleModel({required this.id, required this.name, required this.description, required this.code, required this.currency, this.imageUrl, required final  List<String> memberIds, final  List<String> pendingMemberIds = const [], required final  List<String> adminIds, required this.createdBy, required this.createdAt, this.isPendingDelete = false}): _memberIds = memberIds,_pendingMemberIds = pendingMemberIds,_adminIds = adminIds;
+  const _CircleModel({required this.id, required this.name, required this.description, required this.code, required this.currency, this.imageUrl, required final  List<String> memberIds, final  List<String> pendingMemberIds = const [], final  List<String> oneTimeCodes = const [], required final  List<String> adminIds, required this.createdBy, required this.createdAt, this.isPendingDelete = false}): _memberIds = memberIds,_pendingMemberIds = pendingMemberIds,_oneTimeCodes = oneTimeCodes,_adminIds = adminIds;
   factory _CircleModel.fromJson(Map<String, dynamic> json) => _$CircleModelFromJson(json);
 
 @override final  String id;
@@ -243,6 +244,13 @@ class _CircleModel implements CircleModel {
   if (_pendingMemberIds is EqualUnmodifiableListView) return _pendingMemberIds;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_pendingMemberIds);
+}
+
+ final  List<String> _oneTimeCodes;
+@override@JsonKey() List<String> get oneTimeCodes {
+  if (_oneTimeCodes is EqualUnmodifiableListView) return _oneTimeCodes;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_oneTimeCodes);
 }
 
  final  List<String> _adminIds;
@@ -269,16 +277,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CircleModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.code, code) || other.code == code)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&const DeepCollectionEquality().equals(other._memberIds, _memberIds)&&const DeepCollectionEquality().equals(other._pendingMemberIds, _pendingMemberIds)&&const DeepCollectionEquality().equals(other._adminIds, _adminIds)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isPendingDelete, isPendingDelete) || other.isPendingDelete == isPendingDelete));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CircleModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.code, code) || other.code == code)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&const DeepCollectionEquality().equals(other._memberIds, _memberIds)&&const DeepCollectionEquality().equals(other._pendingMemberIds, _pendingMemberIds)&&const DeepCollectionEquality().equals(other._oneTimeCodes, _oneTimeCodes)&&const DeepCollectionEquality().equals(other._adminIds, _adminIds)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isPendingDelete, isPendingDelete) || other.isPendingDelete == isPendingDelete));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,description,code,currency,imageUrl,const DeepCollectionEquality().hash(_memberIds),const DeepCollectionEquality().hash(_pendingMemberIds),const DeepCollectionEquality().hash(_adminIds),createdBy,createdAt,isPendingDelete);
+int get hashCode => Object.hash(runtimeType,id,name,description,code,currency,imageUrl,const DeepCollectionEquality().hash(_memberIds),const DeepCollectionEquality().hash(_pendingMemberIds),const DeepCollectionEquality().hash(_oneTimeCodes),const DeepCollectionEquality().hash(_adminIds),createdBy,createdAt,isPendingDelete);
 
 @override
 String toString() {
-  return 'CircleModel(id: $id, name: $name, description: $description, code: $code, currency: $currency, imageUrl: $imageUrl, memberIds: $memberIds, pendingMemberIds: $pendingMemberIds, adminIds: $adminIds, createdBy: $createdBy, createdAt: $createdAt, isPendingDelete: $isPendingDelete)';
+  return 'CircleModel(id: $id, name: $name, description: $description, code: $code, currency: $currency, imageUrl: $imageUrl, memberIds: $memberIds, pendingMemberIds: $pendingMemberIds, oneTimeCodes: $oneTimeCodes, adminIds: $adminIds, createdBy: $createdBy, createdAt: $createdAt, isPendingDelete: $isPendingDelete)';
 }
 
 
@@ -289,7 +297,7 @@ abstract mixin class _$CircleModelCopyWith<$Res> implements $CircleModelCopyWith
   factory _$CircleModelCopyWith(_CircleModel value, $Res Function(_CircleModel) _then) = __$CircleModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String description, String code, String currency, String? imageUrl, List<String> memberIds, List<String> pendingMemberIds, List<String> adminIds, String createdBy, DateTime createdAt, bool isPendingDelete
+ String id, String name, String description, String code, String currency, String? imageUrl, List<String> memberIds, List<String> pendingMemberIds, List<String> oneTimeCodes, List<String> adminIds, String createdBy, DateTime createdAt, bool isPendingDelete
 });
 
 
@@ -306,7 +314,7 @@ class __$CircleModelCopyWithImpl<$Res>
 
 /// Create a copy of CircleModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? description = null,Object? code = null,Object? currency = null,Object? imageUrl = freezed,Object? memberIds = null,Object? pendingMemberIds = null,Object? adminIds = null,Object? createdBy = null,Object? createdAt = null,Object? isPendingDelete = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? description = null,Object? code = null,Object? currency = null,Object? imageUrl = freezed,Object? memberIds = null,Object? pendingMemberIds = null,Object? oneTimeCodes = null,Object? adminIds = null,Object? createdBy = null,Object? createdAt = null,Object? isPendingDelete = null,}) {
   return _then(_CircleModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -316,6 +324,7 @@ as String,currency: null == currency ? _self.currency : currency // ignore: cast
 as String,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,memberIds: null == memberIds ? _self._memberIds : memberIds // ignore: cast_nullable_to_non_nullable
 as List<String>,pendingMemberIds: null == pendingMemberIds ? _self._pendingMemberIds : pendingMemberIds // ignore: cast_nullable_to_non_nullable
+as List<String>,oneTimeCodes: null == oneTimeCodes ? _self._oneTimeCodes : oneTimeCodes // ignore: cast_nullable_to_non_nullable
 as List<String>,adminIds: null == adminIds ? _self._adminIds : adminIds // ignore: cast_nullable_to_non_nullable
 as List<String>,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

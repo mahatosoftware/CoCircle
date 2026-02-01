@@ -14,6 +14,9 @@ import 'features/financial/expenses/presentation/expense_detail_screen.dart';
 import 'features/financial/expenses/domain/expense_model.dart';
 import 'features/circles/presentation/circle_settings_screen.dart';
 import 'features/auth/presentation/profile_screen.dart';
+import 'features/circles/presentation/qr_scanner_screen.dart';
+import 'features/financial/expenses/presentation/audit_log_detail_screen.dart';
+import 'features/financial/expenses/domain/audit_log_model.dart';
 import 'core/widgets/copyright_footer.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -65,6 +68,17 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'join-circle',
                 builder: (context, state) => const JoinCircleScreen(),
+              ),
+              GoRoute(
+                path: 'scan-qr',
+                builder: (context, state) => const QRScannerScreen(),
+              ),
+              GoRoute(
+                path: 'join/:code',
+                builder: (context, state) {
+                  final code = state.pathParameters['code'];
+                  return JoinCircleScreen(initialCode: code);
+                },
               ),
               GoRoute(
                 path: 'profile',
@@ -124,6 +138,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                         },
                       ),
                     ],
+                  ),
+                  GoRoute(
+                    path: 'audit-detail',
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>;
+                      final log = extra['log'] as AuditLogModel;
+                      final currency = extra['currency'] as String;
+                      final memberNames = extra['memberNames'] as Map<String, String>;
+                      return AuditLogDetailScreen(log: log, currency: currency, memberNames: memberNames);
+                    },
                   ),
                 ],
               ),

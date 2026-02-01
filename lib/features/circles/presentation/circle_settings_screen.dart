@@ -121,6 +121,62 @@ class CircleSettingsScreen extends ConsumerWidget {
                                   },
                                 ),
                               ),
+                                if (isUserAdmin) ...[
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.link),
+                                      label: const Text('Generate One-Time Invite Link'),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                      onPressed: () async {
+                                        final code = await ref.read(circleControllerProvider.notifier).generateOneTimeCode(
+                                          circleId: circle.id,
+                                          context: context,
+                                        );
+                                        if (code != null) {
+                                          final oneTimeLink = 'https://cocircle.app/join/$code';
+                                          // ignore: deprecated_member_use
+                                          Share.share('Special invite to join "${circle.name}"! Use this one-time link: $oneTimeLink or code: $code');
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  if (circle.oneTimeCodes.isNotEmpty) ...[
+                                    const SizedBox(height: 16),
+                                    const Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text('Active One-Time Invites', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ...circle.oneTimeCodes.map((code) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 8.0),
+                                      child: Row(
+                                        children: [
+                                          Expanded(child: Text(code, style: const TextStyle(fontFamily: 'monospace'))),
+                                          IconButton(
+                                            icon: const Icon(Icons.share, size: 20),
+                                            onPressed: () {
+                                              final oneTimeLink = 'https://cocircle.app/join/$code';
+                                              // ignore: deprecated_member_use
+                                              Share.share('Special invite to join "${circle.name}"! Use this one-time link: $oneTimeLink or code: $code');
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                                            onPressed: () => ref.read(circleControllerProvider.notifier).deleteOneTimeCode(
+                                              circleId: circle.id, 
+                                              code: code, 
+                                              context: context
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )).toList(),
+                                  ],
+                                ],
                             ],
                           ),
                         ),

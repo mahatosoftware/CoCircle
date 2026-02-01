@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/errors/failure.dart';
 import '../domain/expense_model.dart';
+import '../domain/audit_log_model.dart';
 import '../domain/expense_repository.dart';
 
 part 'expense_repository_impl.g.dart';
@@ -19,6 +20,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   ExpenseRepositoryImpl({required FirebaseFirestore firestore}) : _firestore = firestore;
 
   CollectionReference<Map<String, dynamic>> get _expenses => _firestore.collection('expenses');
+  CollectionReference<Map<String, dynamic>> get _auditLogs => _firestore.collection('audit_logs');
 
   @override
   Future<Either<Failure, ExpenseModel>> createExpense(ExpenseModel expense) async {
@@ -38,6 +40,16 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
     try {
       await _expenses.doc(expense.id).update(expense.toJson());
       return right(expense);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteExpense(String expenseId) async {
+    try {
+      await _expenses.doc(expenseId).delete();
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -77,6 +89,27 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((d) => ExpenseModel.fromJson(d.data())).toList();
+        });
+  }
+
+  @override
+  Future<Either<Failure, void>> saveAuditLog(AuditLogModel log) async {
+    try {
+      await _auditLogs.doc(log.id).set(log.toJson());
+      return right(null);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Stream<List<AuditLogModel>> getAuditLogsStream(String tripId) {
+    return _auditLogs
+        .where('tripId', isEqualTo: tripId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((d) => AuditLogModel.fromJson(d.data())).toList();
         });
   }
 }

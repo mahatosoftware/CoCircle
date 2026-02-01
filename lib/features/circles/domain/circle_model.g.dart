@@ -21,6 +21,11 @@ _CircleModel _$CircleModelFromJson(Map<String, dynamic> json) => _CircleModel(
           ?.map((e) => e as String)
           .toList() ??
       const [],
+  oneTimeCodes:
+      (json['oneTimeCodes'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
   adminIds: (json['adminIds'] as List<dynamic>)
       .map((e) => e as String)
       .toList(),
@@ -39,6 +44,7 @@ Map<String, dynamic> _$CircleModelToJson(_CircleModel instance) =>
       'imageUrl': instance.imageUrl,
       'memberIds': instance.memberIds,
       'pendingMemberIds': instance.pendingMemberIds,
+      'oneTimeCodes': instance.oneTimeCodes,
       'adminIds': instance.adminIds,
       'createdBy': instance.createdBy,
       'createdAt': instance.createdAt.toIso8601String(),

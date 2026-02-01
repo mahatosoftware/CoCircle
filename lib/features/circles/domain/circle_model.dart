@@ -14,6 +14,7 @@ abstract class CircleModel with _$CircleModel {
     String? imageUrl,
     required List<String> memberIds,
     @Default([]) List<String> pendingMemberIds,
+    @Default([]) List<String> oneTimeCodes,
     required List<String> adminIds,
     required String createdBy,
     required DateTime createdAt,

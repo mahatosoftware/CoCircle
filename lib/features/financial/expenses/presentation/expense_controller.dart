@@ -8,6 +8,7 @@ import 'package:cocircle/core/utils/snackbar.dart';
 import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
 import '../data/expense_repository_impl.dart';
 import '../domain/expense_model.dart';
+import '../domain/audit_log_model.dart';
 
 part 'expense_controller.g.dart';
 
@@ -103,10 +104,17 @@ class ExpenseController extends _$ExpenseController {
         state = AsyncError(l.message, StackTrace.current);
         showSnackBar(context, l.message);
       },
-      (r) {
+      (r) async {
         state = const AsyncData(null);
         context.pop();
         showSnackBar(context, 'Expense added successfully!');
+        await _logAction(
+          tripId: tripId,
+          expenseId: expenseId,
+          action: AuditAction.create,
+          title: title,
+          amount: amount,
+        );
       },
     );
   }
@@ -188,6 +196,13 @@ class ExpenseController extends _$ExpenseController {
     // To keep it simple, I might need the original expense to preserve some fields.
     // Let's assume we want to update the entry.
     
+    // FETCH OLD EXPENSE FOR AUDIT LOG
+    final oldExpenseRes = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
+    Map<String, Map<String, dynamic>>? changes;
+    oldExpenseRes.fold((_) => null, (old) {
+      changes = old.calculateChanges(expense);
+    });
+
     final result = await ref.read(expenseRepositoryProvider).updateExpense(expense);
 
     result.fold(
@@ -195,10 +210,18 @@ class ExpenseController extends _$ExpenseController {
         state = AsyncError(l.message, StackTrace.current);
         showSnackBar(context, l.message);
       },
-      (r) {
+      (r) async {
         state = const AsyncData(null);
         context.pop();
         showSnackBar(context, 'Expense updated successfully!');
+        await _logAction(
+          tripId: tripId,
+          expenseId: expenseId,
+          action: AuditAction.update,
+          title: title,
+          amount: amount,
+          changes: changes,
+        );
       },
     );
   }
@@ -215,6 +238,13 @@ class ExpenseController extends _$ExpenseController {
     if (expense.splitType == SplitType.percentage && (splitTotal - 100).abs() > 0.01) return;
 
     await ref.read(expenseRepositoryProvider).updateExpense(expense);
+    _logAction(
+      tripId: expense.tripId,
+      expenseId: expense.id,
+      action: AuditAction.update,
+      title: expense.title,
+      amount: expense.amount,
+    );
     _notifyParticipants(expense, "updated");
   }
 
@@ -253,6 +283,16 @@ class ExpenseController extends _$ExpenseController {
     debugPrint('DEBUG: Saving settlement expense to repository: ${expense.id}');
     final result = await ref.read(expenseRepositoryProvider).createExpense(expense);
     
+    if (result.isRight()) {
+      _logAction(
+        tripId: tripId,
+        expenseId: expenseId,
+        action: AuditAction.create,
+        title: title,
+        amount: amount,
+      );
+    }
+    
     return result.fold(
       (l) {
         debugPrint('DEBUG ERROR: Error saving settlement expense: ${l.message}');
@@ -263,6 +303,55 @@ class ExpenseController extends _$ExpenseController {
         return right(r);
       },
     );
+  }
+
+  Future<void> deleteExpense({
+    required String tripId,
+    required String expenseId,
+    required String title,
+    required double amount,
+    required BuildContext context,
+  }) async {
+    final res = await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
+    res.fold(
+      (l) => showSnackBar(context, l.message),
+      (r) async {
+        showSnackBar(context, 'Expense deleted');
+        context.pop();
+        await _logAction(
+          tripId: tripId,
+          expenseId: expenseId,
+          action: AuditAction.delete,
+          title: title,
+          amount: amount,
+        );
+      },
+    );
+  }
+
+  Future<void> _logAction({
+    required String tripId,
+    required String expenseId,
+    required AuditAction action,
+    required String title,
+    required double amount,
+    Map<String, dynamic>? changes,
+  }) async {
+    final user = await ref.read(authRepositoryProvider).getCurrentUser();
+    if (user == null) return;
+
+    final log = AuditLogModel(
+      id: const Uuid().v4(),
+      tripId: tripId,
+      expenseId: expenseId,
+      userId: user.uid,
+      action: action,
+      title: title,
+      amount: amount,
+      timestamp: DateTime.now(),
+      changes: changes,
+    );
+    await ref.read(expenseRepositoryProvider).saveAuditLog(log);
   }
 
   void _notifyParticipants(ExpenseModel expense, String action) {
@@ -280,6 +369,11 @@ class ExpenseController extends _$ExpenseController {
 @riverpod
 Stream<List<ExpenseModel>> tripExpenses(Ref ref, String tripId) {
   return ref.watch(expenseRepositoryProvider).getExpensesStream(tripId);
+}
+
+@riverpod
+Stream<List<AuditLogModel>> tripAuditLogs(Ref ref, String tripId) {
+  return ref.watch(expenseRepositoryProvider).getAuditLogsStream(tripId);
 }
 
 @riverpod

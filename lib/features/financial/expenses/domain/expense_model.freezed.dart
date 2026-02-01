@@ -225,8 +225,8 @@ return $default(_that.id,_that.tripId,_that.title,_that.amount,_that.date,_that.
 /// @nodoc
 @JsonSerializable()
 
-class _ExpenseModel implements ExpenseModel {
-  const _ExpenseModel({required this.id, required this.tripId, required this.title, required this.amount, @TimestampConverter() required this.date, required this.category, required this.payerId, required final  Map<String, double> payers, required final  Map<String, double> splitDetails, required this.splitType, this.notes, this.isSupplemental = false, required this.createdBy, @TimestampConverter() required this.createdAt}): _payers = payers,_splitDetails = splitDetails;
+class _ExpenseModel extends ExpenseModel {
+  const _ExpenseModel({required this.id, required this.tripId, required this.title, required this.amount, @TimestampConverter() required this.date, required this.category, required this.payerId, required final  Map<String, double> payers, required final  Map<String, double> splitDetails, required this.splitType, this.notes, this.isSupplemental = false, required this.createdBy, @TimestampConverter() required this.createdAt}): _payers = payers,_splitDetails = splitDetails,super._();
   factory _ExpenseModel.fromJson(Map<String, dynamic> json) => _$ExpenseModelFromJson(json);
 
 @override final  String id;

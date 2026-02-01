@@ -33,7 +33,7 @@ final class ExpenseControllerProvider
   ExpenseController create() => ExpenseController();
 }
 
-String _$expenseControllerHash() => r'27ed820b519ce9964b3cf4d705e24473ca0b4259';
+String _$expenseControllerHash() => r'e1550feb15c1be71b5c957186a6fe7b0584e1dbb';
 
 abstract class _$ExpenseController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -128,6 +128,83 @@ final class TripExpensesFamily extends $Family
 
   @override
   String toString() => r'tripExpensesProvider';
+}
+
+@ProviderFor(tripAuditLogs)
+final tripAuditLogsProvider = TripAuditLogsFamily._();
+
+final class TripAuditLogsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<AuditLogModel>>,
+          List<AuditLogModel>,
+          Stream<List<AuditLogModel>>
+        >
+    with
+        $FutureModifier<List<AuditLogModel>>,
+        $StreamProvider<List<AuditLogModel>> {
+  TripAuditLogsProvider._({
+    required TripAuditLogsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'tripAuditLogsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$tripAuditLogsHash();
+
+  @override
+  String toString() {
+    return r'tripAuditLogsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<AuditLogModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<AuditLogModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return tripAuditLogs(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TripAuditLogsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$tripAuditLogsHash() => r'e6169f233fc145abe8583bd92f8b94918443ca3a';
+
+final class TripAuditLogsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<AuditLogModel>>, String> {
+  TripAuditLogsFamily._()
+    : super(
+        retry: null,
+        name: r'tripAuditLogsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TripAuditLogsProvider call(String tripId) =>
+      TripAuditLogsProvider._(argument: tripId, from: this);
+
+  @override
+  String toString() => r'tripAuditLogsProvider';
 }
 
 @ProviderFor(expenseDetail)

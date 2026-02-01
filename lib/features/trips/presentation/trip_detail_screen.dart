@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../financial/expenses/presentation/expense_list.dart';
 import '../../financial/expenses/presentation/expense_stats_screen.dart';
+import '../../financial/expenses/presentation/expense_audit_screen.dart';
 import '../../financial/settlements/presentation/settlement_list.dart';
 import '../../circles/presentation/circle_controller.dart';
 import 'trip_controller.dart';
@@ -18,7 +19,7 @@ class TripDetailScreen extends ConsumerWidget {
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: tripAsync.when(
@@ -31,6 +32,7 @@ class TripDetailScreen extends ConsumerWidget {
               Tab(text: 'Expenses', icon: Icon(Icons.receipt)),
               Tab(text: 'Settlements', icon: Icon(Icons.handshake)),
               Tab(text: 'Insights', icon: Icon(Icons.bar_chart)),
+              Tab(text: 'Audit', icon: Icon(Icons.history_edu)),
             ],
           ),
           actions: [
@@ -106,6 +108,7 @@ class TripDetailScreen extends ConsumerWidget {
                      ),
                    ),
                    ExpenseStatsView(tripId: tripId),
+                   ExpenseAuditView(tripId: tripId),
                  ],
                ),
                loading: () => const Center(child: CircularProgressIndicator()),

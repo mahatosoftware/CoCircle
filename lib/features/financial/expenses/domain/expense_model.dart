@@ -27,5 +27,50 @@ abstract class ExpenseModel with _$ExpenseModel {
     @TimestampConverter() required DateTime createdAt,
   }) = _ExpenseModel;
 
+  const ExpenseModel._();
+
   factory ExpenseModel.fromJson(Map<String, dynamic> json) => _$ExpenseModelFromJson(json);
+
+  Map<String, Map<String, dynamic>> calculateChanges(ExpenseModel other) {
+    final changes = <String, Map<String, dynamic>>{};
+
+    if (title != other.title) {
+      changes['title'] = {'old': title, 'new': other.title};
+    }
+    if (amount != other.amount) {
+      changes['amount'] = {'old': amount, 'new': other.amount};
+    }
+    if (date.millisecondsSinceEpoch != other.date.millisecondsSinceEpoch) {
+      changes['date'] = {'old': date.toIso8601String(), 'new': other.date.toIso8601String()};
+    }
+    if (category != other.category) {
+      changes['category'] = {'old': category.name, 'new': other.category.name};
+    }
+    if (splitType != other.splitType) {
+      changes['splitType'] = {'old': splitType.name, 'new': other.splitType.name};
+    }
+    if (notes != other.notes) {
+      changes['notes'] = {'old': notes, 'new': other.notes};
+    }
+    
+    // Compare Payers
+    if (!_isMapEqual(payers, other.payers)) {
+      changes['payers'] = {'old': payers, 'new': other.payers};
+    }
+
+    // Compare Split Details
+    if (!_isMapEqual(splitDetails, other.splitDetails)) {
+      changes['splitDetails'] = {'old': splitDetails, 'new': other.splitDetails};
+    }
+
+    return changes;
+  }
+
+  bool _isMapEqual(Map<String, double> m1, Map<String, double> m2) {
+    if (m1.length != m2.length) return false;
+    for (final key in m1.keys) {
+      if (!m2.containsKey(key) || (m1[key]! - m2[key]!).abs() > 0.01) return false;
+    }
+    return true;
+  }
 }

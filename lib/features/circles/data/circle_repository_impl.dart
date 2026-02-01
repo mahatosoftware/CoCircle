@@ -87,7 +87,14 @@ class CircleRepositoryImpl implements CircleRepository {
   @override
   Future<Either<Failure, CircleModel>> getCircleByCode(String code) async {
     try {
-      final query = await _circles.where('code', isEqualTo: code).limit(1).get();
+      // 1. Try regular code
+      var query = await _circles.where('code', isEqualTo: code).limit(1).get();
+      
+      // 2. Try one-time code if not found
+      if (query.docs.isEmpty) {
+        query = await _circles.where('oneTimeCodes', arrayContains: code).limit(1).get();
+      }
+
       if (query.docs.isEmpty) return left(Failure('Circle not found'));
       return right(CircleModel.fromJson(query.docs.first.data()));
     } catch (e) {
@@ -124,6 +131,63 @@ class CircleRepositoryImpl implements CircleRepository {
      } catch (e) {
        return left(Failure(e.toString()));
      }
+  }
+
+  @override
+  Future<Either<Failure, void>> joinWithOneTimeCode(String circleId, String userId, String code) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _circles.doc(circleId);
+        final doc = await transaction.get(docRef);
+        
+        if (!doc.exists) throw Exception('Circle not found');
+        
+        final data = doc.data()!;
+        final oneTimeCodes = List<String>.from(data['oneTimeCodes'] ?? []);
+        
+        if (!oneTimeCodes.contains(code)) throw Exception('Invalid or used invite code');
+        
+        oneTimeCodes.remove(code);
+        
+        transaction.update(docRef, {
+          'oneTimeCodes': oneTimeCodes,
+          'memberIds': FieldValue.arrayUnion([userId]),
+        });
+      });
+      return right(null);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> generateOneTimeCode(String circleId) async {
+    try {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      final rnd = Random();
+      final code = 'IN-${String.fromCharCodes(Iterable.generate(
+        6, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))))}';
+
+      await _circles.doc(circleId).update({
+        'oneTimeCodes': FieldValue.arrayUnion([code])
+      });
+      
+      return right(code);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteOneTimeCode(String circleId, String code) async {
+    try {
+      await _circles.doc(circleId).update({
+        'oneTimeCodes': FieldValue.arrayRemove([code])
+      });
+      return right(null);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
   }
 
   @override

@@ -3,17 +3,26 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
+import 'qr_scanner_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class JoinCircleScreen extends ConsumerStatefulWidget {
-  const JoinCircleScreen({super.key});
+  final String? initialCode;
+  const JoinCircleScreen({super.key, this.initialCode});
 
   @override
   ConsumerState<JoinCircleScreen> createState() => _JoinCircleScreenState();
 }
 
 class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
-  final _codeController = TextEditingController();
+  late final TextEditingController _codeController;
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController = TextEditingController(text: widget.initialCode);
+  }
 
   @override
   void dispose() {
@@ -49,23 +58,40 @@ class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
-              TextFormField(
-                controller: _codeController,
-                decoration: const InputDecoration(
-                  labelText: 'Circle Code',
-                  hintText: 'e.g. X7Y2Z9A',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.characters,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(7),
-                  UpperCaseTextFormatter(),
+              Row(
+                children: [
+                   Expanded(
+                     child: TextFormField(
+                        controller: _codeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Circle Code',
+                          hintText: 'e.g. X7Y2Z9A',
+                          border: OutlineInputBorder(),
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(10),
+                          UpperCaseTextFormatter(),
+                        ],
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return 'Please enter code';
+                          if (val.length < 7) return 'Code is too short';
+                          return null;
+                        },
+                      ),
+                   ),
+                   const SizedBox(width: 12),
+                   IconButton.filledTonal(
+                     icon: const Icon(Icons.qr_code_scanner),
+                     onPressed: () async {
+                       final scannedCode = await context.push<String>('/scan-qr');
+                       if (scannedCode != null) {
+                         _codeController.text = scannedCode;
+                         _joinCircle();
+                       }
+                     },
+                   ),
                 ],
-                validator: (val) {
-                  if (val == null || val.isEmpty) return 'Please enter code';
-                  if (val.length != 7) return 'Code must be 7 characters';
-                  return null;
-                },
               ),
               const SizedBox(height: 24),
               SizedBox(

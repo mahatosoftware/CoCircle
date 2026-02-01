@@ -72,13 +72,33 @@ class CircleController extends _$CircleController {
            showSnackBar(context, 'You are already a member of this circle.');
            return;
         }
+        
+        // 3. Check if one-time code
+        final isOneTime = circle.oneTimeCodes.contains(code.toUpperCase());
+        
+        if (isOneTime) {
+           final joinRes = await ref.read(circleRepositoryProvider).joinWithOneTimeCode(circle.id, user.uid, code.toUpperCase());
+           joinRes.fold(
+             (l) {
+               state = AsyncError(l.message, StackTrace.current);
+               showSnackBar(context, l.message);
+             },
+             (r) {
+               state = const AsyncData(null);
+               showSnackBar(context, 'Joined ${circle.name} successfully!');
+               context.pop();
+             }
+           );
+           return;
+        }
+
         if (circle.pendingMemberIds.contains(user.uid)) {
            state = const AsyncData(null);
            showSnackBar(context, 'Request already sent. Waiting for approval.');
            return;
         }
 
-        // 3. Request Join
+        // 4. Request Join (Regular code)
         final joinRes = await ref.read(circleRepositoryProvider).requestJoin(circle.id, user.uid);
         
         joinRes.fold(
@@ -89,7 +109,6 @@ class CircleController extends _$CircleController {
           (r) {
             state = const AsyncData(null);
             showSnackBar(context, 'Request sent to ${circle.name}. Waiting for approval.');
-            // Do not invalidate userCirclesProvider yet as user is not a member
             context.pop(); 
           }
         );
@@ -153,6 +172,28 @@ class CircleController extends _$CircleController {
       (r) {
         showSnackBar(context, 'Circle name updated!');
       },
+    );
+  }
+
+  Future<String?> generateOneTimeCode({required String circleId, required BuildContext context}) async {
+    final res = await ref.read(circleRepositoryProvider).generateOneTimeCode(circleId);
+    return res.fold(
+      (l) {
+        showSnackBar(context, l.message);
+        return null;
+      },
+      (code) {
+        showSnackBar(context, 'One-time code generated!');
+        return code;
+      },
+    );
+  }
+
+  Future<void> deleteOneTimeCode({required String circleId, required String code, required BuildContext context}) async {
+    final res = await ref.read(circleRepositoryProvider).deleteOneTimeCode(circleId, code);
+    res.fold(
+      (l) => showSnackBar(context, l.message),
+      (r) => showSnackBar(context, 'Invite code deleted.'),
     );
   }
 }
