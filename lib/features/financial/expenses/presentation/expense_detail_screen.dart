@@ -8,6 +8,7 @@ import 'package:cocircle/features/trips/presentation/trip_controller.dart';
 import '../domain/expense_model.dart';
 import 'expense_controller.dart';
 import 'package:cocircle/core/widgets/copyright_footer.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class ExpenseDetailScreen extends ConsumerWidget {
   final String tripId;
@@ -27,7 +28,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.expenseDetails),
+        title: Text(l10n.expenseDetailsTitle),
         actions: [
           expenseAsync.when(
             data: (expense) => expense.category == ExpenseCategory.settlement.name
@@ -70,6 +71,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, ExpenseModel expense, String circleId, String currency) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -116,20 +118,20 @@ class ExpenseDetailScreen extends ConsumerWidget {
           // Paid By Section
           _buildSectionTitle(l10n.paidBy),
           const SizedBox(height: 12),
-          _buildPayerList(ref, expense, circleId, currency),
+          _buildPayerList(context, ref, expense, circleId, currency),
           
           const SizedBox(height: 32),
           
           // Split Details Section
-          _buildSectionTitle('${l10n.splitDetails} (${expense.splitType.name.toUpperCase()})'),
+          _buildSectionTitle('${l10n.splitDetailsWithType(expense.splitType.name.toUpperCase())}'),
           const SizedBox(height: 12),
-          _buildSplitBreakdown(ref, expense, circleId, currency),
+          _buildSplitBreakdown(context, ref, expense, circleId, currency),
           
           const SizedBox(height: 32),
           
           // Notes Section
           if (expense.notes != null && expense.notes!.isNotEmpty) ...[
-            _buildSectionTitle(l10n.notesSectionTitle),
+            _buildSectionTitle(l10n.notes),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -153,7 +155,8 @@ class ExpenseDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPayerList(WidgetRef ref, ExpenseModel expense, String circleId, String currency) {
+  Widget _buildPayerList(BuildContext context, WidgetRef ref, ExpenseModel expense, String circleId, String currency) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: expense.payers.entries.map((entry) {
         final memberAsync = ref.watch(circleMembersProvider(circleId));
@@ -174,13 +177,14 @@ class ExpenseDetailScreen extends ConsumerWidget {
             );
           },
           loading: () => const LinearProgressIndicator(),
-          error: (_, __) => const Text('Error loading member'),
+          error: (_, __) => Text(l10n.loadMemberError),
         );
       }).toList(),
     );
   }
 
-  Widget _buildSplitBreakdown(WidgetRef ref, ExpenseModel expense, String circleId, String currency) {
+  Widget _buildSplitBreakdown(BuildContext context, WidgetRef ref, ExpenseModel expense, String circleId, String currency) {
+     final l10n = AppLocalizations.of(context)!;
     final memberAsync = ref.watch(circleMembersProvider(circleId));
     
     return memberAsync.when(
@@ -228,7 +232,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
         );
       },
       loading: () => const LinearProgressIndicator(),
-      error: (_, __) => const Text('Error loading split details'),
+      error: (_, __) => Text(l10n.loadSplitDetailsError),
     );
   }
 
@@ -277,7 +281,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
         return AlertDialog(
-          title: Text(l10n.deleteExpense),
+          title: Text(l10n.deleteExpenseTitle),
           content: Text(l10n.deleteExpenseConfirmMessage(expense.title)),
           actions: [
             TextButton(

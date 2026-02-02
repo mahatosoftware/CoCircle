@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../features/financial/expenses/l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class CopyrightFooter extends StatelessWidget {
   const CopyrightFooter({super.key});

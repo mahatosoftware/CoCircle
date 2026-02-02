@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:cocircle/features/trips/domain/trip_model.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
 

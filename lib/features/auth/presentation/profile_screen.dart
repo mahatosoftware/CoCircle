@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository_impl.dart';
 import 'profile_controller.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
@@ -94,10 +94,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: l10n.displayName,
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: const OutlineInputBorder(),
                     ),
                     validator: (val) => val == null || val.isEmpty ? l10n.nameEmptyError : null,
                   ),
@@ -105,10 +105,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   TextFormField(
                     initialValue: user.email,
                     enabled: false,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: l10n.emailAddress,
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      border: const OutlineInputBorder(),
                       helperText: l10n.emailCannotBeChanged,
                     ),
                   ),

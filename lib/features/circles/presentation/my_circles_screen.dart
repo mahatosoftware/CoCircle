@@ -7,7 +7,7 @@ import '../../auth/domain/user_model.dart';
 import 'package:cocircle/features/notifications/presentation/notification_controller.dart';
 import 'package:cocircle/features/notifications/domain/notification_model.dart';
 import '../domain/circle_model.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
 
 class MyCirclesScreen extends ConsumerWidget {
@@ -130,8 +130,10 @@ class MyCirclesScreen extends ConsumerWidget {
                                 children: [
                                   const Icon(Icons.info_outline, size: 14, color: Colors.orange),
                                   const SizedBox(width: 4),
+                                  Text(
                                     l10n.pendingRequest(pendingCount),
                                     style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
                                 ],
                               ),
                             ),
@@ -238,8 +240,8 @@ class MyCirclesScreen extends ConsumerWidget {
                       controller: scrollController,
                       children: [
                         if (pendingCircles.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: Text(AppLocalizations.of(context)!.circleRequests, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                           ),
                           ...pendingCircles.map((circle) {
@@ -262,8 +264,8 @@ class MyCirclesScreen extends ConsumerWidget {
                           const Divider(),
                         ],
                         if (notifications.isNotEmpty) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: Text(AppLocalizations.of(context)!.recentActivity, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                           ),
                           ...notifications.map((n) => ListTile(
@@ -298,8 +300,8 @@ class MyCirclesScreen extends ConsumerWidget {
                           )),
                         ],
                         if (pendingCircles.isEmpty && notifications.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40.0),
                             child: Center(child: Text(AppLocalizations.of(context)!.allCaughtUp)),
                           ),
                       ],

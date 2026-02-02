@@ -9,7 +9,7 @@ import 'package:cocircle/features/financial/expenses/domain/expense_model.dart';
 import 'package:cocircle/features/financial/expenses/presentation/expense_controller.dart';
 import 'package:cocircle/features/financial/settlements/domain/settlement_model.dart';
 import 'package:cocircle/core/widgets/copyright_footer.dart';
-import '../../expenses/l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:collection/collection.dart';
 
 class SettlementList extends ConsumerWidget {
@@ -111,11 +111,12 @@ class SettlementList extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error loading trip: $err')),
+      error: (err, stack) => Center(child: Text(l10n.loadTripError(err.toString()))),
     );
   }
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60.0, horizontal: 24.0),

@@ -7,7 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'core/config/environment.dart';
 import 'router.dart';
 import 'firebase_options_prod.dart';
-import 'l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

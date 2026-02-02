@@ -7,7 +7,7 @@ import '../../financial/expenses/presentation/expense_audit_screen.dart';
 import '../../financial/settlements/presentation/settlement_list.dart';
 import '../../circles/presentation/circle_controller.dart';
 import 'trip_controller.dart';
-import '../../../financial/expenses/l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 
 
@@ -102,7 +102,7 @@ class TripDetailScreen extends ConsumerWidget {
                          Padding(
                            padding: const EdgeInsets.all(16.0),
                            child: Text(
-                             'Settlement Plan (${circle.currency})', 
+                             l10n.settlementPlanTitle(circle.currency), 
                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                            ),
                          ),

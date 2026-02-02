@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import 'circle_controller.dart';
 
 final circleMembersProvider = FutureProvider.family<List<UserModel>, List<String>>((ref, memberIds) async {

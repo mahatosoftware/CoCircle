@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:currency_picker/currency_picker.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class CreateCircleScreen extends ConsumerStatefulWidget {
   const CreateCircleScreen({super.key});
@@ -63,9 +63,9 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
               TextFormField(
                 readOnly: true,
                 controller: TextEditingController(text: _selectedCurrency),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: AppLocalizations.of(context)!.currency,
-                  suffixIcon: Icon(Icons.arrow_drop_down),
+                  suffixIcon: const Icon(Icons.arrow_drop_down),
                 ),
                 onTap: () {
                   showCurrencyPicker(

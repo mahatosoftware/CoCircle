@@ -5,7 +5,7 @@ import '../../../../core/theme/app_pallete.dart';
 import '../../circles/domain/circle_model.dart';
 import '../domain/trip_model.dart';
 import 'trip_controller.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class CreateTripScreen extends ConsumerStatefulWidget {
   final String circleId;
@@ -86,7 +86,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<TripType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: InputDecoration(labelText: l10n.typeLabel),
                   items: TripType.values.map((t) => DropdownMenuItem(
                     value: t,

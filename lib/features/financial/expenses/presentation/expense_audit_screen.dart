@@ -7,7 +7,7 @@ import 'expense_controller.dart';
 import '../../../trips/presentation/trip_controller.dart';
 import '../../../circles/presentation/circle_controller.dart';
 import '../../../../core/theme/app_pallete.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class ExpenseAuditView extends ConsumerWidget {
   final String tripId;
@@ -78,12 +78,12 @@ class ExpenseAuditView extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                _buildActionBadge(log.action),
+                                _buildActionBadge(context, log.action),
                                 const SizedBox(width: 8),
                                 Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'By ${activityUser.displayName}',
+                                  l10n.activityByUser(activityUser.displayName),
                                   style: TextStyle(color: Colors.grey[600], fontSize: 13),
                                 ),
                                 const Spacer(),

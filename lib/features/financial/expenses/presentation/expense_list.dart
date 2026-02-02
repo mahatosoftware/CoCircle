@@ -8,7 +8,7 @@ import 'expense_controller.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class ExpenseList extends ConsumerWidget {
   final String tripId;
@@ -56,7 +56,7 @@ class ExpenseList extends ConsumerWidget {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'edit',
                           child: Row(
                             children: [

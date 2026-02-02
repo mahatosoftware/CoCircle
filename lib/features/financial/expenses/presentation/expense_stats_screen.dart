@@ -9,7 +9,7 @@ import '../domain/expense_model.dart';
 import '../../../trips/presentation/trip_controller.dart';
 import '../../../circles/presentation/circle_controller.dart';
 import '../../../../core/widgets/copyright_footer.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 class ExpenseStatsView extends ConsumerWidget {
   final String tripId;
@@ -309,7 +309,7 @@ class ExpenseStatsView extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Text('Error: $err'),
+          error: (err, _) => Text(l10n.errorWithDetails(err.toString())),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

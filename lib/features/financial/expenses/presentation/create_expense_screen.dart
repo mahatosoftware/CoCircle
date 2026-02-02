@@ -10,7 +10,7 @@ import 'package:cocircle/features/circles/presentation/circle_controller.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
 import '../domain/expense_model.dart';
 import 'expense_controller.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
 class CreateExpenseScreen extends ConsumerStatefulWidget {
@@ -233,6 +233,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     );
   }
 
+  Widget _buildForm(BuildContext context, bool isLoading, String currency) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
         padding: const EdgeInsets.all(16.0),

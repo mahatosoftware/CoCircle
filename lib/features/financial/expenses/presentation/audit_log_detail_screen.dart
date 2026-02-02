@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../domain/audit_log_model.dart';
 import '../../../../core/theme/app_pallete.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 
 import '../../../circles/domain/circle_member_model.dart';
 
@@ -21,6 +21,7 @@ class AuditLogDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     final changes = log.changes ?? {};
 
     return Scaffold(
@@ -52,7 +53,7 @@ class AuditLogDetailScreen extends StatelessWidget {
                           log.title,
                           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        _buildActionBadge(log.action),
+                        _buildActionBadge(context, log.action),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -84,9 +85,9 @@ class AuditLogDetailScreen extends StatelessWidget {
             const SizedBox(height: 12),
             
             if (changes.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                  padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Text(l10n.noSpecificChanges),
                 ),
               )
@@ -99,6 +100,7 @@ class AuditLogDetailScreen extends StatelessWidget {
   }
 
   Widget _buildChangeItem(BuildContext context, String field, dynamic values) {
+    final l10n = AppLocalizations.of(context)!;
     final oldVal = _formatValue(context, field, values['old']);
     final newVal = _formatValue(context, field, values['new']);
 
@@ -202,7 +204,7 @@ class AuditLogDetailScreen extends StatelessWidget {
     return value.toString();
   }
 
-  Widget _buildActionBadge(AuditAction action) {
+  Widget _buildActionBadge(BuildContext context, AuditAction action) {
     final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;

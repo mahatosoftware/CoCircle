@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
 import 'qr_scanner_screen.dart';
-import '../l10n/app_localizations.dart';
+import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 class JoinCircleScreen extends ConsumerStatefulWidget {
