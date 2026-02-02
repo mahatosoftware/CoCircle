@@ -40,7 +40,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                 
                 final membersAsync = ref.watch(circleMembersProvider(circle.memberIds));
                 final pendingAsync = ref.watch(circleMembersProvider(circle.pendingMemberIds));
-                final inviteLink = 'https://cocircle.app/join/${circle.code}';
+                final inviteLink = 'https://cocircle.mahato.in/join/${circle.code}';
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
@@ -137,7 +137,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                           context: context,
                                         );
                                         if (code != null) {
-                                          final oneTimeLink = 'https://cocircle.app/join/$code';
+                                          final oneTimeLink = 'https://cocircle.mahato.in/join/$code';
                                           // ignore: deprecated_member_use
                                           Share.share('Special invite to join "${circle.name}"! Use this one-time link: $oneTimeLink or code: $code');
                                         }
@@ -159,7 +159,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                           IconButton(
                                             icon: const Icon(Icons.share, size: 20),
                                             onPressed: () {
-                                              final oneTimeLink = 'https://cocircle.app/join/$code';
+                                              final oneTimeLink = 'https://cocircle.mahato.in/join/$code';
                                               // ignore: deprecated_member_use
                                               Share.share('Special invite to join "${circle.name}"! Use this one-time link: $oneTimeLink or code: $code');
                                             },

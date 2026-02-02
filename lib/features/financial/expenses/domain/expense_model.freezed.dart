@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ExpenseModel {
 
- String get id; String get tripId; String get title; double get amount;@TimestampConverter() DateTime get date; ExpenseCategory get category; String get payerId;// Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
+ String get id; String get tripId; String get title; double get amount;@TimestampConverter() DateTime get date; String get category; String get payerId;// Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
  Map<String, double> get payers;// uid -> amount
  Map<String, double> get splitDetails;// uid -> amount/ratio/percentage dependent on splitType (stored as calculated amount usually for simplicity, or raw?)
 // Storing the calculated amount per user is safer for immutable history.
@@ -52,7 +52,7 @@ abstract mixin class $ExpenseModelCopyWith<$Res>  {
   factory $ExpenseModelCopyWith(ExpenseModel value, $Res Function(ExpenseModel) _then) = _$ExpenseModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String tripId, String title, double amount,@TimestampConverter() DateTime date, ExpenseCategory category, String payerId, Map<String, double> payers, Map<String, double> splitDetails, SplitType splitType, String? notes, bool isSupplemental, String createdBy,@TimestampConverter() DateTime createdAt
+ String id, String tripId, String title, double amount,@TimestampConverter() DateTime date, String category, String payerId, Map<String, double> payers, Map<String, double> splitDetails, SplitType splitType, String? notes, bool isSupplemental, String createdBy,@TimestampConverter() DateTime createdAt
 });
 
 
@@ -77,7 +77,7 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
-as ExpenseCategory,payerId: null == payerId ? _self.payerId : payerId // ignore: cast_nullable_to_non_nullable
+as String,payerId: null == payerId ? _self.payerId : payerId // ignore: cast_nullable_to_non_nullable
 as String,payers: null == payers ? _self.payers : payers // ignore: cast_nullable_to_non_nullable
 as Map<String, double>,splitDetails: null == splitDetails ? _self.splitDetails : splitDetails // ignore: cast_nullable_to_non_nullable
 as Map<String, double>,splitType: null == splitType ? _self.splitType : splitType // ignore: cast_nullable_to_non_nullable
@@ -170,7 +170,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tripId,  String title,  double amount, @TimestampConverter()  DateTime date,  ExpenseCategory category,  String payerId,  Map<String, double> payers,  Map<String, double> splitDetails,  SplitType splitType,  String? notes,  bool isSupplemental,  String createdBy, @TimestampConverter()  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tripId,  String title,  double amount, @TimestampConverter()  DateTime date,  String category,  String payerId,  Map<String, double> payers,  Map<String, double> splitDetails,  SplitType splitType,  String? notes,  bool isSupplemental,  String createdBy, @TimestampConverter()  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ExpenseModel() when $default != null:
 return $default(_that.id,_that.tripId,_that.title,_that.amount,_that.date,_that.category,_that.payerId,_that.payers,_that.splitDetails,_that.splitType,_that.notes,_that.isSupplemental,_that.createdBy,_that.createdAt);case _:
@@ -191,7 +191,7 @@ return $default(_that.id,_that.tripId,_that.title,_that.amount,_that.date,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tripId,  String title,  double amount, @TimestampConverter()  DateTime date,  ExpenseCategory category,  String payerId,  Map<String, double> payers,  Map<String, double> splitDetails,  SplitType splitType,  String? notes,  bool isSupplemental,  String createdBy, @TimestampConverter()  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tripId,  String title,  double amount, @TimestampConverter()  DateTime date,  String category,  String payerId,  Map<String, double> payers,  Map<String, double> splitDetails,  SplitType splitType,  String? notes,  bool isSupplemental,  String createdBy, @TimestampConverter()  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseModel():
 return $default(_that.id,_that.tripId,_that.title,_that.amount,_that.date,_that.category,_that.payerId,_that.payers,_that.splitDetails,_that.splitType,_that.notes,_that.isSupplemental,_that.createdBy,_that.createdAt);case _:
@@ -211,7 +211,7 @@ return $default(_that.id,_that.tripId,_that.title,_that.amount,_that.date,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tripId,  String title,  double amount, @TimestampConverter()  DateTime date,  ExpenseCategory category,  String payerId,  Map<String, double> payers,  Map<String, double> splitDetails,  SplitType splitType,  String? notes,  bool isSupplemental,  String createdBy, @TimestampConverter()  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tripId,  String title,  double amount, @TimestampConverter()  DateTime date,  String category,  String payerId,  Map<String, double> payers,  Map<String, double> splitDetails,  SplitType splitType,  String? notes,  bool isSupplemental,  String createdBy, @TimestampConverter()  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseModel() when $default != null:
 return $default(_that.id,_that.tripId,_that.title,_that.amount,_that.date,_that.category,_that.payerId,_that.payers,_that.splitDetails,_that.splitType,_that.notes,_that.isSupplemental,_that.createdBy,_that.createdAt);case _:
@@ -234,7 +234,7 @@ class _ExpenseModel extends ExpenseModel {
 @override final  String title;
 @override final  double amount;
 @override@TimestampConverter() final  DateTime date;
-@override final  ExpenseCategory category;
+@override final  String category;
 @override final  String payerId;
 // Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
  final  Map<String, double> _payers;
@@ -295,7 +295,7 @@ abstract mixin class _$ExpenseModelCopyWith<$Res> implements $ExpenseModelCopyWi
   factory _$ExpenseModelCopyWith(_ExpenseModel value, $Res Function(_ExpenseModel) _then) = __$ExpenseModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String tripId, String title, double amount,@TimestampConverter() DateTime date, ExpenseCategory category, String payerId, Map<String, double> payers, Map<String, double> splitDetails, SplitType splitType, String? notes, bool isSupplemental, String createdBy,@TimestampConverter() DateTime createdAt
+ String id, String tripId, String title, double amount,@TimestampConverter() DateTime date, String category, String payerId, Map<String, double> payers, Map<String, double> splitDetails, SplitType splitType, String? notes, bool isSupplemental, String createdBy,@TimestampConverter() DateTime createdAt
 });
 
 
@@ -320,7 +320,7 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
-as ExpenseCategory,payerId: null == payerId ? _self.payerId : payerId // ignore: cast_nullable_to_non_nullable
+as String,payerId: null == payerId ? _self.payerId : payerId // ignore: cast_nullable_to_non_nullable
 as String,payers: null == payers ? _self._payers : payers // ignore: cast_nullable_to_non_nullable
 as Map<String, double>,splitDetails: null == splitDetails ? _self._splitDetails : splitDetails // ignore: cast_nullable_to_non_nullable
 as Map<String, double>,splitType: null == splitType ? _self.splitType : splitType // ignore: cast_nullable_to_non_nullable

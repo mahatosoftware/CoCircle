@@ -5,11 +5,11 @@ import 'expense_repository_impl.dart';
 part 'expense_stats_provider.g.dart';
 
 @riverpod
-Stream<Map<ExpenseCategory, double>> expenseCategoryStats(Ref ref, String tripId) {
+Stream<Map<String, double>> expenseCategoryStats(Ref ref, String tripId) {
   return ref.watch(expenseRepositoryProvider).getExpensesStream(tripId).map((expenses) {
-    final Map<ExpenseCategory, double> stats = {};
+    final Map<String, double> stats = {};
     for (var expense in expenses) {
-      if (expense.category == ExpenseCategory.settlement) continue;
+      if (expense.category == ExpenseCategory.settlement.name) continue;
       stats[expense.category] = (stats[expense.category] ?? 0) + expense.amount;
     }
     return stats;
@@ -21,7 +21,7 @@ Stream<Map<String, double>> expenseMemberStats(Ref ref, String tripId) {
   return ref.watch(expenseRepositoryProvider).getExpensesStream(tripId).map((expenses) {
     final Map<String, double> stats = {};
     for (var expense in expenses) {
-      if (expense.category == ExpenseCategory.settlement) continue;
+      if (expense.category == ExpenseCategory.settlement.name) continue;
       // Aggregate from 'payers' map to support multiple payers accurately
       for (var entry in expense.payers.entries) {
         stats[entry.key] = (stats[entry.key] ?? 0) + entry.value;
@@ -36,7 +36,7 @@ Stream<Map<String, double>> expenseMemberShare(Ref ref, String tripId) {
   return ref.watch(expenseRepositoryProvider).getExpensesStream(tripId).map((expenses) {
     final Map<String, double> stats = {};
     for (var expense in expenses) {
-      if (expense.category == ExpenseCategory.settlement) continue;
+      if (expense.category == ExpenseCategory.settlement.name) continue;
       final amount = expense.amount;
       final splitType = expense.splitType;
       final splitDetails = expense.splitDetails;
@@ -80,7 +80,7 @@ Stream<Map<String, double>> expenseMemberShare(Ref ref, String tripId) {
 Stream<double> tripTotalSpending(Ref ref, String tripId) {
   return ref.watch(expenseRepositoryProvider).getExpensesStream(tripId).map((expenses) {
     return expenses
-        .where((e) => e.category != ExpenseCategory.settlement)
+        .where((e) => e.category != ExpenseCategory.settlement.name)
         .fold(0.0, (sum, expense) => sum + expense.amount);
   });
 }

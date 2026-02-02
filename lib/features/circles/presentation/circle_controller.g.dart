@@ -243,3 +243,44 @@ final class CircleMembersFamily extends $Family
   @override
   String toString() => r'circleMembersProvider';
 }
+
+@ProviderFor(pendingApprovals)
+final pendingApprovalsProvider = PendingApprovalsProvider._();
+
+final class PendingApprovalsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CircleModel>>,
+          List<CircleModel>,
+          Stream<List<CircleModel>>
+        >
+    with
+        $FutureModifier<List<CircleModel>>,
+        $StreamProvider<List<CircleModel>> {
+  PendingApprovalsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pendingApprovalsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pendingApprovalsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CircleModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CircleModel>> create(Ref ref) {
+    return pendingApprovals(ref);
+  }
+}
+
+String _$pendingApprovalsHash() => r'4c14092783405303481c20ee1efadbbd7a25224a';

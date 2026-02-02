@@ -12,7 +12,8 @@ import 'trip_controller.dart';
 
 class TripDetailScreen extends ConsumerWidget {
   final String tripId;
-  const TripDetailScreen({super.key, required this.tripId});
+  final int initialTabIndex;
+  const TripDetailScreen({super.key, required this.tripId, this.initialTabIndex = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,6 +21,7 @@ class TripDetailScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 4,
+      initialIndex: initialTabIndex,
       child: Scaffold(
         appBar: AppBar(
           title: tripAsync.when(

@@ -15,13 +15,13 @@ final expenseCategoryStatsProvider = ExpenseCategoryStatsFamily._();
 final class ExpenseCategoryStatsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<Map<ExpenseCategory, double>>,
-          Map<ExpenseCategory, double>,
-          Stream<Map<ExpenseCategory, double>>
+          AsyncValue<Map<String, double>>,
+          Map<String, double>,
+          Stream<Map<String, double>>
         >
     with
-        $FutureModifier<Map<ExpenseCategory, double>>,
-        $StreamProvider<Map<ExpenseCategory, double>> {
+        $FutureModifier<Map<String, double>>,
+        $StreamProvider<Map<String, double>> {
   ExpenseCategoryStatsProvider._({
     required ExpenseCategoryStatsFamily super.from,
     required String super.argument,
@@ -45,12 +45,12 @@ final class ExpenseCategoryStatsProvider
 
   @$internal
   @override
-  $StreamProviderElement<Map<ExpenseCategory, double>> $createElement(
+  $StreamProviderElement<Map<String, double>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<Map<ExpenseCategory, double>> create(Ref ref) {
+  Stream<Map<String, double>> create(Ref ref) {
     final argument = this.argument as String;
     return expenseCategoryStats(ref, argument);
   }
@@ -67,14 +67,10 @@ final class ExpenseCategoryStatsProvider
 }
 
 String _$expenseCategoryStatsHash() =>
-    r'7e1c59d66a3ebda6e85916b5b4a8ddee0d604633';
+    r'c93bf8404558598697f246e64491dfe281420b2c';
 
 final class ExpenseCategoryStatsFamily extends $Family
-    with
-        $FunctionalFamilyOverride<
-          Stream<Map<ExpenseCategory, double>>,
-          String
-        > {
+    with $FunctionalFamilyOverride<Stream<Map<String, double>>, String> {
   ExpenseCategoryStatsFamily._()
     : super(
         retry: null,
@@ -149,7 +145,7 @@ final class ExpenseMemberStatsProvider
 }
 
 String _$expenseMemberStatsHash() =>
-    r'4eae2d73432a11c2e7ecd49192f57270921a2503';
+    r'dc9c71a4cf02b6d4d56b1ab0d2360acec2c2d610';
 
 final class ExpenseMemberStatsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<Map<String, double>>, String> {
@@ -227,7 +223,7 @@ final class ExpenseMemberShareProvider
 }
 
 String _$expenseMemberShareHash() =>
-    r'9fe67da6ab845e357187bb5732abc189eaf9b2a6';
+    r'32a584ab9067d217f485b21a8fe998c81c793307';
 
 final class ExpenseMemberShareFamily extends $Family
     with $FunctionalFamilyOverride<Stream<Map<String, double>>, String> {
@@ -296,7 +292,7 @@ final class TripTotalSpendingProvider
   }
 }
 
-String _$tripTotalSpendingHash() => r'fc478f6d847013d69344dc38271e093fea90b61c';
+String _$tripTotalSpendingHash() => r'1669c80b8d548a59efe0dc4097efbc4c83d3f14f';
 
 final class TripTotalSpendingFamily extends $Family
     with $FunctionalFamilyOverride<Stream<double>, String> {

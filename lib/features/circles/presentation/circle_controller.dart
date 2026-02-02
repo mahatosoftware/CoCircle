@@ -221,3 +221,25 @@ Future<List<UserModel>> circleMembers(Ref ref, String circleId) async {
   final circle = await ref.watch(circleDetailsProvider(circleId).future);
   return ref.watch(authRepositoryProvider).getUsersByIds(circle.memberIds);
 }
+
+@riverpod
+Stream<List<CircleModel>> pendingApprovals(Ref ref) {
+  final userCirclesAsync = ref.watch(userCirclesProvider);
+  final userAsync = ref.watch(authStateChangesProvider);
+  
+  return userCirclesAsync.when(
+    data: (circles) {
+      final user = userAsync.value;
+      if (user == null) return Stream.value([]);
+      
+      final pending = circles.where((circle) {
+        final isAdmin = circle.adminIds.contains(user.uid);
+        final hasPending = circle.pendingMemberIds.isNotEmpty;
+        return isAdmin && hasPending;
+      }).toList();
+      return Stream.value(pending);
+    },
+    loading: () => const Stream.empty(),
+    error: (err, stack) => Stream.error(err, stack),
+  );
+}

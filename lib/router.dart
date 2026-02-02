@@ -111,7 +111,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'trip/:tripId',
                 builder: (context, state) {
                   final tripId = state.pathParameters['tripId']!;
-                  return TripDetailScreen(tripId: tripId);
+                  final tab = state.uri.queryParameters['tab'];
+                  int initialTab = 0;
+                  if (tab == 'audit') initialTab = 3;
+                  if (tab == 'settlements') initialTab = 1;
+                  if (tab == 'insights') initialTab = 2;
+                  
+                  return TripDetailScreen(tripId: tripId, initialTabIndex: initialTab);
                 },
                 routes: [
                   GoRoute(

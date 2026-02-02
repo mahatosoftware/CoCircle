@@ -40,7 +40,10 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     if (widget.expense != null) {
       _titleController.text = widget.expense!.title;
       _amountController.text = widget.expense!.amount.toString();
-      _selectedCategory = widget.expense!.category;
+      _selectedCategory = ExpenseCategory.values.firstWhere(
+        (c) => c.name == widget.expense!.category,
+        orElse: () => ExpenseCategory.food,
+      );
       _selectedDate = widget.expense!.date;
       _payerAmounts = Map.from(widget.expense!.payers);
       for (var entry in _payerAmounts.entries) {
@@ -129,7 +132,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           title: _titleController.text.trim(),
           amount: amount,
           date: _selectedDate,
-          category: _selectedCategory,
+          category: _selectedCategory.name,
           payers: _payerAmounts,
           splitDetails: _splitValues,
           splitType: _selectedSplitType,
@@ -143,7 +146,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           title: _titleController.text.trim(),
           amount: amount,
           date: _selectedDate,
-          category: _selectedCategory,
+          category: _selectedCategory.name,
           payers: _payerAmounts,
           splitDetails: _splitValues,
           splitType: _selectedSplitType, 
@@ -196,7 +199,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     final expense = widget.expense!.copyWith(
       title: _titleController.text.trim(),
       amount: amount,
-      category: _selectedCategory,
+      category: _selectedCategory.name,
       payers: payers,
       splitDetails: splitDetails,
       splitType: _selectedSplitType,

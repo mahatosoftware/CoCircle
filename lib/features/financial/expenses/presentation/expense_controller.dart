@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../../../core/errors/failure.dart';
@@ -9,6 +10,8 @@ import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
 import '../data/expense_repository_impl.dart';
 import '../domain/expense_model.dart';
 import '../domain/audit_log_model.dart';
+import 'package:cocircle/features/notifications/domain/notification_model.dart';
+import 'package:cocircle/features/notifications/data/notification_repository_impl.dart';
 
 part 'expense_controller.g.dart';
 
@@ -24,7 +27,7 @@ class ExpenseController extends _$ExpenseController {
     required String title,
     required double amount,
     required DateTime date,
-    required ExpenseCategory category,
+    required String category,
     required Map<String, double> payers, // uid -> amount
     required Map<String, double> splitDetails, // uid -> amount
     required SplitType splitType,
@@ -115,6 +118,16 @@ class ExpenseController extends _$ExpenseController {
           title: title,
           amount: amount,
         );
+        await _sendExpenseNotification(
+          tripId: tripId,
+          expenseId: expenseId,
+          title: 'New Expense Added',
+          body: '${user.displayName} added "$title" ($amount)',
+          type: NotificationType.expenseAdded,
+          payers: payers,
+          splitDetails: splitDetails,
+          actorUid: user.uid,
+        );
       },
     );
   }
@@ -125,7 +138,7 @@ class ExpenseController extends _$ExpenseController {
     required String title,
     required double amount,
     required DateTime date,
-    required ExpenseCategory category,
+    required String category,
     required Map<String, double> payers,
     required Map<String, double> splitDetails,
     required SplitType splitType,
@@ -222,6 +235,16 @@ class ExpenseController extends _$ExpenseController {
           amount: amount,
           changes: changes,
         );
+        await _sendExpenseNotification(
+          tripId: tripId,
+          expenseId: expenseId,
+          title: 'Expense Updated',
+          body: '${user.displayName} updated "$title" ($amount)',
+          type: NotificationType.expenseUpdated,
+          payers: payers,
+          splitDetails: splitDetails,
+          actorUid: user.uid,
+        );
       },
     );
   }
@@ -271,7 +294,7 @@ class ExpenseController extends _$ExpenseController {
       title: title,
       amount: amount,
       date: now,
-      category: ExpenseCategory.settlement,
+      category: ExpenseCategory.settlement.name,
       payerId: payerId,
       payers: {payerId: amount},
       splitDetails: {receiverId: amount},
@@ -312,12 +335,36 @@ class ExpenseController extends _$ExpenseController {
     required double amount,
     required BuildContext context,
   }) async {
+    // PRE-FETCH FOR NOTIFICATION PARTICIPANTS
+    final expenseRes = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
+    Map<String, double> payers = {};
+    Map<String, double> splitDetails = {};
+    expenseRes.fold((_) => null, (e) {
+      payers = e.payers;
+      splitDetails = e.splitDetails;
+    });
+
     final res = await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
     res.fold(
       (l) => showSnackBar(context, l.message),
       (r) async {
         showSnackBar(context, 'Expense deleted');
         context.pop();
+        
+        final user = await ref.read(authRepositoryProvider).getCurrentUser();
+        if (user != null) {
+          await _sendExpenseNotification(
+            tripId: tripId,
+            expenseId: expenseId,
+            title: 'Expense Deleted',
+            body: '${user.displayName} deleted "$title"',
+            type: NotificationType.expenseDeleted,
+            payers: payers,
+            splitDetails: splitDetails, 
+            actorUid: user.uid,
+          );
+        }
+
         await _logAction(
           tripId: tripId,
           expenseId: expenseId,
@@ -352,6 +399,41 @@ class ExpenseController extends _$ExpenseController {
       changes: changes,
     );
     await ref.read(expenseRepositoryProvider).saveAuditLog(log);
+  }
+
+  Future<void> _sendExpenseNotification({
+    required String tripId,
+    required String expenseId,
+    required String title,
+    required String body,
+    required NotificationType type,
+    required Map<String, double> payers,
+    required Map<String, double> splitDetails,
+    required String actorUid,
+  }) async {
+    final recipients = <String>{...payers.keys, ...splitDetails.keys};
+    recipients.remove(actorUid);
+
+    // If it's a delete, or we don't have participants, we might want to notify all trip members.
+    // However, the request specifically said "payer and participants".
+    
+    for (final recipientUid in recipients) {
+      final notification = NotificationModel(
+        id: const Uuid().v4(),
+        title: title,
+        body: body,
+        type: type,
+        targetPath: type == NotificationType.expenseDeleted 
+            ? '/trip/$tripId?tab=audit' 
+            : '/trip/$tripId/expense/$expenseId',
+        timestamp: DateTime.now(),
+        recipientUid: recipientUid,
+        senderUid: actorUid,
+        tripId: tripId,
+        expenseId: expenseId,
+      );
+      await ref.read(notificationRepositoryProvider).sendNotification(notification);
+    }
   }
 
   void _notifyParticipants(ExpenseModel expense, String action) {

@@ -29,7 +29,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
         title: const Text('Expense Details'),
         actions: [
           expenseAsync.when(
-            data: (expense) => expense.category == ExpenseCategory.settlement
+            data: (expense) => expense.category == ExpenseCategory.settlement.name
                 ? const SizedBox.shrink()
                 : Row(
                     children: [
@@ -254,7 +254,11 @@ class ExpenseDetailScreen extends ConsumerWidget {
     }
   }
 
-  IconData _getCategoryIcon(ExpenseCategory category) {
+  IconData _getCategoryIcon(String categoryName) {
+    final category = ExpenseCategory.values.firstWhere(
+      (c) => c.name == categoryName,
+      orElse: () => ExpenseCategory.misc,
+    );
     switch (category) {
       case ExpenseCategory.food: return Icons.restaurant;
       case ExpenseCategory.travel: return Icons.flight;

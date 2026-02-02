@@ -119,7 +119,7 @@ class ExpenseStatsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryChart(AsyncValue<Map<ExpenseCategory, double>> statsAsync, NumberFormat format) {
+  Widget _buildCategoryChart(AsyncValue<Map<String, double>> statsAsync, NumberFormat format) {
     return statsAsync.when(
       data: (stats) {
         if (stats.isEmpty) {
@@ -161,7 +161,7 @@ class ExpenseStatsView extends ConsumerWidget {
               children: stats.entries.map((entry) {
                 return _LegendItem(
                   color: _getCategoryColor(entry.key),
-                  text: '${entry.key.name.toUpperCase()}: ${format.format(entry.value)}',
+                  text: '${entry.key.toUpperCase()}: ${format.format(entry.value)}',
                 );
               }).toList(),
             ),
@@ -310,7 +310,11 @@ class ExpenseStatsView extends ConsumerWidget {
   }
 
 
-  Color _getCategoryColor(ExpenseCategory category) {
+  Color _getCategoryColor(String categoryName) {
+    final category = ExpenseCategory.values.firstWhere(
+      (c) => c.name == categoryName,
+      orElse: () => ExpenseCategory.misc,
+    );
     switch (category) {
       case ExpenseCategory.food: return Colors.orange;
       case ExpenseCategory.travel: return Colors.blue;

@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'circle_controller.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
+import 'package:cocircle/features/notifications/presentation/notification_controller.dart';
+import 'package:cocircle/features/notifications/domain/notification_model.dart';
+import '../domain/circle_model.dart';
 import '../../../../core/theme/app_pallete.dart';
 
 class MyCirclesScreen extends ConsumerWidget {
@@ -12,15 +15,51 @@ class MyCirclesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final circlesAsync = ref.watch(userCirclesProvider);
+    final pendingApprovalsAsync = ref.watch(pendingApprovalsProvider);
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
+    final totalNotificationCount = (pendingApprovalsAsync.value?.length ?? 0) + unreadCount;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Circles'),
+        title: const Text('CoCircle'),
         centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.account_circle),
             onPressed: () => context.push('/profile'),
+          ),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none),
+                onPressed: () => _showNotifications(context, ref),
+              ),
+              if (totalNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$totalNotificationCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
          IconButton(
             icon: const Icon(Icons.logout),
@@ -155,5 +194,140 @@ class MyCirclesScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  void _showNotifications(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            final pendingCircles = ref.watch(pendingApprovalsProvider).value ?? [];
+            final notifications = ref.watch(userNotificationsProvider).value ?? [];
+
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Notifications',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (notifications.any((n) => !n.isRead))
+                        TextButton(
+                          onPressed: () => ref.read(notificationControllerProvider.notifier).markAllAsRead(),
+                          child: const Text('Mark all as read'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        if (pendingCircles.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text('Circle Requests', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          ),
+                          ...pendingCircles.map((circle) {
+                            final count = circle.pendingMemberIds.length;
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                                child: const Icon(Icons.group_add, color: Colors.orange),
+                              ),
+                              title: Text(circle.name),
+                              subtitle: Text('$count person${count > 1 ? 's' : ''} waiting'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                context.pop();
+                                context.push('/circle/${circle.id}/settings');
+                              },
+                            );
+                          }),
+                          const Divider(),
+                        ],
+                        if (notifications.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text('Recent Activity', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                          ),
+                          ...notifications.map((n) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundColor: n.isRead ? Colors.grey[100] : AppPallete.primary.withValues(alpha: 0.1),
+                              child: Icon(
+                                _getNotificationIcon(n.type),
+                                color: n.isRead ? Colors.grey : AppPallete.primary,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(
+                              n.title,
+                              style: TextStyle(fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(n.body),
+                                Text(
+                                  _formatTimestamp(n.timestamp),
+                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              ref.read(notificationControllerProvider.notifier).markAsRead(n.id);
+                              context.pop();
+                              context.push(n.targetPath);
+                            },
+                          )),
+                        ],
+                        if (pendingCircles.isEmpty && notifications.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40.0),
+                            child: Center(child: Text('All caught up!')),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  IconData _getNotificationIcon(NotificationType type) {
+    switch (type) {
+      case NotificationType.expenseAdded: return Icons.add_shopping_cart;
+      case NotificationType.expenseUpdated: return Icons.edit_note;
+      case NotificationType.expenseDeleted: return Icons.delete_sweep;
+      case NotificationType.circleJoinRequest: return Icons.person_add;
+    }
+  }
+
+  String _formatTimestamp(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }

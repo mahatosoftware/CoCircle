@@ -30,7 +30,7 @@ class SettlementList extends ConsumerWidget {
           data: (settlements) {
             return expensesAsync.when(
               data: (expenses) {
-                final history = expenses.where((e) => e.category == ExpenseCategory.settlement).toList();
+                final history = expenses.where((e) => e.category == ExpenseCategory.settlement.name).toList();
 
                 if (settlements.isEmpty && history.isEmpty) {
                   return _buildEmptyState(context, ref);

@@ -42,7 +42,7 @@ class ExpenseList extends ConsumerWidget {
                     '$currency ${expense.amount.toStringAsFixed(2)}', 
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  if (expense.category != ExpenseCategory.settlement)
+                  if (expense.category != ExpenseCategory.settlement.name)
                     PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'edit') {
@@ -76,7 +76,11 @@ class ExpenseList extends ConsumerWidget {
     );
   }
 
-  IconData _getCategoryIcon(ExpenseCategory category) {
+  IconData _getCategoryIcon(String categoryName) {
+    final category = ExpenseCategory.values.firstWhere(
+      (c) => c.name == categoryName,
+      orElse: () => ExpenseCategory.misc,
+    );
     switch (category) {
       case ExpenseCategory.food: return Icons.restaurant;
       case ExpenseCategory.travel: return Icons.flight;

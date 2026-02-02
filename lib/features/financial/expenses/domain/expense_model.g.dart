@@ -13,7 +13,7 @@ _ExpenseModel _$ExpenseModelFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String,
       amount: (json['amount'] as num).toDouble(),
       date: const TimestampConverter().fromJson(json['date']),
-      category: $enumDecode(_$ExpenseCategoryEnumMap, json['category']),
+      category: json['category'] as String,
       payerId: json['payerId'] as String,
       payers: (json['payers'] as Map<String, dynamic>).map(
         (k, e) => MapEntry(k, (e as num).toDouble()),
@@ -35,7 +35,7 @@ Map<String, dynamic> _$ExpenseModelToJson(_ExpenseModel instance) =>
       'title': instance.title,
       'amount': instance.amount,
       'date': const TimestampConverter().toJson(instance.date),
-      'category': _$ExpenseCategoryEnumMap[instance.category]!,
+      'category': instance.category,
       'payerId': instance.payerId,
       'payers': instance.payers,
       'splitDetails': instance.splitDetails,
@@ -45,16 +45,6 @@ Map<String, dynamic> _$ExpenseModelToJson(_ExpenseModel instance) =>
       'createdBy': instance.createdBy,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
     };
-
-const _$ExpenseCategoryEnumMap = {
-  ExpenseCategory.food: 'food',
-  ExpenseCategory.travel: 'travel',
-  ExpenseCategory.stay: 'stay',
-  ExpenseCategory.shopping: 'shopping',
-  ExpenseCategory.fuel: 'fuel',
-  ExpenseCategory.misc: 'misc',
-  ExpenseCategory.settlement: 'settlement',
-};
 
 const _$SplitTypeEnumMap = {
   SplitType.equal: 'equal',

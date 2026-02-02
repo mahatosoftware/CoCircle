@@ -15,7 +15,7 @@ abstract class ExpenseModel with _$ExpenseModel {
     required String title,
     required double amount,
     @TimestampConverter() required DateTime date,
-    required ExpenseCategory category,
+    required String category,
     required String payerId, // Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
     required Map<String, double> payers, // uid -> amount
     required Map<String, double> splitDetails, // uid -> amount/ratio/percentage dependent on splitType (stored as calculated amount usually for simplicity, or raw?)
@@ -44,7 +44,7 @@ abstract class ExpenseModel with _$ExpenseModel {
       changes['date'] = {'old': date.toIso8601String(), 'new': other.date.toIso8601String()};
     }
     if (category != other.category) {
-      changes['category'] = {'old': category.name, 'new': other.category.name};
+      changes['category'] = {'old': category, 'new': other.category};
     }
     if (splitType != other.splitType) {
       changes['splitType'] = {'old': splitType.name, 'new': other.splitType.name};
