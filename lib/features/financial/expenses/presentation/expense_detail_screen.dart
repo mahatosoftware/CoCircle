@@ -23,10 +23,11 @@ class ExpenseDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final expenseAsync = ref.watch(expenseDetailProvider(expenseId));
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expense Details'),
+        title: Text(l10n.expenseDetails),
         actions: [
           expenseAsync.when(
             data: (expense) => expense.category == ExpenseCategory.settlement.name
@@ -62,7 +63,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Error loading trip: $e')),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text(l10n.errorWithDetails(e.toString()))),
       ),
     );
   }
@@ -113,14 +114,14 @@ class ExpenseDetailScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           
           // Paid By Section
-          _buildSectionTitle('Paid By'),
+          _buildSectionTitle(l10n.paidBy),
           const SizedBox(height: 12),
           _buildPayerList(ref, expense, circleId, currency),
           
           const SizedBox(height: 32),
           
           // Split Details Section
-          _buildSectionTitle('Split Details (${expense.splitType.name.toUpperCase()})'),
+          _buildSectionTitle('${l10n.splitDetails} (${expense.splitType.name.toUpperCase()})'),
           const SizedBox(height: 12),
           _buildSplitBreakdown(ref, expense, circleId, currency),
           
@@ -128,7 +129,7 @@ class ExpenseDetailScreen extends ConsumerWidget {
           
           // Notes Section
           if (expense.notes != null && expense.notes!.isNotEmpty) ...[
-            _buildSectionTitle('Notes'),
+            _buildSectionTitle(l10n.notesSectionTitle),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -273,30 +274,33 @@ class ExpenseDetailScreen extends ConsumerWidget {
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref, ExpenseModel expense) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Expense'),
-        content: Text('Are you sure you want to delete "${expense.title}"? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.pop(); // Close dialog
-              ref.read(expenseControllerProvider.notifier).deleteExpense(
-                tripId: expense.tripId,
-                expenseId: expense.id,
-                title: expense.title,
-                amount: expense.amount,
-                context: context,
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.deleteExpense),
+          content: Text(l10n.deleteExpenseConfirmMessage(expense.title)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () {
+                context.pop(); // Close dialog
+                ref.read(expenseControllerProvider.notifier).deleteExpense(
+                  tripId: expense.tripId,
+                  expenseId: expense.id,
+                  title: expense.title,
+                  amount: expense.amount,
+                  context: context,
+                );
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(l10n.delete),
+            ),
+          ],
+        );
+      },
     );
   }
 }

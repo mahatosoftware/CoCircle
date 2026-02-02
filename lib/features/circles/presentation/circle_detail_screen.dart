@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
+import '../l10n/app_localizations.dart';
 import 'package:cocircle/features/trips/domain/trip_model.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
 
@@ -22,8 +23,8 @@ class CircleDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: circleAsync.when(
           data: (circle) => Text(circle.name),
-          loading: () => const Text('Loading...'),
-          error: (_, __) => const Text('Error'),
+          loading: () => Text(AppLocalizations.of(context)!.loading),
+          error: (_, __) => Text(AppLocalizations.of(context)!.error),
         ),
         actions: [
           IconButton(
@@ -38,7 +39,7 @@ class CircleDetailScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              'Trips & Events',
+              AppLocalizations.of(context)!.tripsAndEvents,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -54,11 +55,11 @@ class CircleDetailScreen extends ConsumerWidget {
                       children: [
                          const Icon(Icons.flight_takeoff, size: 60, color: Colors.grey),
                          const SizedBox(height: 16),
-                         Text('No trips or events yet', style: Theme.of(context).textTheme.titleMedium),
+                         Text(AppLocalizations.of(context)!.noTripsYet, style: Theme.of(context).textTheme.titleMedium),
                          const SizedBox(height: 8),
                          ElevatedButton(
                            onPressed: () => context.push('/circle/$circleId/create-trip'),
-                           child: const Text('Plan a Trip'),
+                           child: Text(AppLocalizations.of(context)!.planATrip),
                          )
                       ],
                     ),
@@ -81,7 +82,7 @@ class CircleDetailScreen extends ConsumerWidget {
                         subtitle: Text(
                           trip.startDate != null 
                           ? DateFormat.yMMMd().format(trip.startDate!) 
-                          : 'No date set',
+                          : AppLocalizations.of(context)!.noDateSet,
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
@@ -93,7 +94,7 @@ class CircleDetailScreen extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+              error: (err, stack) => Center(child: Text(AppLocalizations.of(context)!.errorWithDetails(err.toString()))),
             ),
           ),
         ],

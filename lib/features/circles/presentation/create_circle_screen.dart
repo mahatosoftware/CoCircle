@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:currency_picker/currency_picker.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
+import '../l10n/app_localizations.dart';
 
 class CreateCircleScreen extends ConsumerStatefulWidget {
   const CreateCircleScreen({super.key});
@@ -40,7 +41,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     final isLoading = ref.watch(circleControllerProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Circle')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.createCircleTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -49,13 +50,13 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Circle Name'),
-                validator: (val) => val == null || val.isEmpty ? 'Please enter a name' : null,
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.circleName),
+                validator: (val) => val == null || val.isEmpty ? AppLocalizations.of(context)!.enterCircleNameError : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -63,7 +64,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                 readOnly: true,
                 controller: TextEditingController(text: _selectedCurrency),
                 decoration: const InputDecoration(
-                  labelText: 'Currency',
+                  labelText: AppLocalizations.of(context)!.currency,
                   suffixIcon: Icon(Icons.arrow_drop_down),
                 ),
                 onTap: () {
@@ -92,7 +93,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                   ),
                   child: isLoading 
                     ? const CircularProgressIndicator(color: Colors.white) 
-                    : const Text('Create Circle'),
+                    : Text(AppLocalizations.of(context)!.createCircleButton),
                 ),
               ),
             ],

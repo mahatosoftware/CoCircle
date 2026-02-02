@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../domain/audit_log_model.dart';
 import '../../../../core/theme/app_pallete.dart';
+import '../l10n/app_localizations.dart';
 
 import '../../../circles/domain/circle_member_model.dart';
 
@@ -19,12 +20,12 @@ class AuditLogDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final changes = log.changes ?? {};
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Change Details'),
+        title: Text(l10n.changeDetailsTitle),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -56,7 +57,7 @@ class AuditLogDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Amount: $currency ${log.amount.toStringAsFixed(2)}',
+                      l10n.amountLabelWithCurrency(currency, log.amount.toStringAsFixed(2)),
                       style: theme.textTheme.titleMedium?.copyWith(color: AppPallete.primary),
                     ),
                     const Divider(height: 24),
@@ -77,7 +78,7 @@ class AuditLogDetailScreen extends StatelessWidget {
             
             const SizedBox(height: 24),
             Text(
-              'Specific Changes',
+              l10n.specificChanges,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -86,7 +87,7 @@ class AuditLogDetailScreen extends StatelessWidget {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 32.0),
-                  child: Text('No specific field changes recorded for this action.'),
+                  child: Text(l10n.noSpecificChanges),
                 ),
               )
             else
@@ -98,8 +99,8 @@ class AuditLogDetailScreen extends StatelessWidget {
   }
 
   Widget _buildChangeItem(BuildContext context, String field, dynamic values) {
-    final oldVal = _formatValue(field, values['old']);
-    final newVal = _formatValue(field, values['new']);
+    final oldVal = _formatValue(context, field, values['old']);
+    final newVal = _formatValue(context, field, values['new']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -135,7 +136,7 @@ class AuditLogDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('FROM', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(l10n.fromLabel, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                     const SizedBox(height: 4),
                     Text(
                       oldVal,
@@ -153,7 +154,7 @@ class AuditLogDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('TO', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(l10n.toLabel, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                     const SizedBox(height: 4),
                     Text(
                       newVal,
@@ -172,8 +173,9 @@ class AuditLogDetailScreen extends StatelessWidget {
     );
   }
 
-  String _formatValue(String field, dynamic value) {
-    if (value == null) return 'None';
+  String _formatValue(BuildContext context, String field, dynamic value) {
+    final l10n = AppLocalizations.of(context)!;
+    if (value == null) return l10n.noneValue;
     if (field == 'amount') return '$currency ${value.toStringAsFixed(2)}';
     if (field == 'date') {
       try {
@@ -187,7 +189,7 @@ class AuditLogDetailScreen extends StatelessWidget {
       return memberNames[value] ?? value.toString();
     }
     if (value is Map) {
-      if (value.isEmpty) return 'None';
+      if (value.isEmpty) return l10n.noneValue;
       // Format {uid: value} into "Name: $value, ..."
       return value.entries.map((e) {
         final name = memberNames[e.key] ?? e.key;
@@ -201,20 +203,21 @@ class AuditLogDetailScreen extends StatelessWidget {
   }
 
   Widget _buildActionBadge(AuditAction action) {
+    final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;
     switch (action) {
       case AuditAction.create:
         color = Colors.green;
-        label = 'CREATED';
+        label = l10n.auditActionCreate;
         break;
       case AuditAction.update:
         color = Colors.blue;
-        label = 'UPDATED';
+        label = l10n.auditActionUpdate;
         break;
       case AuditAction.delete:
         color = Colors.red;
-        label = 'DELETED';
+        label = l10n.auditActionDelete;
         break;
     }
 

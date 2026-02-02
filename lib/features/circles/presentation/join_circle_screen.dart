@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'circle_controller.dart';
 import 'qr_scanner_screen.dart';
+import '../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 class JoinCircleScreen extends ConsumerStatefulWidget {
@@ -44,7 +45,7 @@ class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
     final isLoading = ref.watch(circleControllerProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Join Circle')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.joinCircleTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -53,7 +54,7 @@ class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Enter the 7-character code shared by your admin.',
+                AppLocalizations.of(context)!.joinCircleDescription,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
@@ -63,10 +64,10 @@ class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
                    Expanded(
                      child: TextFormField(
                         controller: _codeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Circle Code',
-                          hintText: 'e.g. X7Y2Z9A',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.circleCode,
+                          hintText: AppLocalizations.of(context)!.circleCodeHint,
+                          border: const OutlineInputBorder(),
                         ),
                         textCapitalization: TextCapitalization.characters,
                         inputFormatters: [
@@ -74,8 +75,8 @@ class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
                           UpperCaseTextFormatter(),
                         ],
                         validator: (val) {
-                          if (val == null || val.isEmpty) return 'Please enter code';
-                          if (val.length < 7) return 'Code is too short';
+                          if (val == null || val.isEmpty) return AppLocalizations.of(context)!.enterCodeError;
+                          if (val.length < 7) return AppLocalizations.of(context)!.codeTooShortError;
                           return null;
                         },
                       ),
@@ -105,7 +106,7 @@ class _JoinCircleScreenState extends ConsumerState<JoinCircleScreen> {
                   ),
                   child: isLoading 
                     ? const CircularProgressIndicator(color: Colors.white) 
-                    : const Text('Request to Join'),
+                    : Text(AppLocalizations.of(context)!.requestToJoinButton),
                 ),
               ),
             ],

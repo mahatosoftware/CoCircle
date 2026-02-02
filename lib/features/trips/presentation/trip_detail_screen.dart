@@ -7,6 +7,7 @@ import '../../financial/expenses/presentation/expense_audit_screen.dart';
 import '../../financial/settlements/presentation/settlement_list.dart';
 import '../../circles/presentation/circle_controller.dart';
 import 'trip_controller.dart';
+import '../../../financial/expenses/l10n/app_localizations.dart';
 
 
 
@@ -18,6 +19,7 @@ class TripDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
+    final l10n = AppLocalizations.of(context)!;
 
     return DefaultTabController(
       length: 4,
@@ -26,15 +28,15 @@ class TripDetailScreen extends ConsumerWidget {
         appBar: AppBar(
           title: tripAsync.when(
             data: (trip) => Text(trip.name),
-            loading: () => const Text('Loading...'),
-            error: (_, __) => const Text('Error'),
+            loading: () => Text(l10n.loading),
+            error: (_, __) => Text(l10n.error),
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Expenses', icon: Icon(Icons.receipt)),
-              Tab(text: 'Settlements', icon: Icon(Icons.handshake)),
-              Tab(text: 'Insights', icon: Icon(Icons.bar_chart)),
-              Tab(text: 'Audit', icon: Icon(Icons.history_edu)),
+              Tab(text: l10n.expensesTab, icon: const Icon(Icons.receipt)),
+              Tab(text: l10n.settlementsTab, icon: const Icon(Icons.handshake)),
+              Tab(text: l10n.insightsTab, icon: const Icon(Icons.bar_chart)),
+              Tab(text: l10n.auditTab, icon: const Icon(Icons.history_edu)),
             ],
           ),
           actions: [
@@ -47,12 +49,12 @@ class TripDetailScreen extends ConsumerWidget {
                     builder: (context) {
                       final controller = TextEditingController(text: trip.name);
                       return AlertDialog(
-                        title: const Text('Edit Trip Name'),
+                        title: Text(l10n.editTripName),
                         content: TextField(
                           controller: controller,
-                          decoration: const InputDecoration(
-                            labelText: 'Trip Name',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: l10n.tripNameLabel,
+                            border: const OutlineInputBorder(),
                           ),
                           autofocus: true,
                           textCapitalization: TextCapitalization.sentences,
@@ -60,7 +62,7 @@ class TripDetailScreen extends ConsumerWidget {
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Cancel'),
+                            child: Text(l10n.cancel),
                           ),
                           ElevatedButton(
                             onPressed: () {
@@ -74,7 +76,7 @@ class TripDetailScreen extends ConsumerWidget {
                                 Navigator.pop(context);
                               }
                             },
-                            child: const Text('Save'),
+                            child: Text(l10n.save),
                           ),
                         ],
                       );
@@ -114,11 +116,11 @@ class TripDetailScreen extends ConsumerWidget {
                  ],
                ),
                loading: () => const Center(child: CircularProgressIndicator()),
-               error: (err, stack) => Center(child: Text('Error loading circle: $err')),
+               error: (err, stack) => Center(child: Text(l10n.loadCircleError(err.toString()))),
              );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text('Error: $err')),
+          error: (err, stack) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push('/trip/$tripId/create-expense'),

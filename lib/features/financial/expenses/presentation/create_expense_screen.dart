@@ -10,6 +10,7 @@ import 'package:cocircle/features/circles/presentation/circle_controller.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
 import '../domain/expense_model.dart';
 import 'expense_controller.dart';
+import '../l10n/app_localizations.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
 class CreateExpenseScreen extends ConsumerStatefulWidget {
@@ -106,7 +107,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
       final totalPaid = _payerAmounts.values.fold(0.0, (sum, val) => sum + val);
       if ((totalPaid - amount).abs() > 0.01) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Total paid ($totalPaid) must equal expense amount ($amount)')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.totalPaidError(totalPaid, amount))),
         );
         return;
       }
@@ -115,11 +116,11 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
       if (_selectedSplitType != SplitType.equal) {
         final totalSplit = _splitValues.values.fold(0.0, (sum, val) => sum + val);
         if (_selectedSplitType == SplitType.exact && (totalSplit - amount).abs() > 0.01) {
-          _showError('Split amounts ($totalSplit) must sum to total amount ($amount)');
+          _showError(AppLocalizations.of(context)!.totalSplitError(totalSplit, amount));
           return;
         }
         if (_selectedSplitType == SplitType.percentage && (totalSplit - 100).abs() > 0.01) {
-          _showError('Percentages must sum to 100% (Current: $totalSplit%)');
+          _showError(AppLocalizations.of(context)!.percentageSumError(totalSplit));
           return;
         }
       }
@@ -214,24 +215,25 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     // Fetch trip to get circleId, then fetch circle to get currency
     final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
 
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.expense != null ? 'Edit Expense' : 'Add Expense')),
+      appBar: AppBar(title: Text(widget.expense != null ? l10n.editExpense : l10n.addExpense)),
       body: tripAsync.when(
         data: (trip) {
           final circleAsync = ref.watch(circleDetailsProvider(trip.circleId));
           return circleAsync.when(
             data: (circle) => _buildForm(context, isLoading, circle.currency),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error loading circle: $e')),
+            error: (e, _) => Center(child: Text(l10n.loadCircleError(e.toString()))),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading trip: $e')),
+        error: (e, _) => Center(child: Text(l10n.loadTripError(e.toString()))),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, bool isLoading, String currency) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -241,21 +243,21 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
               children: [
                 TextFormField(
                   controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'What is this for?'),
-                  validator: (val) => val == null || val.isEmpty ? 'Enter a title' : null,
+                  decoration: InputDecoration(labelText: l10n.expenseTitleLabel),
+                  validator: (val) => val == null || val.isEmpty ? l10n.enterTitleError : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _amountController,
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: l10n.amount,
                     prefixText: '$currency ', 
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Enter amount';
-                    if (double.tryParse(val) == null) return 'Invalid amount';
+                    if (val == null || val.isEmpty) return l10n.enterAmountError;
+                    if (double.tryParse(val) == null) return l10n.invalidAmountError;
                     return null;
                   },
                   onChanged: (_) {
@@ -266,7 +268,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ExpenseCategory>(
                   value: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Category'),
+                  decoration: InputDecoration(labelText: l10n.category),
                   items: ExpenseCategory.values
                       .where((c) => c != ExpenseCategory.settlement)
                       .map((c) => DropdownMenuItem(
@@ -286,9 +288,9 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 InkWell(
                   onTap: _selectDate,
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Date',
-                      suffixIcon: Icon(Icons.calendar_today),
+                    decoration: InputDecoration(
+                      labelText: l10n.date,
+                      suffixIcon: const Icon(Icons.calendar_today),
                     ),
                     child: Text(
                       DateFormat.yMMMd().format(_selectedDate),
@@ -311,7 +313,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                     ),
                     child: isLoading 
                       ? const CircularProgressIndicator(color: Colors.white) 
-                      : Text(widget.expense != null ? 'Update Expense' : 'Save Expense'),
+                      : Text(widget.expense != null ? l10n.updateExpenseButton : l10n.saveExpenseButton),
                   ),
                 ),
               ],
@@ -323,6 +325,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
 
   Widget _buildPayerSection(BuildContext context, String currency) {
     final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
+    final l10n = AppLocalizations.of(context)!;
     return tripAsync.when(
       data: (trip) {
         final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
@@ -330,9 +333,9 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           data: (members) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('Paid By', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(l10n.paidBy, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 8),
               _buildPayerSelector(context, members),
@@ -341,19 +344,19 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
             ],
           ),
           loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('Error loading members: $e'),
+          error: (e, _) => Text(l10n.loadMembersError(e.toString())),
         );
       },
       loading: () => const LinearProgressIndicator(),
-       error: (e, _) => Text('Error: $e'),
+       error: (e, _) => Text(l10n.errorWithDetails(e.toString())),
     );
   }
 
   Widget _buildPayerSelector(BuildContext context, List<UserModel> members) {
     final selectedCount = _payerAmounts.length;
     final label = selectedCount == 0 
-        ? 'Select Payers' 
-        : '$selectedCount payer${selectedCount > 1 ? 's' : ''} selected';
+        ? AppLocalizations.of(context)!.selectPayers 
+        : AppLocalizations.of(context)!.payersSelectedCount(selectedCount);
     
     return InkWell(
       onTap: () => _showPayerDialog(members),
@@ -376,13 +379,14 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   }
 
   void _showPayerDialog(List<UserModel> members) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Select Payers'),
+              title: Text(l10n.selectPayers),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -418,7 +422,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                     Navigator.pop(context);
                     if (widget.expense != null) _triggerAutoSave();
                   },
-                  child: const Text('Done'),
+                  child: Text(l10n.done),
                 ),
               ],
             );
@@ -445,15 +449,16 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 child: TextFormField(
                   controller: _payerControllers[member.uid],
                   decoration: InputDecoration(
-                    labelText: 'Amount Paid',
+                    labelText: AppLocalizations.of(context)!.amountPaid,
                     prefixText: '$currency ',
                     isDense: true,
                     border: const OutlineInputBorder(),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Required';
-                    if (double.tryParse(val) == null) return 'Invalid';
+                    final l10n = AppLocalizations.of(context)!;
+                    if (val == null || val.isEmpty) return l10n.requiredError;
+                    if (double.tryParse(val) == null) return l10n.invalidError;
                     return null;
                   },
                 ),
@@ -473,7 +478,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           child: SegmentedButton<SplitType>(
             segments: SplitType.values.map((s) => ButtonSegment<SplitType>(
               value: s,
-              label: Text(s.name[0].toUpperCase() + s.name.substring(1)),
+              label: Text(_getSplitTitle(s, context)),
             )).toList(),
             selected: {_selectedSplitType},
             onSelectionChanged: (Set<SplitType> newSelection) {
@@ -489,7 +494,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        const Text('Split Between', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.splitBetween, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         _buildParticipantSelector(context),
         const SizedBox(height: 16),
@@ -507,8 +512,8 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           data: (members) {
             final selectedCount = _splitValues.length;
             final label = selectedCount == 0 
-                ? 'Select Participants' 
-                : '$selectedCount participant${selectedCount > 1 ? 's' : ''} selected';
+                ? AppLocalizations.of(context)!.selectParticipants 
+                : AppLocalizations.of(context)!.participantsSelectedCount(selectedCount);
             
             return InkWell(
               onTap: () => _showParticipantDialog(members),
@@ -530,11 +535,11 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
             );
           },
           loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text('Error loading members: $e'),
+          error: (e, _) => Text(AppLocalizations.of(context)!.loadMembersError(e.toString())),
         );
       },
       loading: () => const LinearProgressIndicator(),
-      error: (e, _) => Text('Error: $e'),
+      error: (e, _) => Text(AppLocalizations.of(context)!.errorWithDetails(e.toString())),
     );
   }
 
@@ -545,7 +550,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Select Participants'),
+              title: Text(AppLocalizations.of(context)!.selectParticipants),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -578,7 +583,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                     Navigator.pop(context);
                     if (widget.expense != null) _triggerAutoSave();
                   },
-                  child: const Text('Done'),
+                  child: Text(AppLocalizations.of(context)!.done),
                 ),
               ],
             );
@@ -590,8 +595,8 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
 
   Widget _buildSplitInputs(BuildContext context, String currency) {
     if (_splitValues.isEmpty) {
-      return const Text('No participants selected.', 
-          style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic));
+      return Text(AppLocalizations.of(context)!.noParticipantsSelected, 
+          style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic));
     }
 
     if (_selectedSplitType == SplitType.equal) {
@@ -601,8 +606,8 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
        return Column(
          crossAxisAlignment: CrossAxisAlignment.start,
          children: [
-           const Text('Divided equally among selected participants:', 
-                style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+           Text(AppLocalizations.of(context)!.dividedEquallyDescription, 
+                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
            const SizedBox(height: 8),
            ..._splitValues.keys.map((uid) {
              final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
@@ -667,17 +672,16 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           flex: 2,
                           child: Text(member.displayName, style: const TextStyle(fontWeight: FontWeight.w500)),
                         ),
-                        const SizedBox(width: 12),
                         Expanded(
                           flex: 3,
                           child: TextFormField(
                             controller: _splitControllers[member.uid],
                             decoration: InputDecoration(
-                              labelText: _getSplitLabel(_selectedSplitType, ''),
+                              labelText: _getSplitLabel(_selectedSplitType, context),
                               prefixText: _selectedSplitType == SplitType.exact ? '$currency ' : null,
                               suffixText: _selectedSplitType == SplitType.percentage ? '%' : null,
                               helperText: (_selectedSplitType == SplitType.percentage || _selectedSplitType == SplitType.ratio) 
-                                  ? 'Amount: $currency ${computedAmount.toStringAsFixed(2)}'
+                                  ? AppLocalizations.of(context)!.amountLabelWithCurrency(currency, computedAmount.toStringAsFixed(2))
                                   : null,
                               isDense: true,
                               border: const OutlineInputBorder(),
@@ -685,7 +689,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             onChanged: (_) => setState(() {}),
                             validator: (val) {
-                              if (val == null || val.isEmpty) return 'Required';
+                              if (val == null || val.isEmpty) return AppLocalizations.of(context)!.requiredError;
                               return null;
                             },
                           ),
@@ -697,20 +701,31 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
             );
           },
           loading: () => const SizedBox.shrink(),
-          error: (e, _) => Text('Error: $e'),
+          error: (e, _) => Text(AppLocalizations.of(context)!.errorWithDetails(e.toString())),
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (e, _) => Text('Error: $e'),
+      error: (e, _) => Text(AppLocalizations.of(context)!.errorWithDetails(e.toString())),
     );
   }
 
-  String _getSplitLabel(SplitType type, _) {
+  String _getSplitLabel(SplitType type, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (type) {
-      case SplitType.exact: return 'Amount';
-      case SplitType.percentage: return 'Percent';
-      case SplitType.ratio: return 'Share';
+      case SplitType.exact: return l10n.amount;
+      case SplitType.percentage: return l10n.percent;
+      case SplitType.ratio: return l10n.share;
       case SplitType.equal: return '';
+    }
+  }
+
+  String _getSplitTitle(SplitType type, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case SplitType.exact: return l10n.splitTypeExact;
+      case SplitType.percentage: return l10n.splitTypePercentage;
+      case SplitType.ratio: return l10n.splitTypeRatio;
+      case SplitType.equal: return l10n.splitTypeEqual;
     }
   }
 

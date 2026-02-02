@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../data/auth_repository_impl.dart';
+import '../l10n/app_localizations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -49,13 +50,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             SnackBar(
               content: Text(l.message),
               action: SnackBarAction(
-                label: 'Resend',
+                label: AppLocalizations.of(context)!.resend,
                 onPressed: () async {
                   final resendData = await authRepo.resendVerificationEmail(email: email, password: password);
                   if (mounted) {
                     resendData.fold(
                       (fl) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(fl.message))),
-                      (fr) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verification email sent! Check your inbox.'))),
+                      (fr) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.verificationEmailSent))),
                     );
                   }
                 },
@@ -70,7 +71,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       (r) {
         if (_isSignUp) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created! Please verify your email before logging in. If you don\'t see it, check your spam folder.')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.accountCreatedVerifyEmail)),
           );
           setState(() {
             _isSignUp = false;
@@ -85,15 +86,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset Password'),
+        title: Text(AppLocalizations.of(context)!.resetPasswordTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Enter your email to receive a password reset link.'),
+            Text(AppLocalizations.of(context)!.resetPasswordDescription),
             const SizedBox(height: 16),
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: AppLocalizations.of(context)!.email, border: const OutlineInputBorder()),
               keyboardType: TextInputType.emailAddress,
             ),
           ],
@@ -101,14 +102,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
               final email = emailController.text.trim();
               if (email.isEmpty || !email.contains('@')) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid email')),
+                  SnackBar(content: Text(AppLocalizations.of(context)!.invalidEmailError)),
                 );
                 return;
               }
@@ -118,13 +119,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               final res = await ref.read(authRepositoryProvider).resetPassword(email: email);
               
               if (mounted) {
-                 res.fold(
+                  res.fold(
                   (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.message))),
-                  (r) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password reset email sent! check your inbox.'))),
+                  (r) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.passwordResetEmailSent))),
                 );
               }
             },
-            child: const Text('Send Link'),
+            child: Text(AppLocalizations.of(context)!.sendLink),
           ),
         ],
       ),
@@ -133,6 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
         body: Center(
           child: SingleChildScrollView(
@@ -145,14 +147,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Image.asset('assets/icon/app_icon.png', height: 120),
                   const SizedBox(height: 24),
                   Text(
-                    _isSignUp ? 'Join CoCircle' : 'Welcome Back',
+                    _isSignUp ? l10n.joinCoCircle : l10n.welcomeBack,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _isSignUp ? 'Create an account to get started' : 'Sign in to continue',
+                    _isSignUp ? l10n.signUpDescription : l10n.signInDescription,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                   ),
                   const SizedBox(height: 32),
@@ -160,25 +162,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   if (_isSignUp) ...[
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Name', prefixIcon: Icon(Icons.person)),
-                      validator: (value) => value!.isEmpty ? 'Please enter your name' : null,
+                      decoration: InputDecoration(labelText: l10n.name, prefixIcon: const Icon(Icons.person)),
+                      validator: (value) => value!.isEmpty ? l10n.enterNameError : null,
                     ),
                     const SizedBox(height: 16),
                   ],
 
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
+                    decoration: InputDecoration(labelText: l10n.email, prefixIcon: const Icon(Icons.email)),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) => value!.isEmpty || !value.contains('@') ? 'Enter a valid email' : null,
+                    validator: (value) => value!.isEmpty || !value.contains('@') ? l10n.enterEmailError : null,
                   ),
                   const SizedBox(height: 16),
 
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)),
+                    decoration: InputDecoration(labelText: l10n.password, prefixIcon: const Icon(Icons.lock)),
                     obscureText: true,
-                    validator: (value) => value!.length < 6 ? 'Password must be at least 6 chars' : null,
+                    validator: (value) => value!.length < 6 ? l10n.passwordLengthError : null,
                   ),
                   const SizedBox(height: 8),
                   if (!_isSignUp)
@@ -186,7 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: _showForgotPasswordDialog,
-                        child: const Text('Forgot Password?'),
+                        child: Text(l10n.forgotPassword),
                       ),
                     ),
                   const SizedBox(height: 24),
@@ -205,11 +207,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
-                            child: Text(_isSignUp ? 'Sign Up' : 'Sign In'),
+                            child: Text(_isSignUp ? l10n.signUp : l10n.signIn),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Row(children: [Expanded(child: Divider()), Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('OR')), Expanded(child: Divider())]),
+                        Row(children: [const Expanded(child: Divider()), Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text(l10n.orSeparator)), const Expanded(child: Divider())]),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
@@ -222,7 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               );
                             },
                             icon: const Icon(Icons.login), // Ideally Google Icon
-                            label: const Text('Continue with Google'),
+                            label: Text(l10n.continueWithGoogle),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
@@ -233,7 +235,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: () {
                              setState(() => _isSignUp = !_isSignUp);
                           },
-                          child: Text(_isSignUp ? 'Already have an account? Sign In' : 'Don\'t have an account? Sign Up'),
+                          child: Text(_isSignUp ? l10n.alreadyHaveAccount : l10n.dontHaveAccount),
                         ),
                       ],
                     ),

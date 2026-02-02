@@ -8,6 +8,8 @@ import 'expense_controller.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
+import '../l10n/app_localizations.dart';
+
 class ExpenseList extends ConsumerWidget {
   final String tripId;
   final String currency;
@@ -16,11 +18,12 @@ class ExpenseList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expensesStream = ref.watch(tripExpensesProvider(tripId));
+    final l10n = AppLocalizations.of(context)!;
 
     return expensesStream.when(
       data: (expenses) {
         if (expenses.isEmpty) {
-          return const Center(child: Text('No expenses recorded yet.'));
+          return Center(child: Text(l10n.noExpensesYet));
         }
         return ListView.builder(
           itemCount: expenses.length,
@@ -33,7 +36,10 @@ class ExpenseList extends ConsumerWidget {
               ),
               title: Text(expense.title, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(
-                'Paid by ${expense.payerId == FirebaseAuth.instance.currentUser?.uid ? 'You' : 'Member'}${expense.payers.length > 1 ? ' + ${expense.payers.length - 1} more' : ''} • ${DateFormat.MMMd().format(expense.date)}',
+                l10n.paidBySummary(
+                  expense.payerId == FirebaseAuth.instance.currentUser?.uid ? l10n.you : l10n.member,
+                  DateFormat.MMMd().format(expense.date),
+                ) + (expense.payers.length > 1 ? ' ' + l10n.plusMore(expense.payers.length - 1) : ''),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -55,8 +61,8 @@ class ExpenseList extends ConsumerWidget {
                           child: Row(
                             children: [
                               Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('Edit'),
+                              const SizedBox(width: 8),
+                              Text(l10n.edit),
                             ],
                           ),
                         ),
@@ -72,7 +78,7 @@ class ExpenseList extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => Center(child: Text(l10n.errorWithDetails(e.toString()))),
     );
   }
 

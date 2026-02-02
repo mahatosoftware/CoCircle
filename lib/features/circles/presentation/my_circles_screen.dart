@@ -7,6 +7,7 @@ import '../../auth/domain/user_model.dart';
 import 'package:cocircle/features/notifications/presentation/notification_controller.dart';
 import 'package:cocircle/features/notifications/domain/notification_model.dart';
 import '../domain/circle_model.dart';
+import '../l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
 
 class MyCirclesScreen extends ConsumerWidget {
@@ -18,10 +19,11 @@ class MyCirclesScreen extends ConsumerWidget {
     final pendingApprovalsAsync = ref.watch(pendingApprovalsProvider);
     final unreadCount = ref.watch(unreadNotificationCountProvider);
     final totalNotificationCount = (pendingApprovalsAsync.value?.length ?? 0) + unreadCount;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CoCircle'),
+        title: Text(l10n.appTitle),
         centerTitle: false,
         actions: [
           IconButton(
@@ -76,11 +78,11 @@ class MyCirclesScreen extends ConsumerWidget {
                 children: [
                    const Icon(Icons.group_off_outlined, size: 60, color: Colors.grey),
                    const SizedBox(height: 16),
-                   Text('No circles yet', style: Theme.of(context).textTheme.titleMedium),
+                   Text(l10n.noCircles, style: Theme.of(context).textTheme.titleMedium),
                    const SizedBox(height: 8),
                    ElevatedButton(
                      onPressed: () => _showAddOptions(context),
-                     child: const Text('Get Started'),
+                     child: Text(l10n.getStarted),
                    )
                 ],
               ),
@@ -128,10 +130,8 @@ class MyCirclesScreen extends ConsumerWidget {
                                 children: [
                                   const Icon(Icons.info_outline, size: 14, color: Colors.orange),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    '$pendingCount Pending Request${pendingCount > 1 ? 's' : ''}',
+                                    l10n.pendingRequest(pendingCount),
                                     style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
                                 ],
                               ),
                             ),
@@ -150,7 +150,7 @@ class MyCirclesScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddOptions(context),
@@ -173,7 +173,7 @@ class MyCirclesScreen extends ConsumerWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.add_circle_outline, size: 28),
-                title: const Text('Create New Circle'),
+                title: Text(AppLocalizations.of(context)!.createCircleTitle),
                 onTap: () {
                   context.pop();
                   context.push('/create-circle');
@@ -182,7 +182,7 @@ class MyCirclesScreen extends ConsumerWidget {
               const Divider(),
               ListTile(
                 leading: const Icon(Icons.group_add_outlined, size: 28),
-                title: const Text('Join Existing Circle'),
+                title: Text(AppLocalizations.of(context)!.joinCircleTitle),
                 onTap: () {
                    context.pop();
                    context.push('/join-circle');
@@ -228,7 +228,7 @@ class MyCirclesScreen extends ConsumerWidget {
                       if (notifications.any((n) => !n.isRead))
                         TextButton(
                           onPressed: () => ref.read(notificationControllerProvider.notifier).markAllAsRead(),
-                          child: const Text('Mark all as read'),
+                          child: Text(AppLocalizations.of(context)!.markAllAsRead),
                         ),
                     ],
                   ),
@@ -240,7 +240,7 @@ class MyCirclesScreen extends ConsumerWidget {
                         if (pendingCircles.isNotEmpty) ...[
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text('Circle Requests', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                            child: Text(AppLocalizations.of(context)!.circleRequests, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                           ),
                           ...pendingCircles.map((circle) {
                             final count = circle.pendingMemberIds.length;
@@ -251,7 +251,7 @@ class MyCirclesScreen extends ConsumerWidget {
                                 child: const Icon(Icons.group_add, color: Colors.orange),
                               ),
                               title: Text(circle.name),
-                              subtitle: Text('$count person${count > 1 ? 's' : ''} waiting'),
+                              subtitle: Text(AppLocalizations.of(context)!.waitingSummary(count)),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () {
                                 context.pop();
@@ -264,7 +264,7 @@ class MyCirclesScreen extends ConsumerWidget {
                         if (notifications.isNotEmpty) ...[
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text('Recent Activity', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                            child: Text(AppLocalizations.of(context)!.recentActivity, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                           ),
                           ...notifications.map((n) => ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -285,7 +285,7 @@ class MyCirclesScreen extends ConsumerWidget {
                               children: [
                                 Text(n.body),
                                 Text(
-                                  _formatTimestamp(n.timestamp),
+                                  _formatTimestamp(n.timestamp, context),
                                   style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                                 ),
                               ],
@@ -300,7 +300,7 @@ class MyCirclesScreen extends ConsumerWidget {
                         if (pendingCircles.isEmpty && notifications.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 40.0),
-                            child: Center(child: Text('All caught up!')),
+                            child: Center(child: Text(AppLocalizations.of(context)!.allCaughtUp)),
                           ),
                       ],
                     ),
@@ -323,11 +323,12 @@ class MyCirclesScreen extends ConsumerWidget {
     }
   }
 
-  String _formatTimestamp(DateTime dt) {
+  String _formatTimestamp(DateTime dt, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+    if (diff.inMinutes < 60) return l10n.minutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
+    return l10n.daysAgo(diff.inDays);
   }
 }

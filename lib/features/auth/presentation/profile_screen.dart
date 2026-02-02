@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository_impl.dart';
 import 'profile_controller.dart';
+import '../l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
@@ -39,21 +40,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(authStateChangesProvider);
     final isUpdating = ref.watch(profileControllerProvider).isLoading;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(AppLocalizations.of(context)!.profile),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authRepositoryProvider).signOut(),
-            tooltip: 'Sign Out',
+            tooltip: AppLocalizations.of(context)!.signOut,
           ),
         ],
       ),
       body: userAsync.when(
         data: (user) {
-          if (user == null) return const Center(child: Text('User not found'));
+          if (user == null) return Center(child: Text(AppLocalizations.of(context)!.userNotFound));
           
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -93,21 +95,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(
-                      labelText: 'Display Name',
+                      labelText: l10n.displayName,
                       prefixIcon: Icon(Icons.person_outline),
                       border: OutlineInputBorder(),
                     ),
-                    validator: (val) => val == null || val.isEmpty ? 'Name cannot be empty' : null,
+                    validator: (val) => val == null || val.isEmpty ? l10n.nameEmptyError : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     initialValue: user.email,
                     enabled: false,
                     decoration: const InputDecoration(
-                      labelText: 'Email Address',
+                      labelText: l10n.emailAddress,
                       prefixIcon: Icon(Icons.email_outlined),
                       border: OutlineInputBorder(),
-                      helperText: 'Email cannot be changed',
+                      helperText: l10n.emailCannotBeChanged,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -130,7 +132,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       child: isUpdating 
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Update Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : Text(l10n.updateProfile, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -140,7 +142,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text(AppLocalizations.of(context)!.errorWithDetails(e.toString()))),
       ),
     );
   }

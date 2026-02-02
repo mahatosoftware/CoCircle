@@ -9,6 +9,7 @@ import 'package:cocircle/features/financial/expenses/domain/expense_model.dart';
 import 'package:cocircle/features/financial/expenses/presentation/expense_controller.dart';
 import 'package:cocircle/features/financial/settlements/domain/settlement_model.dart';
 import 'package:cocircle/core/widgets/copyright_footer.dart';
+import '../../expenses/l10n/app_localizations.dart';
 import 'package:collection/collection.dart';
 
 class SettlementList extends ConsumerWidget {
@@ -21,6 +22,7 @@ class SettlementList extends ConsumerWidget {
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
     final activeSettlementsAsync = ref.watch(activeSettlementsProvider(tripId));
     final expensesAsync = ref.watch(tripExpensesProvider(tripId));
+    final l10n = AppLocalizations.of(context)!;
 
     return tripAsync.when(
       data: (trip) {
@@ -43,11 +45,11 @@ class SettlementList extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch, // Ensure cards take full width
                     children: [
                       if (settlements.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+                         Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                           child: Text(
-                            'Active Settlements',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            l10n.activeSettlements,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ),
                         ...settlements.asMap().entries.map((entry) {
@@ -66,15 +68,15 @@ class SettlementList extends ConsumerWidget {
                         }),
                       ],
                       if (history.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 32, 16, 12),
+                         Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 32, 16, 12),
                           child: Text(
-                            'Settlement History',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            l10n.settlementHistory,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ),
                         ...history.map((expense) => membersAsync.when(
-                          data: (members) => _buildHistoryTile(expense, members),
+                          data: (members) => _buildHistoryTile(context, expense, members),
                           loading: () => const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: LinearProgressIndicator(),
@@ -122,15 +124,15 @@ class SettlementList extends ConsumerWidget {
         children: [
           Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.green[100]),
           const SizedBox(height: 24),
-          const Text(
-            'All settled up!',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+           Text(
+            l10n.allSettledUp,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Everyone is even. Any new expenses added will show up here if settlements are needed.',
+           Text(
+            l10n.allSettledUpDescription,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
           ),
         ],
       ),
@@ -138,6 +140,7 @@ class SettlementList extends ConsumerWidget {
   }
 
   Widget _buildActiveSettlementCard(BuildContext context, WidgetRef ref, SettlementTransaction t, List<dynamic> members) {
+    final l10n = AppLocalizations.of(context)!;
     final fromMember = members.firstWhereOrNull((m) => m.uid == t.fromUid);
     final toMember = members.firstWhereOrNull((m) => m.uid == t.toUid);
     final fromName = fromMember?.displayName ?? t.fromUid.substring(0, 4);
@@ -165,7 +168,7 @@ class SettlementList extends ConsumerWidget {
                   style: const TextStyle(color: Colors.black87, fontSize: 14),
                   children: [
                     TextSpan(text: fromName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const TextSpan(text: ' pays '),
+                    TextSpan(text: ' ${l10n.paysLabel('', '').split('  ').first.split('pays').first.isEmpty ? ' pays ' : l10n.paysLabel('', '').replaceAll('{from}', '').replaceAll('{to}', '')} '), 
                     TextSpan(text: toName, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -181,7 +184,7 @@ class SettlementList extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => _confirmSettleUp(context, ref, t, fromName, toName),
                   icon: const Icon(Icons.check),
-                  label: const Text('Settle Up'),
+                  label: Text(l10n.settleUp),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
@@ -194,7 +197,8 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryTile(ExpenseModel expense, List<dynamic> members) {
+  Widget _buildHistoryTile(BuildContext context, ExpenseModel expense, List<dynamic> members) {
+    final l10n = AppLocalizations.of(context)!;
     final fromUid = expense.payerId;
     final toUid = expense.splitDetails.keys.first;
     
@@ -206,7 +210,7 @@ class SettlementList extends ConsumerWidget {
 
     return ListTile(
       leading: const Icon(Icons.history, color: Colors.grey),
-      title: Text('$fromName settled with $toName'),
+      title: Text(l10n.settledWithLabel(fromName, toName)),
       subtitle: Text(DateFormat.MMMd().format(expense.date)),
       trailing: Text(
         '$currency${expense.amount.toStringAsFixed(2)}',
@@ -219,33 +223,36 @@ class SettlementList extends ConsumerWidget {
     final currentUser = FirebaseAuth.instance.currentUser;
     final isPayer = currentUser?.uid == t.fromUid;
 
-    showDialog(
+     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Settle Up'),
-        content: Text(isPayer 
-          ? 'Confirm that you have paid $currency${t.amount} to $toName?'
-          : 'Confirm that you have received $currency${t.amount} from $fromName?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(settlementControllerProvider.notifier).settleUp(
-                tripId: tripId,
-                fromUid: t.fromUid,
-                toUid: t.toUid,
-                amount: t.amount,
-                context: context, // Using outer context
-              );
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.settleUp),
+          content: Text(isPayer 
+            ? l10n.confirmPaidMessage(currency, t.amount, toName)
+            : l10n.confirmReceivedMessage(currency, t.amount, fromName)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(settlementControllerProvider.notifier).settleUp(
+                  tripId: tripId,
+                  fromUid: t.fromUid,
+                  toUid: t.toUid,
+                  amount: t.amount,
+                  context: context, // Using outer context
+                );
+                Navigator.pop(dialogContext);
+              },
+              child: Text(l10n.confirm),
+            ),
+          ],
+        );
+      },
     );
   }
 }

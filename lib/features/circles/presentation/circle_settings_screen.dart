@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
+import '../l10n/app_localizations.dart';
 import 'circle_controller.dart';
 
 final circleMembersProvider = FutureProvider.family<List<UserModel>, List<String>>((ref, memberIds) async {
@@ -20,6 +21,7 @@ class CircleSettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final circleAsync = ref.watch(circleDetailsProvider(circleId));
+    final l10n = AppLocalizations.of(context)!;
     // getCurrentUser is Future. 
     // I should probably use a FutureProvider for user or just use authStateChanges.
     // Let's use authStateChanges which gives Stream<UserModel?>.
@@ -29,7 +31,7 @@ class CircleSettingsScreen extends ConsumerWidget {
     // Let's wrap user fetching in a provider or handle it in the body.
     
     return Scaffold(
-      appBar: AppBar(title: const Text('Circle Settings')),
+      appBar: AppBar(title: Text(l10n.circleSettingsTitle)),
       body: circleAsync.when(
         data: (circle) {
            return StreamBuilder<UserModel?>(
@@ -67,14 +69,14 @@ class CircleSettingsScreen extends ConsumerWidget {
                                         showDialog(
                                           context: context,
                                           builder: (context) => AlertDialog(
-                                            title: const Text('Rename Circle'),
+                                            title: Text(l10n.renameCircle),
                                             content: TextFormField(
                                               controller: controller,
-                                              decoration: const InputDecoration(labelText: 'Circle Name'),
+                                              decoration: InputDecoration(labelText: l10n.circleName),
                                               autofocus: true,
                                             ),
                                             actions: [
-                                              TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
+                                              TextButton(onPressed: () => context.pop(), child: Text(l10n.cancel)),
                                               TextButton(
                                                 onPressed: () {
                                                   if (controller.text.trim().isNotEmpty) {
@@ -86,7 +88,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                                     context.pop();
                                                   }
                                                 },
-                                                child: const Text('Save'),
+                                                child: Text(l10n.save),
                                               ),
                                             ],
                                           ),
@@ -96,7 +98,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text('Code: ${circle.code}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                              Text(l10n.codePrefix(circle.code), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2)),
                               const SizedBox(height: 24),
                               QrImageView(
                                 data: circle.code,
@@ -109,7 +111,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
                                   icon: const Icon(Icons.share),
-                                  label: const Text('Share Invite Link'),
+                                  label: Text(l10n.shareInviteLink),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppPallete.primary,
                                     foregroundColor: Colors.white,
@@ -117,7 +119,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                   ),
                                   onPressed: () {
                                     // ignore: deprecated_member_use
-                                    Share.share('Join my circle "${circle.name}" on CoCircle! Use code: ${circle.code} or click here: $inviteLink');
+                                    Share.share(l10n.shareInviteMessage(circle.name, circle.code, inviteLink));
                                   },
                                 ),
                               ),
@@ -127,7 +129,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
                                       icon: const Icon(Icons.link),
-                                      label: const Text('Generate One-Time Invite Link'),
+                                      label: Text(l10n.generateOneTimeLink),
                                       style: OutlinedButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),
@@ -139,16 +141,16 @@ class CircleSettingsScreen extends ConsumerWidget {
                                         if (code != null) {
                                           final oneTimeLink = 'https://cocircle.mahato.in/join/$code';
                                           // ignore: deprecated_member_use
-                                          Share.share('Special invite to join "${circle.name}"! Use this one-time link: $oneTimeLink or code: $code');
+                                          Share.share(l10n.oneTimeInviteMessage(circle.name, code, oneTimeLink));
                                         }
                                       },
                                     ),
                                   ),
                                   if (circle.oneTimeCodes.isNotEmpty) ...[
                                     const SizedBox(height: 16),
-                                    const Align(
+                                    Align(
                                       alignment: Alignment.centerLeft,
-                                      child: Text('Active One-Time Invites', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      child: Text(l10n.activeOneTimeInvites, style: const TextStyle(fontWeight: FontWeight.bold)),
                                     ),
                                     const SizedBox(height: 8),
                                     ...circle.oneTimeCodes.map((code) => Padding(
@@ -161,7 +163,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                             onPressed: () {
                                               final oneTimeLink = 'https://cocircle.mahato.in/join/$code';
                                               // ignore: deprecated_member_use
-                                              Share.share('Special invite to join "${circle.name}"! Use this one-time link: $oneTimeLink or code: $code');
+                                              Share.share(l10n.oneTimeInviteMessage(circle.name, code, oneTimeLink));
                                             },
                                           ),
                                           IconButton(
@@ -188,7 +190,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                       if (isUserAdmin && circle.pendingMemberIds.isNotEmpty) ...[
                          Align(
                             alignment: Alignment.centerLeft,
-                            child: Text('Pending Requests (${circle.pendingMemberIds.length})', style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: Colors.orange)),
+                            child: Text(l10n.pendingRequestsCount(circle.pendingMemberIds.length), style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold, color: Colors.orange)),
                           ),
                           const SizedBox(height: 8),
                           pendingAsync.when(
@@ -223,7 +225,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                               },
                             ),
                             loading: () => const Center(child: CircularProgressIndicator()),
-                            error: (e, s) => Text('Error: $e'),
+                            error: (e, s) => Text(l10n.errorWithDetails(e.toString())),
                           ),
                           const SizedBox(height: 32),
                       ],
@@ -258,7 +260,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                                      child: const Text('Admin', style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold))
+                                      child: Text(l10n.adminLabel, style: const TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold))
                                     ),
                                   ],
                                 ],
@@ -268,34 +270,34 @@ class CircleSettingsScreen extends ConsumerWidget {
                                 ? PopupMenuButton<String>(
                                     itemBuilder: (context) => [
                                       if (!isMemberAdmin)
-                                        const PopupMenuItem(
+                                        PopupMenuItem(
                                           value: 'promote',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.security, size: 20, color: Colors.orange),
-                                              SizedBox(width: 8),
-                                              Text('Make Admin'),
+                                              const Icon(Icons.security, size: 20, color: Colors.orange),
+                                              const SizedBox(width: 8),
+                                              Text(l10n.makeAdmin),
                                             ],
                                           ),
                                         ),
                                       if (isMemberAdmin)
-                                        const PopupMenuItem(
+                                        PopupMenuItem(
                                           value: 'demote',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.security_update_warning, size: 20, color: Colors.orange),
-                                              SizedBox(width: 8),
-                                              Text('Demote to Member'),
+                                              const Icon(Icons.security_update_warning, size: 20, color: Colors.orange),
+                                              const SizedBox(width: 8),
+                                              Text(l10n.demoteToMember),
                                             ],
                                           ),
                                         ),
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                         value: 'remove',
                                         child: Row(
                                           children: [
-                                            Icon(Icons.person_remove, size: 20, color: Colors.red),
-                                            SizedBox(width: 8),
-                                            Text('Remove Member', style: TextStyle(color: Colors.red)),
+                                            const Icon(Icons.person_remove, size: 20, color: Colors.red),
+                                            const SizedBox(width: 8),
+                                            Text(l10n.removeMember, style: const TextStyle(color: Colors.red)),
                                           ],
                                         ),
                                       ),
@@ -318,10 +320,10 @@ class CircleSettingsScreen extends ConsumerWidget {
                                         showDialog(
                                           context: context,
                                           builder: (context) => AlertDialog(
-                                            title: const Text('Remove Member?'),
-                                            content: Text('Are you sure you want to remove ${member.displayName} from this circle?'),
+                                            title: Text(l10n.removeMemberConfirmTitle),
+                                            content: Text(l10n.removeMemberConfirmMessage(member.displayName)),
                                             actions: [
-                                              TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
+                                              TextButton(onPressed: () => context.pop(), child: Text(l10n.cancel)),
                                               TextButton(
                                                 onPressed: () {
                                                   context.pop();
@@ -332,7 +334,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                                                     isSelf: false,
                                                   );
                                                 }, 
-                                                child: const Text('Remove', style: TextStyle(color: Colors.red))
+                                                child: Text(l10n.remove, style: const TextStyle(color: Colors.red))
                                               ),
                                             ],
                                           ),
@@ -346,7 +348,7 @@ class CircleSettingsScreen extends ConsumerWidget {
                           },
                         ),
                         loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Text('Error loading members: $e'),
+                        error: (e, _) => Text(l10n.loadMembersError(e.toString())),
                       ),
 
                       const SizedBox(height: 40),
@@ -361,42 +363,42 @@ class CircleSettingsScreen extends ConsumerWidget {
                                 final otherAdmins = circle.adminIds.where((id) => id != currentUser.uid).toList();
                                 
                                 if (isUserAdmin && otherAdmins.isEmpty && circle.memberIds.length > 1) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Cannot Leave Circle'),
-                                      content: const Text('You are the only admin. Please promote another member to admin before leaving.'),
-                                      actions: [
-                                        TextButton(onPressed: () => context.pop(), child: const Text('OK')),
-                                      ],
-                                    ),
-                                  );
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text(l10n.cannotLeaveCircleTitle),
+                                        content: Text(l10n.onlyAdminError),
+                                        actions: [
+                                          TextButton(onPressed: () => context.pop(), child: Text(l10n.ok)),
+                                        ],
+                                      ),
+                                    );
                                   return;
                                 }
 
                                 // Confirm dialog
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Leave Circle?'),
-                                    content: const Text('Are you sure you want to leave this circle?'),
-                                    actions: [
-                                      TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
-                                      TextButton(
-                                        onPressed: () {
-                                          context.pop();
-                                          ref.read(circleControllerProvider.notifier).removeMember(
-                                             circleId: circle.id, 
-                                             memberId: currentUser.uid, 
-                                             context: context,
-                                             isSelf: true
-                                          );
-                                        }, 
-                                        child: const Text('Leave', style: TextStyle(color: Colors.red))
-                                      ),
-                                    ],
-                                  ),
-                                );
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text(l10n.leaveCircleConfirmTitle),
+                                      content: Text(l10n.leaveCircleConfirmMessage),
+                                      actions: [
+                                        TextButton(onPressed: () => context.pop(), child: Text(l10n.cancel)),
+                                        TextButton(
+                                          onPressed: () {
+                                            context.pop();
+                                            ref.read(circleControllerProvider.notifier).removeMember(
+                                               circleId: circle.id, 
+                                               memberId: currentUser!.uid, 
+                                               context: context,
+                                               isSelf: true
+                                            );
+                                          }, 
+                                          child: Text(l10n.leave, style: const TextStyle(color: Colors.red))
+                                        ),
+                                      ],
+                                    ),
+                                  );
                               },
                              icon: const Icon(Icons.exit_to_app, color: Colors.red),
                              label: const Text('Leave Circle', style: TextStyle(color: Colors.red)),
@@ -413,9 +415,9 @@ class CircleSettingsScreen extends ConsumerWidget {
         },
       );
     },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
-    ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text(l10n.errorWithDetails(e.toString()))),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../features/financial/expenses/l10n/app_localizations.dart';
 
 class CopyrightFooter extends StatelessWidget {
   const CopyrightFooter({super.key});
@@ -10,7 +11,7 @@ class CopyrightFooter extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Text(
-          '© ${DateTime.now().year} CoCircle. All rights reserved.',
+            AppLocalizations.of(context)!.copyrightText(DateTime.now().year.toString()),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.grey[400],

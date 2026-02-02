@@ -9,6 +9,7 @@ import '../domain/expense_model.dart';
 import '../../../trips/presentation/trip_controller.dart';
 import '../../../circles/presentation/circle_controller.dart';
 import '../../../../core/widgets/copyright_footer.dart';
+import '../l10n/app_localizations.dart';
 
 class ExpenseStatsView extends ConsumerWidget {
   final String tripId;
@@ -21,6 +22,7 @@ class ExpenseStatsView extends ConsumerWidget {
     final shareStatsAsync = ref.watch(expenseMemberShareProvider(tripId));
     final totalSpendingAsync = ref.watch(tripTotalSpendingProvider(tripId));
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
+    final l10n = AppLocalizations.of(context)!;
 
     return tripAsync.when(
       data: (trip) {
@@ -37,49 +39,50 @@ class ExpenseStatsView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSummaryCard(totalSpendingAsync, format),
+                  _buildSummaryCard(context, totalSpendingAsync, format),
                   const SizedBox(height: 24),
                   Text(
-                    'Spending by Category',
+                    l10n.spendingByCategory,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _buildCategoryChart(categoryStatsAsync, format),
+                  _buildCategoryChart(context, categoryStatsAsync, format),
                   const SizedBox(height: 32),
                   Text(
-                    'Spending by Member (Who Paid)',
+                    l10n.spendingByMember,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _buildMemberChart(memberStatsAsync, membersAsync, format),
+                  _buildMemberChart(context, memberStatsAsync, membersAsync, format),
                   const SizedBox(height: 32),
                   Text(
-                    'Liability (Who Owes what)',
+                    l10n.liabilityTitle,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _buildShareChart(shareStatsAsync, membersAsync, format),
+                  _buildShareChart(context, shareStatsAsync, membersAsync, format),
                   const SizedBox(height: 100), // Space for FAB
                 ],
               ),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Error: $err')),
+          error: (err, _) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
     );
   }
 
-  Widget _buildSummaryCard(AsyncValue<double> totalAsync, NumberFormat format) {
+  Widget _buildSummaryCard(BuildContext context, AsyncValue<double> totalAsync, NumberFormat format) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -96,8 +99,8 @@ class ExpenseStatsView extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            const Text(
-              'Total Spending',
+            Text(
+              l10n.totalSpending,
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -111,7 +114,7 @@ class ExpenseStatsView extends ConsumerWidget {
                 ),
               ),
               loading: () => const CircularProgressIndicator(color: Colors.white),
-              error: (err, _) => const Text('Error', style: TextStyle(color: Colors.white)),
+              error: (err, _) => Text(l10n.error),
             ),
           ],
         ),
@@ -119,11 +122,12 @@ class ExpenseStatsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryChart(AsyncValue<Map<String, double>> statsAsync, NumberFormat format) {
+  Widget _buildCategoryChart(BuildContext context, AsyncValue<Map<String, double>> statsAsync, NumberFormat format) {
+    final l10n = AppLocalizations.of(context)!;
     return statsAsync.when(
       data: (stats) {
         if (stats.isEmpty) {
-          return const Center(child: Text('No expenses recorded yet.'));
+          return Center(child: Text(l10n.noExpensesYet));
         }
 
         final total = stats.values.fold(0.0, (sum, val) => sum + val);
@@ -169,15 +173,17 @@ class ExpenseStatsView extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Text('Error: $err'),
+      error: (err, _) => Text(l10n.errorWithDetails(err.toString())),
     );
   }
 
   Widget _buildMemberChart(
+    BuildContext context,
     AsyncValue<Map<String, double>> statsAsync,
     AsyncValue<List<dynamic>> membersAsync,
     NumberFormat format,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return statsAsync.when(
       data: (stats) {
         if (stats.isEmpty) return const SizedBox.shrink();
@@ -233,7 +239,7 @@ class ExpenseStatsView extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Text('Error: $err'),
+          error: (err, _) => Text(l10n.errorWithDetails(err.toString())),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -242,10 +248,12 @@ class ExpenseStatsView extends ConsumerWidget {
   }
 
   Widget _buildShareChart(
+    BuildContext context,
     AsyncValue<Map<String, double>> statsAsync,
     AsyncValue<List<dynamic>> membersAsync,
     NumberFormat format,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return statsAsync.when(
       data: (stats) {
         if (stats.isEmpty) return const SizedBox.shrink();

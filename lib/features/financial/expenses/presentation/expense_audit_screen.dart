@@ -7,6 +7,7 @@ import 'expense_controller.dart';
 import '../../../trips/presentation/trip_controller.dart';
 import '../../../circles/presentation/circle_controller.dart';
 import '../../../../core/theme/app_pallete.dart';
+import '../l10n/app_localizations.dart';
 
 class ExpenseAuditView extends ConsumerWidget {
   final String tripId;
@@ -16,6 +17,7 @@ class ExpenseAuditView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auditLogsAsync = ref.watch(tripAuditLogsProvider(tripId));
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
+    final l10n = AppLocalizations.of(context)!;
 
     return tripAsync.when(
       data: (trip) {
@@ -32,7 +34,7 @@ class ExpenseAuditView extends ConsumerWidget {
                 return auditLogsAsync.when(
                   data: (logs) {
                     if (logs.isEmpty) {
-                      return const Center(child: Text('No audit history available.'));
+                      return Center(child: Text(l10n.noAuditHistory));
                     }
 
                     return ListView.separated(
@@ -112,7 +114,7 @@ class ExpenseAuditView extends ConsumerWidget {
                                       );
                                     },
                                     icon: const Icon(Icons.compare_arrows, size: 18),
-                                    label: const Text('View Specific Changes'),
+                                    label: Text(l10n.viewSpecificChanges),
                                     style: TextButton.styleFrom(
                                       foregroundColor: AppPallete.primary,
                                       alignment: Alignment.centerLeft,
@@ -127,37 +129,38 @@ class ExpenseAuditView extends ConsumerWidget {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, _) => Center(child: Text('Error loading audit logs: $err')),
+                  error: (err, _) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error loading members: $err')),
+              error: (err, _) => Center(child: Text(l10n.loadMembersError(err.toString()))),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Error: $err')),
+          error: (err, _) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
     );
   }
 
-  Widget _buildActionBadge(AuditAction action) {
+  Widget _buildActionBadge(BuildContext context, AuditAction action) {
+    final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;
     switch (action) {
       case AuditAction.create:
         color = Colors.green;
-        label = 'CREATED';
+        label = l10n.auditActionCreate;
         break;
       case AuditAction.update:
         color = Colors.blue;
-        label = 'UPDATED';
+        label = l10n.auditActionUpdate;
         break;
       case AuditAction.delete:
         color = Colors.red;
-        label = 'DELETED';
+        label = l10n.auditActionDelete;
         break;
     }
 

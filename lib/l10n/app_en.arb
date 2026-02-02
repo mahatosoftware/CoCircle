@@ -1,0 +1,459 @@
+{
+  "appTitle": "CoCircle",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "login": "Login",
+  "signIn": "Sign In",
+  "signUp": "Sign Up",
+  "email": "Email",
+  "password": "Password",
+  "forgotPassword": "Forgot Password?",
+  "sendResetLink": "Send Reset Link",
+  "verifyEmail": "Verify Email",
+  "resendEmail": "Resend Email",
+  "resetPasswordTitle": "Reset Password",
+  "resetPasswordDescription": "Enter your email to receive a password reset link.",
+  "cancel": "Cancel",
+  "invalidEmailError": "Please enter a valid email",
+  "passwordResetEmailSent": "Password reset email sent! check your inbox.",
+  "sendLink": "Send Link",
+  "joinCoCircle": "Join CoCircle",
+  "welcomeBack": "Welcome Back",
+  "signUpDescription": "Create an account to get started",
+  "signInDescription": "Sign in to continue",
+  "name": "Name",
+  "enterNameError": "Please enter your name",
+  "enterEmailError": "Enter a valid email",
+  "passwordLengthError": "Password must be at least 6 chars",
+  "alreadyHaveAccount": "Already have an account? Sign In",
+  "dontHaveAccount": "Don't have an account? Sign Up",
+  "continueWithGoogle": "Continue with Google",
+  "orSeparator": "OR",
+  "verificationEmailSent": "Verification email sent! Check your inbox.",
+  "accountCreatedVerifyEmail": "Account created! Please verify your email before logging in. If you don't see it, check your spam folder.",
+  "resend": "Resend",
+  "profile": "Profile",
+  "signOut": "Sign Out",
+  "userNotFound": "User not found",
+  "displayName": "Display Name",
+  "nameEmptyError": "Name cannot be empty",
+  "emailAddress": "Email Address",
+  "emailCannotBeChanged": "Email cannot be changed",
+  "updateProfile": "Update Profile",
+  "errorWithDetails": "Error: {error}",
+  "@errorWithDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noCircles": "No circles yet",
+  "getStarted": "Get Started",
+  "pendingRequest": "{count, plural, =1{1 Pending Request} other{{count} Pending Requests}}",
+  "@pendingRequest": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createCircleTitle": "Create Circle",
+  "createCircleButton": "Create Circle",
+  "joinCircleTitle": "Join Circle",
+  "circleName": "Circle Name",
+  "enterCircleNameError": "Please enter a name",
+  "description": "Description",
+  "currency": "Currency",
+  "joinCircleDescription": "Enter the 7-character code shared by your admin.",
+  "circleCode": "Circle Code",
+  "circleCodeHint": "e.g. X7Y2Z9A",
+  "enterCodeError": "Please enter code",
+  "codeTooShortError": "Code is too short",
+  "requestToJoinButton": "Request to Join",
+  "loading": "Loading...",
+  "error": "Error",
+  "tripsAndEvents": "Trips & Events",
+  "noTripsYet": "No trips or events yet",
+  "planATrip": "Plan a Trip",
+  "noDateSet": "No date set",
+  "circleSettingsTitle": "Circle Settings",
+  "renameCircle": "Rename Circle",
+  "save": "Save",
+  "codePrefix": "Code: {code}",
+  "@codePrefix": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "shareInviteLink": "Share Invite Link",
+  "shareInviteMessage": "Join my circle \"{circleName}\" on CoCircle! Use code: {code} or click here: {link}",
+  "@shareInviteMessage": {
+    "placeholders": {
+      "circleName": { "type": "String" },
+      "code": { "type": "String" },
+      "link": { "type": "String" }
+    }
+  },
+  "generateOneTimeLink": "Generate One-Time Invite Link",
+  "oneTimeInviteMessage": "Special invite to join \"{circleName}\"! Use this one-time link: {link} or code: {code}",
+  "@oneTimeInviteMessage": {
+    "placeholders": {
+      "circleName": { "type": "String" },
+      "code": { "type": "String" },
+      "link": { "type": "String" }
+    }
+  },
+  "activeOneTimeInvites": "Active One-Time Invites",
+  "pendingRequestsCount": "Pending Requests ({count})",
+  "@pendingRequestsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "membersCount": "Members ({count})",
+  "@membersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "adminLabel": "Admin",
+  "makeAdmin": "Make Admin",
+  "demoteToMember": "Demote to Member",
+  "removeMember": "Remove Member",
+  "removeMemberConfirmTitle": "Remove Member?",
+  "removeMemberConfirmMessage": "Are you sure you want to remove {name} from this circle?",
+  "@removeMemberConfirmMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "remove": "Remove",
+  "loadMembersError": "Error loading members: {error}",
+  "@loadMembersError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "cannotLeaveCircleTitle": "Cannot Leave Circle",
+  "onlyAdminError": "You are the only admin. Please promote another member to admin before leaving.",
+  "ok": "OK",
+  "leaveCircleConfirmTitle": "Leave Circle?",
+  "leaveCircleConfirmMessage": "Are you sure you want to leave this circle?",
+  "leave": "Leave",
+  "leaveCircleButton": "Leave Circle",
+  "editExpense": "Edit Expense",
+  "addExpense": "Add Expense",
+  "totalPaidError": "Total paid ({totalPaid}) must equal expense amount ({amount})",
+  "@totalPaidError": {
+    "placeholders": {
+      "totalPaid": { "type": "double" },
+      "amount": { "type": "double" }
+    }
+  },
+  "totalSplitError": "Split amounts ({totalSplit}) must sum to total amount ({amount})",
+  "@totalSplitError": {
+    "placeholders": {
+      "totalSplit": { "type": "double" },
+      "amount": { "type": "double" }
+    }
+  },
+  "percentageSumError": "Percentages must sum to 100% (Current: {total}%)",
+  "@percentageSumError": {
+    "placeholders": {
+      "total": { "type": "double" }
+    }
+  },
+  "loadCircleError": "Error loading circle: {error}",
+  "@loadCircleError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "loadTripError": "Error loading trip: {error}",
+  "@loadTripError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "expenseTitleLabel": "What is this for?",
+  "enterTitleError": "Enter a title",
+  "amount": "Amount",
+  "enterAmountError": "Enter amount",
+  "invalidAmountError": "Invalid amount",
+  "category": "Category",
+  "date": "Date",
+  "updateExpenseButton": "Update Expense",
+  "saveExpenseButton": "Save Expense",
+  "paidBy": "Paid By",
+  "selectPayers": "Select Payers",
+  "payersSelectedCount": "{count, plural, =1{1 payer selected} other{{count} payers selected}}",
+  "@payersSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "done": "Done",
+  "amountPaid": "Amount Paid",
+  "requiredError": "Required",
+  "invalidError": "Invalid",
+  "splitTypeExact": "Exact",
+  "splitTypePercentage": "Percentage",
+  "splitTypeRatio": "Ratio",
+  "splitTypeEqual": "Equal",
+  "splitBetween": "Split Between",
+  "selectParticipants": "Select Participants",
+  "participantsSelectedCount": "{count, plural, =1{1 participant selected} other{{count} participants selected}}",
+  "@participantsSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noParticipantsSelected": "No participants selected.",
+  "dividedEquallyDescription": "Divided equally among selected participants:",
+  "percent": "Percent",
+  "share": "Share",
+  "amountLabelWithCurrency": "Amount: {currency} {amount}",
+  "@amountLabelWithCurrency": {
+    "placeholders": {
+      "currency": { "type": "String" },
+      "amount": { "type": "String" }
+    }
+  },
+  "expenseDetailsTitle": "Expense Details",
+  "splitDetailsWithType": "Split Details ({type})",
+  "@splitDetailsWithType": {
+    "placeholders": {
+      "type": { "type": "String" }
+    }
+  },
+  "notes": "Notes",
+  "loadMemberError": "Error loading member",
+  "loadSplitDetailsError": "Error loading split details",
+  "ratioLabel": "Ratio: {value}",
+  "@ratioLabel": {
+    "placeholders": {
+      "value": { "type": "double" }
+    }
+  },
+  "exactAmount": "Exact Amount",
+  "equalShare": "Equal Share",
+  "deleteExpenseTitle": "Delete Expense",
+  "deleteExpenseConfirmMessage": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+  "@deleteExpenseConfirmMessage": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "delete": "Delete",
+  "noExpensesYet": "No expenses recorded yet.",
+  "paidBySummary": "Paid by {payer} • {date}",
+  "@paidBySummary": {
+    "placeholders": {
+      "payer": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "you": "You",
+  "member": "Member",
+  "plusMore": "+ {count} more",
+  "@plusMore": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "edit": "Edit",
+  "spendingByCategory": "Spending by Category",
+  "spendingByMember": "Spending by Member (Who Paid)",
+  "liabilityTitle": "Liability (Who Owes what)",
+  "totalSpending": "Total Spending",
+  "activeSettlements": "Active Settlements",
+  "settlementHistory": "Settlement History",
+  "calculateSettlementsError": "Error calculating settlements: {error}",
+  "@calculateSettlementsError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "allSettledUp": "All settled up!",
+  "allSettledUpDescription": "Everyone is even. Any new expenses added will show up here if settlements are needed.",
+  "paysLabel": "{from} pays {to}",
+  "@paysLabel": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "settleUp": "Settle Up",
+  "settledWithLabel": "{from} settled with {to}",
+  "@settledWithLabel": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "confirmPaidMessage": "Confirm that you have paid {currency}{amount} to {to}?",
+  "@confirmPaidMessage": {
+    "placeholders": {
+      "currency": { "type": "String" },
+      "amount": { "type": "double" },
+      "to": { "type": "String" }
+    }
+  },
+  "confirmReceivedMessage": "Confirm that you have received {currency}{amount} from {from}?",
+  "@confirmReceivedMessage": {
+    "placeholders": {
+      "currency": { "type": "String" },
+      "amount": { "type": "double" },
+      "from": { "type": "String" }
+    }
+  },
+  "confirm": "Confirm",
+  "newTripTitle": "New Trip / Event",
+  "location": "Location",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "create": "Create",
+  "expenses": "Expenses",
+  "settlements": "Settlements",
+  "insights": "Insights",
+  "audit": "Audit",
+  "editTripName": "Edit Trip Name",
+  "tripName": "Trip Name",
+  "settlementPlanWithCurrency": "Settlement Plan ({currency})",
+  "@settlementPlanWithCurrency": {
+    "placeholders": {
+      "currency": { "type": "String" }
+    }
+  },
+  "copyright": "© {year} CoCircle. All rights reserved.",
+  "@copyright": {
+    "placeholders": {
+      "year": { "type": "int" }
+    }
+  },
+  "notifications": "Notifications",
+  "markAllAsRead": "Mark all as read",
+  "circleRequests": "Circle Requests",
+  "waitingSummary": "{count, plural, =1{1 person waiting} other{{count} persons waiting}}",
+  "@waitingSummary": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "recentActivity": "Recent Activity",
+  "allCaughtUp": "All caught up!",
+  "minutesAgo": "{count}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "hoursAgo": "{count}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "daysAgo": "{count}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noAuditHistory": "No audit history available.",
+  "activityByUser": "By {name}",
+  "@activityByUser": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "viewSpecificChanges": "View Specific Changes",
+  "auditActionCreate": "CREATED",
+  "auditActionUpdate": "UPDATED",
+  "auditActionDelete": "DELETED",
+  "changeDetailsTitle": "Change Details",
+  "specificChanges": "Specific Changes",
+  "noSpecificChanges": "No specific field changes recorded for this action.",
+  "fromLabel": "FROM",
+  "toLabel": "TO",
+  "noneValue": "None",
+  "newTripEvent": "New Trip / Event",
+  "@newTripEvent": {
+    "description": "Title for the create trip screen"
+  },
+  "nameLabel": "Name",
+  "@nameLabel": {
+    "description": "Label for name input"
+  },
+  "enterNameError": "Please enter name",
+  "@enterNameError": {
+    "description": "Error message when name is empty"
+  },
+  "typeLabel": "Type",
+  "@typeLabel": {
+    "description": "Label for type dropdown"
+  },
+  "locationLabel": "Location",
+  "@locationLabel": {
+    "description": "Label for location input"
+  },
+  "startDateLabel": "Start Date",
+  "@startDateLabel": {
+    "description": "Label for start date picker"
+  },
+  "endDateLabel": "End Date",
+  "@endDateLabel": {
+    "description": "Label for end date picker"
+  },
+  "createButton": "Create",
+  "@createButton": {
+    "description": "Text for create button"
+  },
+  "expensesTab": "Expenses",
+  "@expensesTab": {
+    "description": "Label for expenses tab"
+  },
+  "settlementsTab": "Settlements",
+  "@settlementsTab": {
+    "description": "Label for settlements tab"
+  },
+  "insightsTab": "Insights",
+  "@insightsTab": {
+    "description": "Label for insights tab"
+  },
+  "auditTab": "Audit",
+  "@auditTab": {
+    "description": "Label for audit tab"
+  },
+  "editTripName": "Edit Trip Name",
+  "@editTripName": {
+    "description": "Title for edit trip name dialog"
+  },
+  "tripNameLabel": "Trip Name",
+  "@tripNameLabel": {
+    "description": "Label for trip name input"
+  },
+  "settlementPlanTitle": "Settlement Plan ({currency})",
+  "@settlementPlanTitle": {
+    "description": "Title for the settlement plan section",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "loadCircleError": "Error loading circle: {error}",
+  "copyrightText": "© {year} CoCircle. All rights reserved.",
+  "@copyrightText": {
+    "description": "Copyright text in the footer",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'core/config/environment.dart';
 import 'router.dart';
 import 'firebase_options_prod.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,8 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightThemeMode,
       darkTheme: AppTheme.darkThemeMode,
       routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         if (AppEnvironment.isDev) {

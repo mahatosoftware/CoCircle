@@ -5,6 +5,7 @@ import '../../../../core/theme/app_pallete.dart';
 import '../../circles/domain/circle_model.dart';
 import '../domain/trip_model.dart';
 import 'trip_controller.dart';
+import '../l10n/app_localizations.dart';
 
 class CreateTripScreen extends ConsumerStatefulWidget {
   final String circleId;
@@ -66,9 +67,10 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(tripControllerProvider).isLoading;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Trip / Event')),
+      appBar: AppBar(title: Text(l10n.newTripEvent)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -79,13 +81,13 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (val) => val == null || val.isEmpty ? 'Please enter name' : null,
+                  decoration: InputDecoration(labelText: l10n.nameLabel),
+                  validator: (val) => val == null || val.isEmpty ? l10n.enterNameError : null,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<TripType>(
                   value: _selectedType,
-                  decoration: const InputDecoration(labelText: 'Type'),
+                  decoration: InputDecoration(labelText: l10n.typeLabel),
                   items: TripType.values.map((t) => DropdownMenuItem(
                     value: t,
                     child: Text(t.name.toUpperCase()),
@@ -95,7 +97,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'Location'),
+                  decoration: InputDecoration(labelText: l10n.locationLabel),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -104,7 +106,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => _pickDate(true),
                         icon: const Icon(Icons.date_range),
-                        label: Text(_startDate == null ? 'Start Date' : DateFormat.yMMMd().format(_startDate!)),
+                        label: Text(_startDate == null ? l10n.startDateLabel : DateFormat.yMMMd().format(_startDate!)),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -112,7 +114,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => _pickDate(false),
                         icon: const Icon(Icons.date_range),
-                        label: Text(_endDate == null ? 'End Date' : DateFormat.yMMMd().format(_endDate!)),
+                        label: Text(_endDate == null ? l10n.endDateLabel : DateFormat.yMMMd().format(_endDate!)),
                       ),
                     ),
                   ],
@@ -127,7 +129,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                   ),
                   child: isLoading 
                     ? const CircularProgressIndicator(color: Colors.white) 
-                    : const Text('Create'),
+                    : Text(l10n.createButton),
                 ),
               ],
             ),

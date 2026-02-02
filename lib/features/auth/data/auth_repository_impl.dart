@@ -114,7 +114,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       final firebaseUser = credential.user!;
       
-      await firebaseUser.sendEmailVerification();
+      await firebaseUser.sendEmailVerification(_getActionCodeSettings('/verify-email'));
       
       final newUser = UserModel(
         uid: firebaseUser.uid,
@@ -253,13 +253,27 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> resetPassword({required String email}) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      await _auth.sendPasswordResetEmail(
+        email: email,
+        actionCodeSettings: _getActionCodeSettings('/reset-password'),
+      );
       return right(null);
     } on FirebaseAuthException catch (e) {
       return left(Failure(e.message ?? 'Failed to send reset email'));
     } catch (e) {
       return left(Failure(e.toString()));
     }
+  }
+
+  ActionCodeSettings _getActionCodeSettings(String path) {
+    return ActionCodeSettings(
+      url: 'https://cocircle.mahato.in$path',
+      handleCodeInApp: true,
+      androidPackageName: AppEnvironment.packageName,
+      androidInstallApp: true,
+      androidMinimumVersion: '1',
+      iOSBundleId: 'in.mahato.cocircle',
+    );
   }
 
   @override
@@ -276,7 +290,7 @@ class AuthRepositoryImpl implements AuthRepository {
          return left(Failure('Email is already verified. Please sign in.'));
       }
 
-      await credential.user!.sendEmailVerification();
+      await credential.user!.sendEmailVerification(_getActionCodeSettings('/verify-email'));
       await _auth.signOut();
       
       return right(null);
