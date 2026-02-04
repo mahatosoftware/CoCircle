@@ -477,9 +477,14 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
         SizedBox(
           width: double.infinity,
           child: SegmentedButton<SplitType>(
+            style: SegmentedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
             segments: SplitType.values.map((s) => ButtonSegment<SplitType>(
               value: s,
-              label: Text(_getSplitTitle(s, context)),
+              label: Text(_getSplitTitle(s, context), overflow: TextOverflow.clip, softWrap: false),
             )).toList(),
             selected: {_selectedSplitType},
             onSelectionChanged: (Set<SplitType> newSelection) {
@@ -742,17 +747,6 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     }
   }
 
-  void _distributeEqually(double totalAmount) {
-    if (_payerAmounts.isEmpty) return;
-    final share = totalAmount / _payerAmounts.length;
-    setState(() {
-      for (var uid in _payerAmounts.keys) {
-        _payerAmounts[uid] = share;
-        _payerControllers[uid]?.text = share.toStringAsFixed(2);
-      }
-    });
-    if (widget.expense != null) _triggerAutoSave();
-  }
   
   IconData _getCategoryIcon(ExpenseCategory category) {
     switch (category) {

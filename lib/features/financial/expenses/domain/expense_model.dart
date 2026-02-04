@@ -73,4 +73,17 @@ abstract class ExpenseModel with _$ExpenseModel {
     }
     return true;
   }
+
+  Map<String, Map<String, dynamic>> toAuditChanges() {
+    return {
+      'title': {'old': title, 'new': null},
+      'amount': {'old': amount, 'new': null},
+      'date': {'old': date.toIso8601String(), 'new': null},
+      'category': {'old': category, 'new': null},
+      'splitType': {'old': splitType.name, 'new': null},
+      'notes': {'old': notes, 'new': null},
+      'payers': {'old': payers, 'new': null},
+      'splitDetails': {'old': splitDetails, 'new': null},
+    };
+  }
 }

@@ -102,8 +102,8 @@ class ExpenseController extends _$ExpenseController {
 
     final result = await ref.read(expenseRepositoryProvider).createExpense(expense);
 
-    result.fold(
-      (l) {
+    await result.fold(
+      (l) async {
         state = AsyncError(l.message, StackTrace.current);
         showSnackBar(context, l.message);
       },
@@ -218,8 +218,8 @@ class ExpenseController extends _$ExpenseController {
 
     final result = await ref.read(expenseRepositoryProvider).updateExpense(expense);
 
-    result.fold(
-      (l) {
+    await result.fold(
+      (l) async {
         state = AsyncError(l.message, StackTrace.current);
         showSnackBar(context, l.message);
       },
@@ -345,8 +345,8 @@ class ExpenseController extends _$ExpenseController {
     });
 
     final res = await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
-    res.fold(
-      (l) => showSnackBar(context, l.message),
+    await res.fold(
+      (l) async => showSnackBar(context, l.message),
       (r) async {
         showSnackBar(context, 'Expense deleted');
         context.pop();
@@ -365,12 +365,19 @@ class ExpenseController extends _$ExpenseController {
           );
         }
 
+        // Use the pre-fetched expense data for audit log
+        Map<String, Map<String, dynamic>>? changes;
+        expenseRes.fold((_) => null, (e) {
+          changes = e.toAuditChanges();
+        });
+
         await _logAction(
           tripId: tripId,
           expenseId: expenseId,
           action: AuditAction.delete,
           title: title,
           amount: amount,
+          changes: changes,
         );
       },
     );

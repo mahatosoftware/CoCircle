@@ -114,7 +114,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       final firebaseUser = credential.user!;
       
-      await firebaseUser.sendEmailVerification(_getActionCodeSettings('/verify-email'));
+      await firebaseUser.sendEmailVerification();
       
       final newUser = UserModel(
         uid: firebaseUser.uid,
@@ -255,7 +255,6 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _auth.sendPasswordResetEmail(
         email: email,
-        actionCodeSettings: _getActionCodeSettings('/reset-password'),
       );
       return right(null);
     } on FirebaseAuthException catch (e) {
@@ -263,17 +262,6 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       return left(Failure(e.toString()));
     }
-  }
-
-  ActionCodeSettings _getActionCodeSettings(String path) {
-    return ActionCodeSettings(
-      url: 'https://cocircle.mahato.in$path',
-      handleCodeInApp: true,
-      androidPackageName: AppEnvironment.packageName,
-      androidInstallApp: true,
-      androidMinimumVersion: '1',
-      iOSBundleId: 'in.mahato.cocircle',
-    );
   }
 
   @override
@@ -290,7 +278,7 @@ class AuthRepositoryImpl implements AuthRepository {
          return left(Failure('Email is already verified. Please sign in.'));
       }
 
-      await credential.user!.sendEmailVerification(_getActionCodeSettings('/verify-email'));
+      await credential.user!.sendEmailVerification();
       await _auth.signOut();
       
       return right(null);
