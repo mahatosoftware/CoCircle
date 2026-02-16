@@ -466,10 +466,6 @@ Stream<List<AuditLogModel>> tripAuditLogs(Ref ref, String tripId) {
 }
 
 @riverpod
-Future<ExpenseModel> expenseDetail(Ref ref, String expenseId) async {
-  final result = await ref.watch(expenseRepositoryProvider).getExpenseById(expenseId);
-  return result.fold(
-    (l) => throw Exception(l.message),
-    (r) => r,
-  );
+Stream<ExpenseModel> expenseDetail(Ref ref, String expenseId) {
+  return ref.watch(expenseRepositoryProvider).getExpenseStream(expenseId);
 }

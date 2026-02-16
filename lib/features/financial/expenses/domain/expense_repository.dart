@@ -10,6 +10,7 @@ abstract interface class ExpenseRepository {
   Future<Either<Failure, List<ExpenseModel>>> getExpensesForTrip(String tripId);
   Future<Either<Failure, ExpenseModel>> getExpenseById(String expenseId);
   Stream<List<ExpenseModel>> getExpensesStream(String tripId);
+  Stream<ExpenseModel> getExpenseStream(String expenseId);
   
   Future<Either<Failure, void>> saveAuditLog(AuditLogModel log);
   Stream<List<AuditLogModel>> getAuditLogsStream(String tripId);

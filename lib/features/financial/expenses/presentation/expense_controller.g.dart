@@ -33,7 +33,7 @@ final class ExpenseControllerProvider
   ExpenseController create() => ExpenseController();
 }
 
-String _$expenseControllerHash() => r'f76a3c7d7fedac67b25ad63995008a2cfe1267a7';
+String _$expenseControllerHash() => r'e2832ad911c4d51851e73689ac8a3808401cfc30';
 
 abstract class _$ExpenseController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -215,9 +215,9 @@ final class ExpenseDetailProvider
         $FunctionalProvider<
           AsyncValue<ExpenseModel>,
           ExpenseModel,
-          FutureOr<ExpenseModel>
+          Stream<ExpenseModel>
         >
-    with $FutureModifier<ExpenseModel>, $FutureProvider<ExpenseModel> {
+    with $FutureModifier<ExpenseModel>, $StreamProvider<ExpenseModel> {
   ExpenseDetailProvider._({
     required ExpenseDetailFamily super.from,
     required String super.argument,
@@ -241,12 +241,12 @@ final class ExpenseDetailProvider
 
   @$internal
   @override
-  $FutureProviderElement<ExpenseModel> $createElement(
+  $StreamProviderElement<ExpenseModel> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<ExpenseModel> create(Ref ref) {
+  Stream<ExpenseModel> create(Ref ref) {
     final argument = this.argument as String;
     return expenseDetail(ref, argument);
   }
@@ -262,10 +262,10 @@ final class ExpenseDetailProvider
   }
 }
 
-String _$expenseDetailHash() => r'14bf662440707b6296a07e75aa61dc9f24439ff4';
+String _$expenseDetailHash() => r'd892911fdbd03aed52b4dd3437c5c19365b04a2e';
 
 final class ExpenseDetailFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<ExpenseModel>, String> {
+    with $FunctionalFamilyOverride<Stream<ExpenseModel>, String> {
   ExpenseDetailFamily._()
     : super(
         retry: null,

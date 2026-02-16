@@ -93,6 +93,16 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }
 
   @override
+  Stream<ExpenseModel> getExpenseStream(String expenseId) {
+    return _expenses.doc(expenseId).snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        throw Exception('Expense not found');
+      }
+      return ExpenseModel.fromJson(snapshot.data()!);
+    });
+  }
+
+  @override
   Future<Either<Failure, void>> saveAuditLog(AuditLogModel log) async {
     try {
       await _auditLogs.doc(log.id).set(log.toJson());
