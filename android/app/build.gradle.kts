@@ -16,8 +16,22 @@ plugins {
 
 android {
     namespace = "in.mahato.cocircle"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "28.0.12433566"
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        dex {
+            useLegacyPackaging = false
+        }
+        // Ensure shared libraries are not compressed
+        jniLibs.useLegacyPackaging = false
+    }
 
     signingConfigs {
         create("release") {
@@ -42,8 +56,8 @@ android {
         applicationId = "in.mahato.cocircle"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        minSdk = 24
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -68,6 +82,10 @@ android {
             dimension = "default"
             resValue("string", "app_name", "CoCircle")
         }
+    }
+
+    aaptOptions {
+        noCompress("so")
     }
 }
 
