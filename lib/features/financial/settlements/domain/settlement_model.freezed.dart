@@ -216,8 +216,8 @@ return $default(_that.id,_that.tripId,_that.version,_that.timestamp,_that.balanc
 }
 
 /// @nodoc
+@JsonSerializable()
 
-@JsonSerializable(explicitToJson: true)
 class _SettlementModel implements SettlementModel {
   const _SettlementModel({required this.id, required this.tripId, required this.version, @TimestampConverter() required this.timestamp, required final  Map<String, double> balances, required final  List<SettlementTransaction> transactions, required final  List<String> expenseIdsIncluded, required this.createdBy}): _balances = balances,_transactions = transactions,_expenseIdsIncluded = expenseIdsIncluded;
   factory _SettlementModel.fromJson(Map<String, dynamic> json) => _$SettlementModelFromJson(json);
@@ -522,8 +522,8 @@ return $default(_that.fromUid,_that.toUid,_that.amount,_that.payerConfirmed,_tha
 }
 
 /// @nodoc
+@JsonSerializable()
 
-@JsonSerializable(explicitToJson: true)
 class _SettlementTransaction implements SettlementTransaction {
   const _SettlementTransaction({required this.fromUid, required this.toUid, required this.amount, this.payerConfirmed = false, this.receiverConfirmed = false, this.isCompleted = false, @TimestampConverter() this.completedAt});
   factory _SettlementTransaction.fromJson(Map<String, dynamic> json) => _$SettlementTransactionFromJson(json);

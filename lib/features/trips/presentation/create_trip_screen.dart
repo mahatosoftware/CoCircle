@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_pallete.dart';
-import '../../circles/domain/circle_model.dart';
 import '../domain/trip_model.dart';
 import 'trip_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';

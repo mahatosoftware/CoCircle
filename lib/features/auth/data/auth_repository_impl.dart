@@ -15,9 +15,7 @@ part 'auth_repository_impl.g.dart';
 AuthRepository authRepository(Ref ref) {
   return AuthRepositoryImpl(
     auth: FirebaseAuth.instance,
-    googleSignIn: GoogleSignIn(
-      serverClientId: AppEnvironment.googleServerClientId,
-    ),
+    googleSignIn: GoogleSignIn.instance,
     firestore: FirebaseFirestore.instance,
   );
 }
@@ -139,26 +137,28 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserModel>> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        debugPrint("Google Sign-In: User aborted the flow");
-        return left(Failure('Google Sign-In aborted'));
-      }
-
-      debugPrint("Google Sign-In: Account obtained: ${googleUser.email}");
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
       
-      if (googleAuth.idToken == null && googleAuth.accessToken == null) {
-        debugPrint("Google Sign-In Error: Both idToken and accessToken are null");
-        return left(Failure('Google Sign-In failed: Missing tokens'));
-      }
-
-      debugPrint("Google Sign-In: idToken: ${googleAuth.idToken != null ? 'Present' : 'Missing'}");
-      debugPrint("Google Sign-In: accessToken: ${googleAuth.accessToken != null ? 'Present' : 'Missing'}");
+      debugPrint("Google Sign-In: Account obtained: ${googleUser.email}");
+      
+      // Authentication tokens (ID Token)
+      final String? idToken = googleUser.authentication.idToken;
+      
+      // Authorization tokens (Access Token) - Required for full Firebase integration
+      // We request basic profile authorization to get an access token
+      final authz = await googleUser.authorizationClient.authorizeScopes([
+        'openid',
+        'email',
+        'profile',
+      ]);
+      final String accessToken = authz.accessToken;
+      
+      debugPrint("Google Sign-In: idToken: ${idToken != null ? 'Present' : 'Missing'}");
+      debugPrint("Google Sign-In: accessToken: Present");
 
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        accessToken: accessToken,
+        idToken: idToken,
       );
 
       final UserCredential userCredential = await _auth.signInWithCredential(credential);

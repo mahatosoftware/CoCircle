@@ -26,11 +26,6 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-        dex {
-            useLegacyPackaging = false
-        }
-        // Ensure shared libraries are not compressed
-        jniLibs.useLegacyPackaging = false
     }
 
     signingConfigs {
@@ -67,6 +62,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("release")
+            
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -113,6 +113,9 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    
+    // NEW: Required for Android 15 Edge-to-Edge support
+    implementation("androidx.activity:activity-ktx:1.10.0")
 }
 
 apply(plugin = "com.google.gms.google-services")

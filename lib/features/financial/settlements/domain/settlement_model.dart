@@ -7,7 +7,6 @@ part 'settlement_model.g.dart';
 
 @freezed
 abstract class SettlementModel with _$SettlementModel {
-  @JsonSerializable(explicitToJson: true)
   const factory SettlementModel({
     required String id,
     required String tripId,
@@ -24,7 +23,6 @@ abstract class SettlementModel with _$SettlementModel {
 
 @freezed
 abstract class SettlementTransaction with _$SettlementTransaction {
-  @JsonSerializable(explicitToJson: true)
   const factory SettlementTransaction({
     required String fromUid,
     required String toUid,
