@@ -96,6 +96,14 @@ flutter {
 configurations.all {
     resolutionStrategy {
         force("com.google.android.gms:play-services-auth:21.3.0")
+        
+        // Fix for 16 KB page size support in ML Kit and CameraX
+        force("com.google.mlkit:barcode-scanning:17.3.0")
+        force("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+        force("androidx.camera:camera-core:1.4.1")
+        force("androidx.camera:camera-camera2:1.4.1")
+        force("androidx.camera:camera-lifecycle:1.4.1")
+        force("androidx.camera:camera-view:1.4.1")
     }
 }
 
