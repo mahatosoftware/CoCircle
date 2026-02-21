@@ -9,10 +9,13 @@ import 'core/theme/app_theme.dart';
 import 'core/config/environment.dart';
 import 'router.dart';
 import 'firebase_options_prod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await MobileAds.instance.initialize();
   
   // Enable Edge-to-Edge at the Flutter level
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

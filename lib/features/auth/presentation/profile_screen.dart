@@ -5,6 +5,7 @@ import '../data/auth_repository_impl.dart';
 import 'profile_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
+import '../../../../core/widgets/ad_banner_widget.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -213,6 +214,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         : Text(l10n.updateProfile, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
+                  const AdBannerWidget(),
                   const SizedBox(height: 40),
                 ],
               ),

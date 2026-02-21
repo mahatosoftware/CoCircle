@@ -9,6 +9,7 @@ import 'package:cocircle/features/notifications/domain/notification_model.dart';
 import '../domain/circle_model.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
+import '../../../../core/widgets/native_ad_widget.dart';
 
 class MyCirclesScreen extends ConsumerWidget {
   const MyCirclesScreen({super.key});
@@ -94,11 +95,21 @@ class MyCirclesScreen extends ConsumerWidget {
               final currentUser = snapshot.data;
               if (currentUser == null) return const Center(child: CircularProgressIndicator());
 
+              final int adInterval = 3;
+              final int totalItems = circles.length + (circles.length / adInterval).floor();
+
               return ListView.builder(
-                itemCount: circles.length,
+                itemCount: totalItems,
                 padding: const EdgeInsets.all(16),
                 itemBuilder: (context, index) {
-                  final circle = circles[index];
+                  if (index > 0 && (index + 1) % (adInterval + 1) == 0) {
+                    return const NativeAdWidget();
+                  }
+
+                  final circleIndex = index - (index / (adInterval + 1)).floor();
+                  if (circleIndex >= circles.length) return const SizedBox.shrink();
+                  
+                  final circle = circles[circleIndex];
                   final pendingCount = circle.pendingMemberIds.length;
                   final isAdmin = circle.adminIds.contains(currentUser.uid);
                   final showBadge = isAdmin && pendingCount > 0;

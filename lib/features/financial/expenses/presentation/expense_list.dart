@@ -9,6 +9,7 @@ import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/copyright_footer.dart';
 
 import 'package:cocircle/l10n/app_localizations.dart';
+import '../../../../core/widgets/native_ad_widget.dart';
 
 class ExpenseList extends ConsumerWidget {
   final String tripId;
@@ -25,10 +26,20 @@ class ExpenseList extends ConsumerWidget {
         if (expenses.isEmpty) {
           return Center(child: Text(l10n.noExpensesYet));
         }
+        final int adInterval = 4;
+        final int totalItems = expenses.length + (expenses.length / adInterval).floor();
+
         return ListView.builder(
-          itemCount: expenses.length,
+          itemCount: totalItems,
           itemBuilder: (context, index) {
-            final expense = expenses[index];
+            if (index > 0 && (index + 1) % (adInterval + 1) == 0) {
+              return const NativeAdWidget();
+            }
+
+            final expenseIndex = index - (index / (adInterval + 1)).floor();
+            if (expenseIndex >= expenses.length) return const SizedBox.shrink();
+
+            final expense = expenses[expenseIndex];
             return ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.blueGrey[100],
