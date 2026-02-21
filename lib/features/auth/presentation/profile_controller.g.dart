@@ -41,7 +41,7 @@ final class ProfileControllerProvider
   }
 }
 
-String _$profileControllerHash() => r'6d3cc90b03b12cdff19527b4f02ad06b80aea722';
+String _$profileControllerHash() => r'366bd3b7f17519e633364b753776f2b446cffe8c';
 
 abstract class _$ProfileController extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

@@ -9,6 +9,8 @@ abstract class UserModel with _$UserModel {
     required String uid,
     required String email,
     required String displayName,
+    String? country,
+    String? vpa,
     String? photoUrl,
     required DateTime createdAt,
   }) = _UserModel;

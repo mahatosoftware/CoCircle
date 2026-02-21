@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
-import '../../../../core/config/environment.dart';
 import '../../../../core/errors/failure.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_model.dart';
@@ -227,7 +226,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> updateUserProfile({required String name, String? photoUrl}) async {
+  Future<Either<Failure, void>> updateUserProfile({required String name, String? country, String? vpa, String? photoUrl}) async {
     try {
       final user = _auth.currentUser;
       if (user == null) return left(Failure('User not found'));
@@ -241,8 +240,12 @@ class AuthRepositoryImpl implements AuthRepository {
       // Update Firestore
       await _firestore.collection('users').doc(user.uid).update({
         'displayName': name,
+        if (country != null) 'country': country,
+        if (vpa != null) 'vpa': vpa,
         if (photoUrl != null) 'photoUrl': photoUrl,
       });
+
+
 
       return right(null);
     } catch (e) {

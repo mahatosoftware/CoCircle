@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'widgets/trip_overview_view.dart';
 import 'widgets/finance_group_view.dart';
 import '../../polls/presentation/poll_list_view.dart';
 import '../../tasks/presentation/task_list_view.dart';
@@ -24,9 +23,9 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 4,
+      length: 3,
       vsync: this,
-      initialIndex: widget.initialTabIndex >= 4 ? 0 : widget.initialTabIndex,
+      initialIndex: widget.initialTabIndex >= 3 ? 0 : widget.initialTabIndex,
     );
     _tabController.addListener(() {
       setState(() {}); // Rebuild for FAB update
@@ -54,7 +53,6 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: l10n.overview, icon: const Icon(Icons.dashboard_outlined)),
             Tab(text: l10n.finance, icon: const Icon(Icons.payments_outlined)),
             Tab(text: l10n.polls, icon: const Icon(Icons.poll_outlined)),
             const Tab(text: 'Tasks', icon: Icon(Icons.task_alt_outlined)),
@@ -113,7 +111,6 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
            return TabBarView(
              controller: _tabController,
              children: [
-               TripOverviewView(trip: trip),
                FinanceGroupView(tripId: widget.tripId),
                PollListView(tripId: widget.tripId),
                TaskListView(tripId: widget.tripId),
@@ -123,7 +120,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
       ),
-      floatingActionButton: _tabController.index == 2
+      floatingActionButton: _tabController.index == 1
           ? Padding(
               padding: const EdgeInsets.only(bottom: 80),
               child: FloatingActionButton(
@@ -131,7 +128,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
                 child: const Icon(Icons.add),
               ),
             )
-          : _tabController.index == 1
+          : _tabController.index == 0
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 80),
                   child: FloatingActionButton(
@@ -143,3 +140,4 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
     );
   }
 }
+

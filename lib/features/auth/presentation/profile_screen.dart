@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:country_picker/country_picker.dart';
 import '../data/auth_repository_impl.dart';
 import 'profile_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import '../../../../core/theme/app_pallete.dart';
-import '../../../../core/widgets/copyright_footer.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -15,7 +15,10 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
+  final _vpaController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String? _selectedCountry;
+  String? _countryFlag;
 
   @override
   void initState() {
@@ -27,12 +30,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = await ref.read(authRepositoryProvider).getCurrentUser();
     if (user != null) {
       _nameController.text = user.displayName;
+      _vpaController.text = user.vpa ?? '';
+      setState(() {
+        _selectedCountry = user.country;
+        if (_selectedCountry != null) {
+          final country = Country.tryParse(_selectedCountry!);
+          _countryFlag = country?.flagEmoji;
+        }
+      });
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _vpaController.dispose();
     super.dispose();
   }
 
@@ -41,6 +53,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userAsync = ref.watch(authStateChangesProvider);
     final isUpdating = ref.watch(profileControllerProvider).isLoading;
     final l10n = AppLocalizations.of(context)!;
+
+    final isIndia = _selectedCountry == 'India';
 
     return Scaffold(
       appBar: AppBar(
@@ -112,6 +126,71 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       helperText: l10n.emailCannotBeChanged,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () {
+                      showCountryPicker(
+                        context: context,
+                        showPhoneCode: false,
+                        onSelect: (Country country) {
+                          setState(() {
+                            _selectedCountry = country.name;
+                            _countryFlag = country.flagEmoji;
+                          });
+                        },
+                      );
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Country',
+                        prefixIcon: Icon(Icons.public),
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Row(
+                        children: [
+                          if (_countryFlag != null) ...[
+                            Text(_countryFlag!, style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(_selectedCountry ?? 'Select Country'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (isIndia) ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _vpaController,
+                      decoration: const InputDecoration(
+                        labelText: 'UPI ID / VPA',
+                        hintText: 'e.g. user@bank',
+                        prefixIcon: Icon(Icons.payment),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (val) {
+                        if (isIndia && (val == null || val.isEmpty)) {
+                          return 'Please enter your UPI ID';
+                        }
+                        if (val != null && val.isNotEmpty && !val.contains('@')) {
+                          return 'Please enter a valid UPI ID';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    const Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 14, color: Colors.grey),
+                        SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            "Always verify the receiver's name and vpa inside the UPI app before completing the payment.",
+                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
@@ -120,6 +199,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         if (_formKey.currentState!.validate()) {
                           ref.read(profileControllerProvider.notifier).updateProfile(
                             name: _nameController.text.trim(),
+                            country: _selectedCountry,
+                            vpa: isIndia ? _vpaController.text.trim() : null,
                             context: context,
                           );
                         }
@@ -141,6 +222,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           );
         },
+
+
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(AppLocalizations.of(context)!.errorWithDetails(e.toString()))),
       ),

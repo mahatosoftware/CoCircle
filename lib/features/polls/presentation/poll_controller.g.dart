@@ -33,7 +33,7 @@ final class PollControllerProvider
   PollController create() => PollController();
 }
 
-String _$pollControllerHash() => r'7b4eb08e3e54349a14f94cc4dee52fb68b94127e';
+String _$pollControllerHash() => r'a31c0df7a85e84d2e5b93cb038b654e2ce6d1e33';
 
 abstract class _$PollController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -108,7 +108,7 @@ final class TripPollsProvider
   }
 }
 
-String _$tripPollsHash() => r'05d04c364f9b9e436799316fad696ae1415a00bf';
+String _$tripPollsHash() => r'c3ae3e1c5cd61422394e032b258a9f215e6ced08';
 
 final class TripPollsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<PollModel>>, String> {

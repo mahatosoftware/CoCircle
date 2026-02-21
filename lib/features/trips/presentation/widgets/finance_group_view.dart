@@ -86,38 +86,34 @@ class _FinanceGroupViewState extends ConsumerState<FinanceGroupView>
                     ),
                   ),
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: TabBar(
-                    controller: _tabController,
-                    indicatorSize: TabBarIndicatorSize.label,
-                    indicator: UnderlineTabIndicator(
-                      borderSide: BorderSide(
-                        width: 3,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      insets: const EdgeInsets.only(bottom: 70), // Move indicator to top
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  indicator: UnderlineTabIndicator(
+                    borderSide: BorderSide(
+                      width: 3,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                    tabs: [
-                      Tab(
-                        text: l10n.expensesTab,
-                        icon: const Icon(Icons.receipt_long_outlined),
-                      ),
-                      Tab(
-                        text: l10n.settlementsTab,
-                        icon: const Icon(Icons.handshake_outlined),
-                      ),
-                      Tab(
-                        text: l10n.insightsTab,
-                        icon: const Icon(Icons.insights_outlined),
-                      ),
-                      Tab(
-                        text: l10n.auditTab,
-                        icon: const Icon(Icons.history_outlined),
-                      ),
-                    ],
-
+                    insets: const EdgeInsets.only(bottom: 70), // Move indicator to top
                   ),
+                  tabs: [
+                    Tab(
+                      text: l10n.expensesTab,
+                      icon: const Icon(Icons.receipt_long_outlined),
+                    ),
+                    Tab(
+                      text: l10n.settlementsTab,
+                      icon: const Icon(Icons.handshake_outlined),
+                    ),
+                    Tab(
+                      text: l10n.insightsTab,
+                      icon: const Icon(Icons.insights_outlined),
+                    ),
+                    Tab(
+                      text: l10n.auditTab,
+                      icon: const Icon(Icons.history_outlined),
+                    ),
+                  ],
                 ),
               ),
             ],

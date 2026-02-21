@@ -10,7 +10,7 @@ abstract interface class AuthRepository {
   Future<Either<Failure, void>> signOut();
   Future<UserModel?> getCurrentUser();
   Future<List<UserModel>> getUsersByIds(List<String> userIds);
-  Future<Either<Failure, void>> updateUserProfile({required String name, String? photoUrl});
+  Future<Either<Failure, void>> updateUserProfile({required String name, String? country, String? vpa, String? photoUrl});
   Future<Either<Failure, void>> resetPassword({required String email});
   Future<Either<Failure, void>> resendVerificationEmail({required String email, required String password});
 }

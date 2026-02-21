@@ -43,4 +43,7 @@ const _$NotificationTypeEnumMap = {
   NotificationType.expenseUpdated: 'expenseUpdated',
   NotificationType.expenseDeleted: 'expenseDeleted',
   NotificationType.circleJoinRequest: 'circleJoinRequest',
+  NotificationType.pollCreated: 'pollCreated',
+  NotificationType.pollOptionAdded: 'pollOptionAdded',
+  NotificationType.pollUpdated: 'pollUpdated',
 };

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository_impl.dart';
 import 'package:cocircle/core/utils/snackbar.dart';
@@ -13,10 +12,16 @@ class ProfileController extends _$ProfileController {
 
   Future<void> updateProfile({
     required String name,
+    String? country,
+    String? vpa,
     required BuildContext context,
   }) async {
     state = const AsyncLoading();
-    final result = await ref.read(authRepositoryProvider).updateUserProfile(name: name);
+    final result = await ref.read(authRepositoryProvider).updateUserProfile(
+          name: name,
+          country: country,
+          vpa: vpa,
+        );
     
     result.fold(
       (failure) {

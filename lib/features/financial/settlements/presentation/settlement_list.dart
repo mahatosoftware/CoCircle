@@ -8,9 +8,11 @@ import 'package:cocircle/features/financial/settlements/presentation/settlement_
 import 'package:cocircle/features/financial/expenses/domain/expense_model.dart';
 import 'package:cocircle/features/financial/expenses/presentation/expense_controller.dart';
 import 'package:cocircle/features/financial/settlements/domain/settlement_model.dart';
-import 'package:cocircle/core/widgets/copyright_footer.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
+import 'package:cocircle/features/auth/domain/user_model.dart';
+import 'package:flutter_upi_india/flutter_upi_india.dart';
 import 'package:collection/collection.dart';
+import 'package:cocircle/core/utils/snackbar.dart';
 
 class SettlementList extends ConsumerWidget {
   final String tripId;
@@ -140,7 +142,7 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
-  Widget _buildActiveSettlementCard(BuildContext context, WidgetRef ref, SettlementTransaction t, List<dynamic> members) {
+  Widget _buildActiveSettlementCard(BuildContext context, WidgetRef ref, SettlementTransaction t, List<UserModel> members) {
     final l10n = AppLocalizations.of(context)!;
     final fromMember = members.firstWhereOrNull((m) => m.uid == t.fromUid);
     final toMember = members.firstWhereOrNull((m) => m.uid == t.toUid);
@@ -179,6 +181,22 @@ class SettlementList extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
               ),
             ),
+            if (isPayer && toMember?.vpa != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _initiateUpiTransaction(context, t, toMember!, currency),
+                    icon: const Icon(Icons.account_balance_outlined, size: 18),
+                    label: const Text('Pay via UPI'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      side: const BorderSide(color: Colors.green),
+                    ),
+                  ),
+                ),
+              ),
             if (isPayer || isReceiver)
               SizedBox(
                 width: double.infinity,
@@ -198,7 +216,7 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryTile(BuildContext context, ExpenseModel expense, List<dynamic> members) {
+  Widget _buildHistoryTile(BuildContext context, ExpenseModel expense, List<UserModel> members) {
     final l10n = AppLocalizations.of(context)!;
     final fromUid = expense.payerId;
     final toUid = expense.splitDetails.keys.first;
@@ -256,4 +274,100 @@ class SettlementList extends ConsumerWidget {
       },
     );
   }
+
+  Future<void> _initiateUpiTransaction(
+    BuildContext context,
+    SettlementTransaction t,
+    UserModel receiver,
+    String currency,
+  ) async {
+    if (receiver.vpa == null) return;
+
+    List<ApplicationMeta>? apps;
+
+    try {
+      apps = await UpiPay.getInstalledUpiApplications(
+        statusType: UpiApplicationDiscoveryAppStatusType.all,
+      );
+    } catch (e) {
+      if (context.mounted) showSnackBar(context, 'Error fetching UPI apps: $e');
+      return;
+    }
+
+    if (apps.isEmpty) {
+      if (context.mounted) showSnackBar(context, 'No UPI apps found on this device.');
+      return;
+    }
+
+    if (context.mounted) {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    'Select UPI App',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: apps!.length,
+                    itemBuilder: (context, index) {
+                      final appMeta = apps![index];
+                      return ListTile(
+                        leading: SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: appMeta.iconImage(48),
+                        ),
+                        title: Text(appMeta.upiApplication.getAppName()),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          try {
+                            await UpiPay.initiateTransaction(
+                              app: appMeta.upiApplication,
+                              receiverUpiAddress: receiver.vpa!,
+                              receiverName: receiver.displayName,
+                              transactionRef: 'SETTLE_${DateTime.now().millisecondsSinceEpoch}',
+                              transactionNote: 'Settlement for trip',
+                              amount: t.amount.toStringAsFixed(2),
+                            );
+                          } catch (e) {
+                            if (context.mounted) showSnackBar(context, 'Transaction failed: $e');
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 14, color: Colors.grey),
+                    SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        "Always verify the receiver's name and vpa inside the UPI app before completing the payment.",
+                        style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
 }
+
+
+
