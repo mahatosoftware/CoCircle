@@ -61,7 +61,6 @@ class TripController extends _$TripController {
       },
     );
   }
-
   Future<void> updateTripName({
     required TripModel trip,
     required String newName,
