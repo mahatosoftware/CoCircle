@@ -6,109 +6,147 @@ import '../../trips/presentation/trip_controller.dart';
 import '../domain/task_model.dart';
 import 'task_controller.dart';
 
-class TaskListView extends ConsumerWidget {
+class TaskListView extends ConsumerStatefulWidget {
   final String tripId;
 
   const TaskListView({super.key, required this.tripId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tasksAsync = ref.watch(tripTasksProvider(tripId));
-    final tripAsync = ref.watch(tripDetailsProvider(tripId));
+  ConsumerState<TaskListView> createState() => _TaskListViewState();
+}
 
-    return tasksAsync.when(
-      data: (tasks) {
-        return tripAsync.when(
-          data: (trip) {
-            final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
-            return membersAsync.when(
-              data: (members) {
-                final memberMap = {for (final m in members) m.uid: m.displayName};
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: tasks.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return _TaskHeader(
-                        onCreatePressed: () => _showCreateTaskDialog(context, ref),
-                      );
-                    }
+class _TaskListViewState extends ConsumerState<TaskListView> {
+  late final TextEditingController _controller;
+  final _focusNode = FocusNode();
 
-                    final task = tasks[index - 1];
-                    return _TaskCard(
-                      task: task,
-                      completedByName: task.completedBy != null
-                          ? (memberMap[task.completedBy!] ?? 'Member')
-                          : null,
-                      onMarkComplete: () => ref
-                          .read(taskControllerProvider.notifier)
-                          .markTaskComplete(task: task, context: context),
-                      onDelete: () => _showDeleteConfirmation(context, ref, task),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text(e.toString())),
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(e.toString())),
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submitTask() {
+    final title = _controller.text.trim();
+    if (title.isEmpty) return;
+
+    ref.read(taskControllerProvider.notifier).createTask(
+          tripId: widget.tripId,
+          title: title,
+          context: context,
         );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(e.toString())),
+    _controller.clear();
+    _focusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tasksAsync = ref.watch(tripTasksProvider(widget.tripId));
+    final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
+
+    return Column(
+      children: [
+        Expanded(
+          child: tasksAsync.when(
+            data: (tasks) {
+              return tripAsync.when(
+                data: (trip) {
+                  final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
+                  return membersAsync.when(
+                    data: (members) {
+                      final memberMap = {for (final m in members) m.uid: m.displayName};
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: tasks.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return const _TaskHeader();
+                          }
+
+                          final task = tasks[index - 1];
+                          return _TaskCard(
+                            task: task,
+                            completedByName: task.completedBy != null
+                                ? (memberMap[task.completedBy!] ?? 'Member')
+                                : null,
+                            onMarkComplete: () => ref
+                                .read(taskControllerProvider.notifier)
+                                .markTaskComplete(task: task, context: context),
+                            onDelete: () => _showDeleteConfirmation(context, ref, task),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text(e.toString())),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text(e.toString())),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text(e.toString())),
+          ),
+        ),
+        _buildBottomInput(),
+      ],
     );
   }
 
-  void _showCreateTaskDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Create Task'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            labelText: 'Task title',
-            border: OutlineInputBorder(),
-          ),
-          onSubmitted: (_) {
-            final title = controller.text.trim();
-            if (title.isEmpty) return;
-            ref.read(taskControllerProvider.notifier).createTask(
-                  tripId: tripId,
-                  title: title,
-                  context: context,
-                );
-            Navigator.of(dialogContext).pop();
-          },
+  Widget _buildBottomInput() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(
+          top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 16, right: 8, top: 8, bottom: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  textCapitalization: TextCapitalization.sentences,
+                  minLines: 1,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: 'Add a task...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.withValues(alpha: 0.1),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  onSubmitted: (_) => _submitTask(),
+                ),
+
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: _submitTask,
+                icon: const Icon(Icons.send_rounded),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              final title = controller.text.trim();
-              if (title.isEmpty) return;
-              ref.read(taskControllerProvider.notifier).createTask(
-                    tripId: tripId,
-                    title: title,
-                    context: context,
-                  );
-              Navigator.of(dialogContext).pop();
-            },
-            child: const Text('Create'),
-          ),
-        ],
+        ),
       ),
     );
   }
+
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref, TaskModel task) {
     showDialog(
@@ -138,25 +176,18 @@ class TaskListView extends ConsumerWidget {
 }
 
 class _TaskHeader extends StatelessWidget {
-  final VoidCallback onCreatePressed;
-
-  const _TaskHeader({required this.onCreatePressed});
+  const _TaskHeader();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(4, 0, 0, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Tasks',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          IconButton(
-            tooltip: 'Create task',
-            onPressed: onCreatePressed,
-            icon: const Icon(Icons.add_task_outlined),
           ),
         ],
       ),
@@ -217,3 +248,4 @@ class _TaskCard extends StatelessWidget {
     );
   }
 }
+

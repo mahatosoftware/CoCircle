@@ -124,16 +124,20 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
         error: (err, stack) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
       ),
       floatingActionButton: _tabController.index == 2
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/trip/${widget.tripId}/create-poll'),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.createPoll),
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 80),
+              child: FloatingActionButton(
+                onPressed: () => context.push('/trip/${widget.tripId}/create-poll'),
+                child: const Icon(Icons.add),
+              ),
             )
           : _tabController.index == 1
-              ? FloatingActionButton.extended(
-                  onPressed: () => context.push('/trip/${widget.tripId}/create-expense'),
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.addExpense),
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 80),
+                  child: FloatingActionButton(
+                    onPressed: () => context.push('/trip/${widget.tripId}/create-expense'),
+                    child: const Icon(Icons.add),
+                  ),
                 )
               : null,
     );

@@ -47,20 +47,6 @@ class _FinanceGroupViewState extends ConsumerState<FinanceGroupView>
         return circleAsync.when(
           data: (circle) => Column(
             children: [
-              Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  tabs: [
-                    Tab(text: l10n.expensesTab),
-                    Tab(text: l10n.settlementsTab),
-                    Tab(text: l10n.insightsTab),
-                    Tab(text: l10n.auditTab),
-                  ],
-                ),
-              ),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -91,8 +77,52 @@ class _FinanceGroupViewState extends ConsumerState<FinanceGroupView>
                   ],
                 ),
               ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    indicator: UnderlineTabIndicator(
+                      borderSide: BorderSide(
+                        width: 3,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      insets: const EdgeInsets.only(bottom: 70), // Move indicator to top
+                    ),
+                    tabs: [
+                      Tab(
+                        text: l10n.expensesTab,
+                        icon: const Icon(Icons.receipt_long_outlined),
+                      ),
+                      Tab(
+                        text: l10n.settlementsTab,
+                        icon: const Icon(Icons.handshake_outlined),
+                      ),
+                      Tab(
+                        text: l10n.insightsTab,
+                        icon: const Icon(Icons.insights_outlined),
+                      ),
+                      Tab(
+                        text: l10n.auditTab,
+                        icon: const Icon(Icons.history_outlined),
+                      ),
+                    ],
+
+                  ),
+                ),
+              ),
             ],
           ),
+
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text(e.toString())),
         );
