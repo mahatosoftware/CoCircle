@@ -322,6 +322,9 @@ class MyCirclesScreen extends ConsumerWidget {
       case NotificationType.expenseUpdated: return Icons.edit_note;
       case NotificationType.expenseDeleted: return Icons.delete_sweep;
       case NotificationType.circleJoinRequest: return Icons.person_add;
+      case NotificationType.pollCreated: return Icons.poll;
+      case NotificationType.pollOptionAdded: return Icons.add_chart;
+      case NotificationType.pollUpdated: return Icons.edit_calendar;
     }
   }
 

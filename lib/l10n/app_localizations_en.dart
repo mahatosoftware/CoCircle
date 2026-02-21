@@ -576,10 +576,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settlements => 'Settlements';
 
   @override
-  String get insights => 'Insights';
+  String get insights => '📊 Insights';
 
   @override
-  String get audit => 'Audit';
+  String get audit => '🔍 Audit';
 
   @override
   String get editTripName => 'Edit Trip Name';
@@ -717,6 +717,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String settlementPlanTitle(String currency) {
     return 'Settlement Plan ($currency)';
   }
+
+  @override
+  String get finance => 'Finance';
+
+  @override
+  String get overview => 'Overview';
+
+  @override
+  String get polls => 'Polls';
+
+  @override
+  String get expense => 'Expense';
+
+  @override
+  String get settlement => 'Settlement';
+
+  @override
+  String get createPoll => 'Create Poll';
+
+  @override
+  String get pollQuestion => 'Question';
+
+  @override
+  String get enterQuestionError => 'Please enter a question';
+
+  @override
+  String get pollOptions => 'Options';
+
+  @override
+  String get addOption => 'Add Option';
+
+  @override
+  String get createPollButton => 'Create Poll';
+
+  @override
+  String votesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '1 vote',
+      zero: 'No votes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noPollsYet => 'No polls created';
+
+  @override
+  String get closePoll => 'Close Poll';
+
+  @override
+  String get pollClosed => 'Poll Closed';
+
+  @override
+  String get optionLimitError => 'Minimum 2 options required';
+
+  @override
+  String get allowMultipleSelections => 'Allow multiple selections';
+
+  @override
+  String get viewResults => 'View Results';
+
+  @override
+  String get editPoll => 'Edit Poll';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get deletePoll => 'Delete Poll';
+
+  @override
+  String get confirmDeletePoll => 'Are you sure you want to delete this poll?';
 
   @override
   String copyrightText(String year) {

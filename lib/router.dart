@@ -17,6 +17,9 @@ import 'features/auth/presentation/profile_screen.dart';
 import 'features/circles/presentation/qr_scanner_screen.dart';
 import 'features/financial/expenses/presentation/audit_log_detail_screen.dart';
 import 'features/financial/expenses/domain/audit_log_model.dart';
+import 'features/financial/presentation/trip_finance_section_screen.dart';
+import 'features/polls/presentation/create_poll_screen.dart';
+import 'features/polls/domain/poll_model.dart';
 import 'core/widgets/copyright_footer.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -153,6 +156,26 @@ final routerProvider = Provider<GoRouter>((ref) {
                       final currency = extra['currency'] as String;
                       final memberNames = extra['memberNames'] as Map<String, String>;
                       return AuditLogDetailScreen(log: log, currency: currency, memberNames: memberNames);
+                    },
+                  ),
+                   GoRoute(
+                    path: 'finance/:type',
+                    builder: (context, state) {
+                      final tripId = state.pathParameters['tripId']!;
+                      final typeStr = state.pathParameters['type']!;
+                      final type = FinanceSectionType.values.firstWhere(
+                        (e) => e.name == typeStr,
+                        orElse: () => FinanceSectionType.expenses,
+                      );
+                      return TripFinanceSectionScreen(tripId: tripId, type: type);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'create-poll',
+                    builder: (context, state) {
+                      final tripId = state.pathParameters['tripId']!;
+                      final poll = state.extra as PollModel?;
+                      return CreatePollScreen(tripId: tripId, poll: poll);
                     },
                   ),
                 ],

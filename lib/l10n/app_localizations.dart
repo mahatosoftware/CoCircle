@@ -1069,13 +1069,13 @@ abstract class AppLocalizations {
   /// No description provided for @insights.
   ///
   /// In en, this message translates to:
-  /// **'Insights'**
+  /// **'📊 Insights'**
   String get insights;
 
   /// No description provided for @audit.
   ///
   /// In en, this message translates to:
-  /// **'Audit'**
+  /// **'🔍 Audit'**
   String get audit;
 
   /// Title for edit trip name dialog
@@ -1305,6 +1305,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settlement Plan ({currency})'**
   String settlementPlanTitle(String currency);
+
+  /// No description provided for @finance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get finance;
+
+  /// No description provided for @overview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get overview;
+
+  /// No description provided for @polls.
+  ///
+  /// In en, this message translates to:
+  /// **'Polls'**
+  String get polls;
+
+  /// No description provided for @expense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get expense;
+
+  /// No description provided for @settlement.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement'**
+  String get settlement;
+
+  /// No description provided for @createPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Poll'**
+  String get createPoll;
+
+  /// No description provided for @pollQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get pollQuestion;
+
+  /// No description provided for @enterQuestionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a question'**
+  String get enterQuestionError;
+
+  /// No description provided for @pollOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get pollOptions;
+
+  /// No description provided for @addOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Option'**
+  String get addOption;
+
+  /// No description provided for @createPollButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Poll'**
+  String get createPollButton;
+
+  /// No description provided for @votesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}'**
+  String votesCount(int count);
+
+  /// No description provided for @noPollsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No polls created'**
+  String get noPollsYet;
+
+  /// No description provided for @closePoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Poll'**
+  String get closePoll;
+
+  /// No description provided for @pollClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Poll Closed'**
+  String get pollClosed;
+
+  /// No description provided for @optionLimitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 2 options required'**
+  String get optionLimitError;
+
+  /// No description provided for @allowMultipleSelections.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow multiple selections'**
+  String get allowMultipleSelections;
+
+  /// No description provided for @viewResults.
+  ///
+  /// In en, this message translates to:
+  /// **'View Results'**
+  String get viewResults;
+
+  /// No description provided for @editPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Poll'**
+  String get editPoll;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @deletePoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Poll'**
+  String get deletePoll;
+
+  /// No description provided for @confirmDeletePoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this poll?'**
+  String get confirmDeletePoll;
 
   /// Copyright text in the footer
   ///

@@ -446,7 +446,37 @@
       }
     }
   },
-  "loadCircleError": "Error loading circle: {error}",
+  "finance": "Finance",
+  "overview": "Overview",
+  "polls": "Polls",
+  "expense": "Expense",
+  "settlement": "Settlement",
+  "insights": "📊 Insights",
+  "audit": "🔍 Audit",
+  "createPoll": "Create Poll",
+  "pollQuestion": "Question",
+  "enterQuestionError": "Please enter a question",
+  "pollOptions": "Options",
+  "addOption": "Add Option",
+  "createPollButton": "Create Poll",
+  "votesCount": "{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}",
+  "@votesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noPollsYet": "No polls created",
+  "closePoll": "Close Poll",
+  "pollClosed": "Poll Closed",
+  "optionLimitError": "Minimum 2 options required",
+  "allowMultipleSelections": "Allow multiple selections",
+  "viewResults": "View Results",
+  "editPoll": "Edit Poll",
+  "saveChanges": "Save Changes",
+  "deletePoll": "Delete Poll",
+  "confirmDeletePoll": "Are you sure you want to delete this poll?",
   "copyrightText": "© {year} CoCircle. All rights reserved.",
   "@copyrightText": {
     "description": "Copyright text in the footer",

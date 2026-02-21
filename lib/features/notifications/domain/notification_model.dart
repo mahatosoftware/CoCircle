@@ -8,6 +8,9 @@ enum NotificationType {
   expenseUpdated,
   expenseDeleted,
   circleJoinRequest,
+  pollCreated,
+  pollOptionAdded,
+  pollUpdated,
 }
 
 @freezed
