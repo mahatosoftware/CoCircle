@@ -168,9 +168,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (val) {
-                        if (isIndia && (val == null || val.isEmpty)) {
-                          return 'Please enter your UPI ID';
-                        }
                         if (val != null && val.isNotEmpty && !val.contains('@')) {
                           return 'Please enter a valid UPI ID';
                         }

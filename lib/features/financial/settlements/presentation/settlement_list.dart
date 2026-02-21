@@ -12,6 +12,8 @@ import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:cocircle/features/auth/domain/user_model.dart';
 import 'package:flutter_upi_india/flutter_upi_india.dart';
 import 'package:collection/collection.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
 import 'package:cocircle/core/utils/snackbar.dart';
 
 class SettlementList extends ConsumerWidget {
@@ -24,74 +26,103 @@ class SettlementList extends ConsumerWidget {
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
     final activeSettlementsAsync = ref.watch(activeSettlementsProvider(tripId));
     final expensesAsync = ref.watch(tripExpensesProvider(tripId));
+    final currentUserAsync = ref.watch(authStateChangesProvider);
     final l10n = AppLocalizations.of(context)!;
 
     return tripAsync.when(
       data: (trip) {
         final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
-        
+
         return activeSettlementsAsync.when(
           data: (settlements) {
-            return expensesAsync.when(
-              data: (expenses) {
-                final history = expenses.where((e) => e.category == ExpenseCategory.settlement.name).toList();
+            return membersAsync.when(
+              data: (members) {
+                return expensesAsync.when(
+                  data: (expenses) {
+                    final currentUser = currentUserAsync.value;
+                    final isUserVpaEmpty = currentUser == null || currentUser.vpa == null || currentUser.vpa!.isEmpty;
 
-                if (settlements.isEmpty && history.isEmpty) {
-                  return _buildEmptyState(context, ref);
-                }
+                    final isAnyReceiverVpaEmpty = settlements.any((t) {
+                      final receiver = members.firstWhereOrNull((m) => m.uid == t.toUid);
+                      return receiver == null || receiver.vpa == null || receiver.vpa!.isEmpty;
+                    });
 
-                return SizedBox(
-                  width: double.infinity,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch, // Ensure cards take full width
-                    children: [
-                      if (settlements.isNotEmpty) ...[
-                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                          child: Text(
-                            l10n.activeSettlements,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        ...settlements.asMap().entries.map((entry) {
-                          final t = entry.value;
-                          return membersAsync.when(
-                            data: (members) => _buildActiveSettlementCard(context, ref, t, members),
-                            loading: () => const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: LinearProgressIndicator(),
+                    final showUpiMessage = isUserVpaEmpty || isAnyReceiverVpaEmpty;
+                    final history = expenses.where((e) => e.category == ExpenseCategory.settlement.name).toList();
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (showUpiMessage)
+                          Container(
+                            margin: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                             ),
-                            error: (err, _) => Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text('Error loading members: $err'),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.info_outline, color: Colors.blue),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        l10n.enableUpiMessage,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () => context.push('/profile'),
+                                  child: Text(l10n.goToProfile),
+                                ),
+                              ],
                             ),
-                          );
-                        }),
+                          ),
+                        if (settlements.isEmpty && history.isEmpty)
+                          _buildEmptyState(context, ref)
+                        else ...[
+                          if (settlements.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                              child: Text(
+                                l10n.activeSettlements,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ...settlements.asMap().entries.map((entry) {
+                              final t = entry.value;
+                              return _buildActiveSettlementCard(context, ref, t, members);
+                            }),
+                          ],
+                          if (history.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 32, 16, 12),
+                              child: Text(
+                                l10n.settlementHistory,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ...history.map((expense) => _buildHistoryTile(context, expense, members)),
+                          ],
+                          const SizedBox(height: 100),
+                        ],
                       ],
-                      if (history.isNotEmpty) ...[
-                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 32, 16, 12),
-                          child: Text(
-                            l10n.settlementHistory,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        ...history.map((expense) => membersAsync.when(
-                          data: (members) => _buildHistoryTile(context, expense, members),
-                          loading: () => const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: LinearProgressIndicator(),
-                          ),
-                          error: (err, _) => Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text('Error: $err'),
-                          ),
-                        )),
-                      ],
-                      const SizedBox(height: 100),
-                    ],
+                    );
+                  },
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40.0),
+                      child: CircularProgressIndicator(),
+                    ),
                   ),
+                  error: (e, _) => Center(child: Text('Error loading history: $e')),
                 );
               },
               loading: () => const Center(
@@ -100,7 +131,7 @@ class SettlementList extends ConsumerWidget {
                   child: CircularProgressIndicator(),
                 ),
               ),
-              error: (e, _) => Center(child: Text('Error loading history: $e')),
+              error: (err, _) => Center(child: Text('Error loading members: $err')),
             );
           },
           loading: () => const Center(
@@ -109,7 +140,7 @@ class SettlementList extends ConsumerWidget {
               child: CircularProgressIndicator(),
             ),
           ),
-          error: (e, _) => Center(child: Text('Error calculating settlements: $e')),
+          error: (e, _) => Center(child: Text(l10n.calculateSettlementsError(e.toString()))),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -127,12 +158,12 @@ class SettlementList extends ConsumerWidget {
         children: [
           Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.green[100]),
           const SizedBox(height: 24),
-           Text(
+          Text(
             l10n.allSettledUp,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           const SizedBox(height: 12),
-           Text(
+          Text(
             l10n.allSettledUpDescription,
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.grey, fontSize: 14),
@@ -171,7 +202,7 @@ class SettlementList extends ConsumerWidget {
                   style: const TextStyle(color: Colors.black87, fontSize: 14),
                   children: [
                     TextSpan(text: fromName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    TextSpan(text: ' ${l10n.paysLabel('', '').split('  ').first.split('pays').first.isEmpty ? ' pays ' : l10n.paysLabel('', '').replaceAll('{from}', '').replaceAll('{to}', '')} '), 
+                    TextSpan(text: ' ${l10n.paysLabel('', '').split('  ').first.split('pays').first.isEmpty ? ' pays ' : l10n.paysLabel('', '').replaceAll('{from}', '').replaceAll('{to}', '')} '),
                     TextSpan(text: toName, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -220,10 +251,10 @@ class SettlementList extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final fromUid = expense.payerId;
     final toUid = expense.splitDetails.keys.first;
-    
+
     final fromMember = members.firstWhereOrNull((m) => m.uid == fromUid);
     final toMember = members.firstWhereOrNull((m) => m.uid == toUid);
-    
+
     final fromName = fromMember?.displayName ?? fromUid.substring(0, 4);
     final toName = toMember?.displayName ?? toUid.substring(0, 4);
 
@@ -242,15 +273,15 @@ class SettlementList extends ConsumerWidget {
     final currentUser = FirebaseAuth.instance.currentUser;
     final isPayer = currentUser?.uid == t.fromUid;
 
-     showDialog(
+    showDialog(
       context: context,
       builder: (dialogContext) {
         final l10n = AppLocalizations.of(context)!;
         return AlertDialog(
           title: Text(l10n.settleUp),
-          content: Text(isPayer 
-            ? l10n.confirmPaidMessage(currency, t.amount, toName)
-            : l10n.confirmReceivedMessage(currency, t.amount, fromName)),
+          content: Text(isPayer
+              ? l10n.confirmPaidMessage(currency, t.amount, toName)
+              : l10n.confirmReceivedMessage(currency, t.amount, fromName)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -259,12 +290,12 @@ class SettlementList extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 ref.read(settlementControllerProvider.notifier).settleUp(
-                  tripId: tripId,
-                  fromUid: t.fromUid,
-                  toUid: t.toUid,
-                  amount: t.amount,
-                  context: context, // Using outer context
-                );
+                      tripId: tripId,
+                      fromUid: t.fromUid,
+                      toUid: t.toUid,
+                      amount: t.amount,
+                      context: context, // Using outer context
+                    );
                 Navigator.pop(dialogContext);
               },
               child: Text(l10n.confirm),
@@ -368,6 +399,3 @@ class SettlementList extends ConsumerWidget {
     }
   }
 }
-
-
-
