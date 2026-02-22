@@ -47,7 +47,8 @@ class SettlementList extends ConsumerWidget {
                       return receiver == null || receiver.vpa == null || receiver.vpa!.isEmpty;
                     });
 
-                    final showUpiMessage = isUserVpaEmpty || isAnyReceiverVpaEmpty;
+                    final isInr = currency.toUpperCase() == 'INR' || currency == '₹';
+                    final showUpiMessage = isInr && (isUserVpaEmpty || isAnyReceiverVpaEmpty);
                     final history = expenses.where((e) => e.category == ExpenseCategory.settlement.name).toList();
 
                     return Column(
@@ -212,7 +213,7 @@ class SettlementList extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
               ),
             ),
-            if (isPayer && toMember?.vpa != null)
+            if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
               Padding(
                 padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
                 child: SizedBox(
@@ -361,14 +362,16 @@ class SettlementList extends ConsumerWidget {
                         onTap: () async {
                           Navigator.pop(context);
                           try {
-                            await UpiPay.initiateTransaction(
+                            final cleanName = receiver.displayName.replaceAll(RegExp(r'[^\w\s]'), '');
+                            final response = await UpiPay.initiateTransaction(
                               app: appMeta.upiApplication,
                               receiverUpiAddress: receiver.vpa!,
-                              receiverName: receiver.displayName,
-                              transactionRef: 'SETTLE_${DateTime.now().millisecondsSinceEpoch}',
-                              transactionNote: 'Settlement for trip',
+                              receiverName: cleanName.length > 30 ? cleanName.substring(0, 30) : cleanName,
+                              transactionRef: '${DateTime.now().millisecondsSinceEpoch.toString().substring(3, 13)}',
+                              transactionNote: 'CoCircle Settlement', // Short, generic note
                               amount: t.amount.toStringAsFixed(2),
                             );
+                            debugPrint('UPI Transaction Response: $response');
                           } catch (e) {
                             if (context.mounted) showSnackBar(context, 'Transaction failed: $e');
                           }

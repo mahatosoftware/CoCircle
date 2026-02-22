@@ -1447,7 +1447,7 @@ abstract class AppLocalizations {
   /// No description provided for @enableUpiMessage.
   ///
   /// In en, this message translates to:
-  /// **'UPI payments are available for users in India.\nBoth sender and receiver must set their country to India and add their UPI ID (VPA) in the Profile screen to enable this feature.\n\nAfter completing the UPI payment, return here and tap Settle Up to record the transaction.'**
+  /// **'UPI payments are available for users in India.\nBoth sender and receiver must set their country to India and add their UPI ID (VPA) in the Profile screen to enable this feature.\nAfter completing the UPI payment, return here and tap Settle Up to record the transaction.'**
   String get enableUpiMessage;
 
   /// No description provided for @goToProfile.
