@@ -10,7 +10,7 @@ import 'package:cocircle/features/financial/expenses/presentation/expense_contro
 import 'package:cocircle/features/financial/settlements/domain/settlement_model.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:cocircle/features/auth/domain/user_model.dart';
-import 'package:flutter_upi_india/flutter_upi_india.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
@@ -213,22 +213,22 @@ class SettlementList extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
               ),
             ),
-            if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _initiateUpiTransaction(context, t, toMember!, currency),
-                    icon: const Icon(Icons.account_balance_outlined, size: 18),
-                    label: const Text('Pay via UPI'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.green,
-                      side: const BorderSide(color: Colors.green),
-                    ),
-                  ),
-                ),
-              ),
+//             if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
+//               Padding(
+//                 padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+//                 child: SizedBox(
+//                   width: double.infinity,
+//                   child: OutlinedButton.icon(
+//                     onPressed: () => _initiateUpiTransaction(context, t, toMember!, currency),
+//                     icon: const Icon(Icons.account_balance_outlined, size: 18),
+//                     label: const Text('Pay via UPI'),
+//                     style: OutlinedButton.styleFrom(
+//                       foregroundColor: Colors.green,
+//                       side: const BorderSide(color: Colors.green),
+//                     ),
+//                   ),
+//                 ),
+//               ),
             if (isPayer || isReceiver)
               SizedBox(
                 width: double.infinity,
@@ -307,7 +307,127 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
+  void _showUPIReviewSheet(
+    BuildContext context,
+    SettlementTransaction t,
+    UserModel receiver,
+    String currency,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              'Review Payment',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            _buildReviewRow('Amount', '$currency${t.amount.toStringAsFixed(2)}', isBold: true),
+            const Divider(height: 32),
+            _buildReviewRow('To', receiver.displayName),
+            const SizedBox(height: 8),
+            _buildReviewRow('UPI ID', receiver.vpa ?? ''),
+            const SizedBox(height: 8),
+            _buildReviewRow('Note', 'CoCircle Settlement'),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Verify the receiver's name inside the UPI app before confirming.",
+                      style: TextStyle(fontSize: 12, color: Colors.amber[900]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _launchUPIIntent(context, t, receiver, currency);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Open UPI App', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isBold ? 18 : 14,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _initiateUpiTransaction(
+    BuildContext context,
+    SettlementTransaction t,
+    UserModel receiver,
+    String currency,
+  ) async {
+    _showUPIReviewSheet(context, t, receiver, currency);
+  }
+
+  Future<void> _launchUPIIntent(
     BuildContext context,
     SettlementTransaction t,
     UserModel receiver,
@@ -315,90 +435,98 @@ class SettlementList extends ConsumerWidget {
   ) async {
     if (receiver.vpa == null) return;
 
-    List<ApplicationMeta>? apps;
+    final String receiverVpa = receiver.vpa!;
+    final String receiverName = receiver.displayName.replaceAll(RegExp(r'[^\w\s]'), '');
+    final String amount = t.amount.toStringAsFixed(2);
+    final String transactionRef = DateTime.now().millisecondsSinceEpoch.toString().substring(3, 13);
+    const String transactionNote = 'CoCircle Settlement';
 
-    try {
-      apps = await UpiPay.getInstalledUpiApplications(
-        statusType: UpiApplicationDiscoveryAppStatusType.all,
-      );
-    } catch (e) {
-      if (context.mounted) showSnackBar(context, 'Error fetching UPI apps: $e');
+    final String query = 'pa=${Uri.encodeComponent(receiverVpa)}'
+        '&pn=${Uri.encodeComponent(receiverName)}'
+        '&am=$amount'
+        '&tr=$transactionRef'
+        '&tn=${Uri.encodeComponent(transactionNote)}'
+        '&cu=INR';
+
+    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (!isIOS) {
+      // Android: Standard system picker via upi://
+      final Uri upiUri = Uri.parse('upi://pay?$query');
+      if (await canLaunchUrl(upiUri)) {
+        await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) showSnackBar(context, 'No UPI apps found to handle this request.');
+      }
       return;
     }
 
-    if (apps.isEmpty) {
-      if (context.mounted) showSnackBar(context, 'No UPI apps found on this device.');
+    // iOS Implementation: Check specific apps because there's no system picker
+    final List<_IOSUpiApp> apps = [
+      _IOSUpiApp(name: 'Google Pay', scheme: 'tez://pay?'),
+      _IOSUpiApp(name: 'PhonePe', scheme: 'phonepe://pay?'),
+      _IOSUpiApp(name: 'Paytm', scheme: 'paytmmp://pay?'),
+      _IOSUpiApp(name: 'BHIM', scheme: 'bhim://pay?'),
+      _IOSUpiApp(name: 'Amazon Pay', scheme: 'amazonpay://pay?'),
+    ];
+
+    final List<_IOSUpiApp> installedApps = [];
+    for (var app in apps) {
+      if (await canLaunchUrl(Uri.parse(app.scheme))) {
+        installedApps.add(app);
+      }
+    }
+
+    if (installedApps.isEmpty) {
+      // Fallback to generic upi://
+      final Uri genericUri = Uri.parse('upi://pay?$query');
+      if (await canLaunchUrl(genericUri)) {
+        await launchUrl(genericUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) showSnackBar(context, 'No UPI apps found on this device.');
+      }
       return;
     }
 
     if (context.mounted) {
       showModalBottomSheet(
         context: context,
-        builder: (context) {
-          return SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Select UPI App',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: apps!.length,
-                    itemBuilder: (context, index) {
-                      final appMeta = apps![index];
-                      return ListTile(
-                        leading: SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: appMeta.iconImage(48),
-                        ),
-                        title: Text(appMeta.upiApplication.getAppName()),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          try {
-                            final cleanName = receiver.displayName.replaceAll(RegExp(r'[^\w\s]'), '');
-                            final response = await UpiPay.initiateTransaction(
-                              app: appMeta.upiApplication,
-                              receiverUpiAddress: receiver.vpa!,
-                              receiverName: cleanName.length > 30 ? cleanName.substring(0, 30) : cleanName,
-                              transactionRef: '${DateTime.now().millisecondsSinceEpoch.toString().substring(3, 13)}',
-                              transactionNote: 'CoCircle Settlement', // Short, generic note
-                              amount: t.amount.toStringAsFixed(2),
-                            );
-                            debugPrint('UPI Transaction Response: $response');
-                          } catch (e) {
-                            if (context.mounted) showSnackBar(context, 'Transaction failed: $e');
-                          }
-                        },
-                      );
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Select UPI App', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              ...installedApps.map((app) => ListTile(
+                    leading: const Icon(Icons.account_balance_wallet_outlined, color: Colors.green),
+                    title: Text(app.name),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final Uri launchUri = Uri.parse('${app.scheme}$query');
+                      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
                     },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 14, color: Colors.grey),
-                    SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        "Always verify the receiver's name and vpa inside the UPI app before completing the payment.",
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          );
-        },
+                  )),
+              ListTile(
+                leading: const Icon(Icons.open_in_new),
+                title: const Text('Default UPI App'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await launchUrl(Uri.parse('upi://pay?$query'), mode: LaunchMode.externalApplication);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       );
     }
   }
+}
+
+class _IOSUpiApp {
+  final String name;
+  final String scheme;
+  _IOSUpiApp({required this.name, required this.scheme});
 }
