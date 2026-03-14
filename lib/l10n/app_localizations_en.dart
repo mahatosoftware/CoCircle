@@ -204,7 +204,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTripsYet => 'No trips or events yet';
 
   @override
-  String get planATrip => 'Plan a Trip';
+  String get planATrip => 'Plan a Trip or Event';
 
   @override
   String get noDateSet => 'No date set';

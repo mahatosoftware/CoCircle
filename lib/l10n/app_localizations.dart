@@ -457,7 +457,7 @@ abstract class AppLocalizations {
   /// No description provided for @planATrip.
   ///
   /// In en, this message translates to:
-  /// **'Plan a Trip'**
+  /// **'Plan a Trip or Event'**
   String get planATrip;
 
   /// No description provided for @noDateSet.
