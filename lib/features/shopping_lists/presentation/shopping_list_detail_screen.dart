@@ -82,6 +82,8 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
               final now = DateTime.now();
               final formattedDate = DateFormat('MMM d, yyyy • h:mm a').format(now);
               
+              buffer.writeln('✨ Shared via CoCircle ✨');
+              buffer.writeln();
               buffer.writeln('🛒 Shopping List: ${_currentList.name}');
               buffer.writeln('📅 Shared on: $formattedDate');
               buffer.writeln();
