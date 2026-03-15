@@ -8,6 +8,7 @@ import 'shopping_list_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import '../domain/shopping_list_model.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ShoppingListDetailScreen extends ConsumerStatefulWidget {
   final ShoppingListModel shoppingList;
@@ -67,6 +68,35 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
       appBar: AppBar(
         title: Text(_currentList.name),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () {
+              final items = itemsStream.value;
+              if (items == null || items.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No items to share.')),
+                );
+                return;
+              }
+              final buffer = StringBuffer();
+              final now = DateTime.now();
+              final formattedDate = DateFormat('MMM d, yyyy • h:mm a').format(now);
+              
+              buffer.writeln('🛒 Shopping List: ${_currentList.name}');
+              buffer.writeln('📅 Shared on: $formattedDate');
+              buffer.writeln();
+              buffer.writeln('Items:');
+              for (final item in items) {
+                final quantityStr = (item.quantity > 0 && item.unit.isNotEmpty)
+                    ? '(${item.quantity.toStringAsFixed(item.quantity.truncateToDouble() == item.quantity ? 0 : 2)} ${item.unit})'
+                    : '';
+                final checkbox = item.isCompleted ? '✅' : '⬜️';
+                buffer.writeln('$checkbox ${item.title} $quantityStr'.trim());
+              }
+              // ignore: deprecated_member_use
+              Share.share(buffer.toString());
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _editName,
