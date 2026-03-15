@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_pallete.dart';
+import '../../auth/domain/user_model.dart';
+import '../../circles/presentation/circle_controller.dart';
 import 'shopping_list_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import '../domain/shopping_list_model.dart';
@@ -57,6 +60,7 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
   @override
   Widget build(BuildContext context) {
     final itemsStream = ref.watch(shoppingListItemsProvider(_currentList.id));
+    final membersAsync = ref.watch(circleMembersProvider(_currentList.circleId));
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -102,9 +106,43 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              final subtitle = (item.quantity > 0 && item.unit.isNotEmpty)
+              final quantityStr = (item.quantity > 0 && item.unit.isNotEmpty)
                   ? '${item.quantity.toStringAsFixed(item.quantity.truncateToDouble() == item.quantity ? 0 : 2)} ${item.unit}'
                   : null;
+
+              String? completedText;
+              if (item.isCompleted && item.completedBy != null && item.completedAt != null) {
+                final members = membersAsync.value ?? [];
+                UserModel? user;
+                for (final m in members) {
+                  if (m.uid == item.completedBy) {
+                    user = m;
+                    break;
+                  }
+                }
+                final name = user?.displayName ?? 'Someone';
+                final time = DateFormat('MMM d, h:mm a').format(item.completedAt!.toLocal());
+                completedText = 'Completed by $name at $time';
+              }
+
+              Widget? subtitleWidget;
+              if (completedText != null) {
+                subtitleWidget = Text(
+                  quantityStr != null ? '$quantityStr\n$completedText' : completedText,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                );
+              } else if (quantityStr != null) {
+                subtitleWidget = Text(
+                  quantityStr,
+                  style: TextStyle(
+                    decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                    color: item.isCompleted ? Colors.grey : null,
+                  ),
+                );
+              }
 
               return ListTile(
                 leading: Checkbox(
@@ -125,15 +163,7 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
                     color: item.isCompleted ? Colors.grey : null,
                   ),
                 ),
-                subtitle: subtitle != null
-                    ? Text(
-                        subtitle,
-                        style: TextStyle(
-                          decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-                          color: item.isCompleted ? Colors.grey : null,
-                        ),
-                      )
-                    : null,
+                subtitle: subtitleWidget,
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.grey),
                   onPressed: () {
