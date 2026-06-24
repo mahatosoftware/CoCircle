@@ -86,6 +86,28 @@ class TripController extends _$TripController {
       },
     );
   }
+
+  Future<void> toggleTripActive({
+    required TripModel trip,
+    required BuildContext context,
+  }) async {
+    state = const AsyncLoading();
+    final updatedTrip = trip.copyWith(isActive: !trip.isActive);
+    final result = await ref.read(tripRepositoryProvider).updateTrip(updatedTrip);
+
+    result.fold(
+      (l) {
+        state = AsyncError(l.message, StackTrace.current);
+        showSnackBar(context, 'Failed to update trip status: ${l.message}');
+      },
+      (r) {
+        state = const AsyncData(null);
+        showSnackBar(context, 'Trip marked as ${updatedTrip.isActive ? 'active' : 'inactive'}');
+        ref.invalidate(tripDetailsProvider(trip.id));
+        ref.invalidate(circleTripsProvider(trip.circleId));
+      },
+    );
+  }
 }
 
 @riverpod

@@ -59,50 +59,82 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              tripAsync.whenData((trip) {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    final controller = TextEditingController(text: trip.name);
-                    return AlertDialog(
-                      title: Text(l10n.editTripName),
-                      content: TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          labelText: l10n.tripNameLabel,
-                          border: const OutlineInputBorder(),
+          tripAsync.when(
+            data: (trip) => PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      final controller = TextEditingController(text: trip.name);
+                      return AlertDialog(
+                        title: Text(l10n.editTripName),
+                        content: TextField(
+                          controller: controller,
+                          decoration: InputDecoration(
+                            labelText: l10n.tripNameLabel,
+                            border: const OutlineInputBorder(),
+                          ),
+                          autofocus: true,
+                          textCapitalization: TextCapitalization.sentences,
                         ),
-                        autofocus: true,
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(l10n.cancel),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            final newName = controller.text.trim();
-                            if (newName.isNotEmpty && newName != trip.name) {
-                              ref.read(tripControllerProvider.notifier).updateTripName(
-                                  trip: trip,
-                                  newName: newName,
-                                  context: context,
-                                );
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Text(l10n.save),
-                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(l10n.cancel),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              final newName = controller.text.trim();
+                              if (newName.isNotEmpty && newName != trip.name) {
+                                ref.read(tripControllerProvider.notifier).updateTripName(
+                                    trip: trip,
+                                    newName: newName,
+                                    context: context,
+                                  );
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: Text(l10n.save),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else if (value == 'toggleActive') {
+                  ref.read(tripControllerProvider.notifier).toggleTripActive(
+                    trip: trip,
+                    context: context,
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.edit_outlined),
+                        const SizedBox(width: 8),
+                        Text(l10n.editTripName),
                       ],
-                    );
-                  },
-                );
-              });
-            },
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'toggleActive',
+                    child: Row(
+                      children: [
+                        Icon(trip.isActive ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                        const SizedBox(width: 8),
+                        Text(trip.isActive ? 'Mark as Inactive' : 'Mark as Active'),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+            ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
         ],
       ),

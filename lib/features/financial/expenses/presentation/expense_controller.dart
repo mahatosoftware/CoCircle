@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/errors/failure.dart';
 import 'package:cocircle/core/utils/snackbar.dart';
 import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
@@ -12,6 +13,8 @@ import '../domain/expense_model.dart';
 import '../domain/audit_log_model.dart';
 import 'package:cocircle/features/notifications/domain/notification_model.dart';
 import 'package:cocircle/features/notifications/data/notification_repository_impl.dart';
+import 'package:cocircle/features/trips/data/trip_repository_impl.dart';
+import 'package:cocircle/features/circles/data/circle_repository_impl.dart';
 
 part 'expense_controller.g.dart';
 
@@ -124,8 +127,6 @@ class ExpenseController extends _$ExpenseController {
           title: 'New Expense Added',
           body: '${user.displayName} added "$title" ($amount)',
           type: NotificationType.expenseAdded,
-          payers: payers,
-          splitDetails: splitDetails,
           actorUid: user.uid,
         );
       },
@@ -241,8 +242,6 @@ class ExpenseController extends _$ExpenseController {
           title: 'Expense Updated',
           body: '${user.displayName} updated "$title" ($amount)',
           type: NotificationType.expenseUpdated,
-          payers: payers,
-          splitDetails: splitDetails,
           actorUid: user.uid,
         );
       },
@@ -359,8 +358,6 @@ class ExpenseController extends _$ExpenseController {
             title: 'Expense Deleted',
             body: '${user.displayName} deleted "$title"',
             type: NotificationType.expenseDeleted,
-            payers: payers,
-            splitDetails: splitDetails, 
             actorUid: user.uid,
           );
         }
@@ -414,16 +411,24 @@ class ExpenseController extends _$ExpenseController {
     required String title,
     required String body,
     required NotificationType type,
-    required Map<String, double> payers,
-    required Map<String, double> splitDetails,
     required String actorUid,
   }) async {
-    final recipients = <String>{...payers.keys, ...splitDetails.keys};
+    // Fetch Trip to get circleId
+    final tripResult = await ref.read(tripRepositoryProvider).getTripById(tripId);
+    if (tripResult.isLeft()) return;
+    final trip = tripResult.getRight().toNullable();
+    if (trip == null) return;
+
+    // Fetch Circle to get all memberIds
+    final circleResult = await ref.read(circleRepositoryProvider).getCircleById(trip.circleId);
+    if (circleResult.isLeft()) return;
+    final circle = circleResult.getRight().toNullable();
+    if (circle == null) return;
+
+    final recipients = Set<String>.from(circle.memberIds);
     recipients.remove(actorUid);
 
-    // If it's a delete, or we don't have participants, we might want to notify all trip members.
-    // However, the request specifically said "payer and participants".
-    
+    // 1. Send in-app notifications
     for (final recipientUid in recipients) {
       final notification = NotificationModel(
         id: const Uuid().v4(),
@@ -440,6 +445,43 @@ class ExpenseController extends _$ExpenseController {
         expenseId: expenseId,
       );
       await ref.read(notificationRepositoryProvider).sendNotification(notification);
+    }
+
+    final emailText = '$body\n\nGroup: ${circle.name}\nTrip: ${trip.name}';
+    final emailHtml = '<p>$body</p><p><strong>Group:</strong> ${circle.name}<br><strong>Trip:</strong> ${trip.name}</p>';
+
+    // 2. Send email via Firebase Trigger Email extension
+    await _sendExpenseEmail(
+      memberIds: circle.memberIds,
+      title: title,
+      text: emailText,
+      html: emailHtml,
+    );
+  }
+
+  Future<void> _sendExpenseEmail({
+    required List<String> memberIds,
+    required String title,
+    required String text,
+    required String html,
+  }) async {
+    final authRepo = ref.read(authRepositoryProvider);
+    final users = await authRepo.getUsersByIds(memberIds);
+    
+    final emails = users.map((u) => u.email).where((e) => e.isNotEmpty).toList();
+    if (emails.isEmpty) return;
+
+    try {
+      await FirebaseFirestore.instance.collection('mail').add({
+        'to': emails,
+        'message': {
+          'subject': title,
+          'text': text,
+          'html': html,
+        }
+      });
+    } catch (e) {
+      debugPrint('Failed to send expense email: $e');
     }
   }
 

@@ -24,6 +24,8 @@ import 'core/widgets/copyright_footer.dart';
 import 'features/shopping_lists/presentation/create_shopping_list_screen.dart';
 import 'features/shopping_lists/presentation/shopping_list_detail_screen.dart';
 import 'features/shopping_lists/domain/shopping_list_model.dart';
+import 'features/circles/presentation/circle_trips_screen.dart';
+import 'features/circles/presentation/circle_shopping_lists_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -116,6 +118,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) {
                       final circleId = state.pathParameters['circleId']!;
                       return CreateShoppingListScreen(circleId: circleId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'trips',
+                    builder: (context, state) {
+                      final circleId = state.pathParameters['circleId']!;
+                      return CircleTripsScreen(circleId: circleId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'shopping-lists',
+                    builder: (context, state) {
+                      final circleId = state.pathParameters['circleId']!;
+                      return CircleShoppingListsScreen(circleId: circleId);
                     },
                   ),
                 ]
