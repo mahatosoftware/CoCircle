@@ -149,9 +149,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   final tripId = state.pathParameters['tripId']!;
                   final tab = state.uri.queryParameters['tab'];
                   int initialTab = 0;
-                  if (tab == 'polls') initialTab = 1;
-                  if (tab == 'tasks') initialTab = 2;
-                  if (tab == 'settlements' || tab == 'insights' || tab == 'audit') initialTab = 0;
+                  if (tab == 'plan') initialTab = 0;
+                  if (tab == 'finance') initialTab = 1;
+                  if (tab == 'polls') initialTab = 2;
+                  if (tab == 'tasks') initialTab = 3;
+                  if (tab == 'settlements' || tab == 'insights' || tab == 'audit') initialTab = 1;
                   
                   return TripDetailScreen(tripId: tripId, initialTabIndex: initialTab);
                 },

@@ -13,7 +13,7 @@ class AdHelper {
     }
     // Replace with real IDs for production
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Placeholder
+      return 'ca-app-pub-8382655413286804/9572647653'; // Placeholder
     } else if (Platform.isIOS) {
       return 'ca-app-pub-3940256099942544/2934735716'; // Placeholder
     }
@@ -30,7 +30,7 @@ class AdHelper {
     }
     // Replace with real IDs for production
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/2247696110'; // Placeholder
+      return 'ca-app-pub-8382655413286804/3816565158'; // Placeholder
     } else if (Platform.isIOS) {
       return 'ca-app-pub-3940256099942544/3986624511'; // Placeholder
     }

@@ -33,7 +33,7 @@ final class ExpenseControllerProvider
   ExpenseController create() => ExpenseController();
 }
 
-String _$expenseControllerHash() => r'e2832ad911c4d51851e73689ac8a3808401cfc30';
+String _$expenseControllerHash() => r'193f6da4fdb14a3eebe8deb9e9befa8b93348c65';
 
 abstract class _$ExpenseController extends $AsyncNotifier<void> {
   FutureOr<void> build();
