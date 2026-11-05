@@ -17,6 +17,32 @@ class PackingSection extends ConsumerStatefulWidget {
 class _PackingSectionState extends ConsumerState<PackingSection> {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
+  int _selectedCategoryIndex = 0;
+
+  // Available Categories
+  static const List<Map<String, dynamic>> _categories = [
+    {'label': 'All', 'tag': null, 'icon': Icons.all_inclusive_rounded, 'color': Colors.blue},
+    {'label': 'Clothing', 'tag': '#clothing', 'icon': Icons.checkroom_rounded, 'color': Colors.teal},
+    {'label': 'Electronics', 'tag': '#electronics', 'icon': Icons.power_rounded, 'color': Colors.purple},
+    {'label': 'Documents', 'tag': '#documents', 'icon': Icons.assignment_rounded, 'color': Colors.red},
+    {'label': 'Essentials', 'tag': '#essentials', 'icon': Icons.favorite_rounded, 'color': Colors.amber},
+    {'label': 'General', 'tag': '#general', 'icon': Icons.backpack_rounded, 'color': Colors.grey},
+  ];
+
+  String _getCategoryFromTitle(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('#clothing') || lower.contains('#clothes')) return '#clothing';
+    if (lower.contains('#electronics') || lower.contains('#tech') || lower.contains('#electronic')) return '#electronics';
+    if (lower.contains('#documents') || lower.contains('#docs') || lower.contains('#document')) return '#documents';
+    if (lower.contains('#essentials') || lower.contains('#essential')) return '#essentials';
+    return '#general';
+  }
+
+  String _cleanTitle(String title) {
+    return title
+        .replaceAll(RegExp(r'#(clothing|clothes|electronics|tech|electronic|documents|docs|document|essentials|essential|general)', caseSensitive: false), '')
+        .trim();
+  }
 
   @override
   void dispose() {
@@ -37,6 +63,117 @@ class _PackingSectionState extends ConsumerState<PackingSection> {
 
     _textController.clear();
     _focusNode.unfocus();
+  }
+
+  Widget _buildCategoryTabBar(ThemeData theme, List<PackingItemModel> items) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+        ),
+      ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final category = _categories[index];
+          final isSelected = _selectedCategoryIndex == index;
+          final color = category['color'] as Color;
+          
+          // Count items in this category
+          final tag = category['tag'];
+          final count = tag == null
+              ? items.length
+              : items.where((item) => _getCategoryFromTitle(item.title) == tag).length;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              selected: isSelected,
+              label: Row(
+                children: [
+                  Icon(
+                    category['icon'] as IconData,
+                    size: 14,
+                    color: isSelected ? Colors.white : color,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    category['label'] as String,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _selectedCategoryIndex = index);
+                }
+              },
+              selectedColor: color,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              checkmarkColor: Colors.white,
+              showCheckmark: false,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isSelected ? color : Colors.grey.withValues(alpha: 0.15),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryBadge(PackingItemModel item, ThemeData theme) {
+    final tag = _getCategoryFromTitle(item.title);
+    if (tag == '#general') return const SizedBox.shrink();
+    
+    final category = _categories.firstWhere((c) => c['tag'] == tag, orElse: () => _categories.last);
+    final color = category['color'] as Color;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        category['label'] as String,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    );
   }
 
   @override
@@ -61,39 +198,73 @@ class _PackingSectionState extends ConsumerState<PackingSection> {
                 );
               }
 
-              return tripAsync.when(
-                data: (trip) {
-                  final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
-                  return membersAsync.when(
-                    data: (members) {
-                      final memberMap = {for (final m in members) m.uid: m.displayName};
-                      final sortedItems = List<PackingItemModel>.from(items)
-                        ..sort((a, b) {
-                          if (a.isPacked != b.isPacked) {
-                            return a.isPacked ? 1 : -1;
-                          }
-                          return b.createdAt.compareTo(a.createdAt);
-                        });
+              return Column(
+                children: [
+                  _buildCategoryTabBar(theme, items),
+                  Expanded(
+                    child: tripAsync.when(
+                      data: (trip) {
+                        final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
+                        return membersAsync.when(
+                          data: (members) {
+                            final memberMap = {for (final m in members) m.uid: m.displayName};
+                            
+                            // Filter items by category
+                            final categoryTag = _categories[_selectedCategoryIndex]['tag'];
+                            final filteredItems = categoryTag == null
+                                ? items
+                                : items.where((item) => _getCategoryFromTitle(item.title) == categoryTag).toList();
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: sortedItems.length,
-                        itemBuilder: (context, index) {
-                          final item = sortedItems[index];
-                          final assigneeName = item.assignedTo != null
-                              ? (memberMap[item.assignedTo!] ?? 'Member')
-                              : null;
+                            final sortedItems = List<PackingItemModel>.from(filteredItems)
+                              ..sort((a, b) {
+                                if (a.isPacked != b.isPacked) {
+                                  return a.isPacked ? 1 : -1;
+                                }
+                                return b.createdAt.compareTo(a.createdAt);
+                              });
 
-                          return _buildPackingItemRow(context, item, assigneeName, members, currentUserId, theme);
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text(e.toString())),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text(e.toString())),
+                            if (sortedItems.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.backpack_outlined,
+                                      size: 48,
+                                      color: Colors.grey.withValues(alpha: 0.5),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'No items in ${_categories[_selectedCategoryIndex]['label']}',
+                                      style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: sortedItems.length,
+                              itemBuilder: (context, index) {
+                                final item = sortedItems[index];
+                                final assigneeName = item.assignedTo != null
+                                    ? (memberMap[item.assignedTo!] ?? 'Member')
+                                    : null;
+
+                                return _buildPackingItemRow(context, item, assigneeName, members, currentUserId, theme);
+                              },
+                            );
+                          },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (e, _) => Center(child: Text(e.toString())),
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Center(child: Text(e.toString())),
+                    ),
+                  ),
+                ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -134,13 +305,20 @@ class _PackingSectionState extends ConsumerState<PackingSection> {
             }
           },
         ),
-        title: Text(
-          item.title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            decoration: item.isPacked ? TextDecoration.lineThrough : null,
-            color: item.isPacked ? Colors.grey : null,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _cleanTitle(item.title),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  decoration: item.isPacked ? TextDecoration.lineThrough : null,
+                  color: item.isPacked ? Colors.grey : null,
+                ),
+              ),
+            ),
+            _buildCategoryBadge(item, theme),
+          ],
         ),
         subtitle: _buildAssigneeBadge(context, item, assigneeName, members, currentUserId, theme),
         trailing: IconButton(
@@ -300,6 +478,7 @@ class _PackingSectionState extends ConsumerState<PackingSection> {
   }
 
   Widget _buildBottomInput(String currentUserId) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -333,7 +512,47 @@ class _PackingSectionState extends ConsumerState<PackingSection> {
                   onSubmitted: (_) => _submitItem(currentUserId),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
+              // Category Picker Dropdown
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.label_outline_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+                tooltip: 'Select Category Tag',
+                onSelected: (tag) {
+                  final text = _textController.text;
+                  if (tag.isNotEmpty && !text.toLowerCase().contains(tag.toLowerCase())) {
+                    _textController.text = '$text $tag'.trim();
+                    _textController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: _textController.text.length),
+                    );
+                    _focusNode.requestFocus();
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return _categories
+                      .where((c) => c['tag'] != null) // skip "All"
+                      .map((category) {
+                    final tag = category['tag'] as String;
+                    final label = category['label'] as String;
+                    final icon = category['icon'] as IconData;
+                    final color = category['color'] as Color;
+
+                    return PopupMenuItem<String>(
+                      value: tag,
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 18, color: color),
+                          const SizedBox(width: 8),
+                          Text(label, style: const TextStyle(fontSize: 13)),
+                        ],
+                      ),
+                    );
+                  }).toList();
+                },
+              ),
+              const SizedBox(width: 4),
               IconButton.filled(
                 onPressed: () => _submitItem(currentUserId),
                 icon: const Icon(Icons.send_rounded),

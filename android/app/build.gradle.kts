@@ -17,7 +17,7 @@ plugins {
 android {
     namespace = "in.mahato.cocircle"
     compileSdk = 37
-    ndkVersion = "28.0.12433566"
+    ndkVersion = flutter.ndkVersion
 
     packaging {
         jniLibs {

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/config/environment.dart';
 import 'router.dart';
 import 'firebase_options_prod.dart';
@@ -32,6 +33,7 @@ void main() async {
     packageName: 'in.mahato.cocircle',
     appName: 'CoCircle',
     googleServerClientId: '273341956-u3ub04qtsebrfs3e7ge17p1dj36af1ea.apps.googleusercontent.com',
+    defaultDatabaseUrl: 'https://cocircle-firebase-prod-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
   // Initialize Firebase
@@ -39,6 +41,18 @@ void main() async {
      await Firebase.initializeApp(
        options: DefaultFirebaseOptions.currentPlatform,
      );
+
+     // Fetch dynamic database URL from config table
+     try {
+       final doc = await FirebaseFirestore.instance.collection('config').doc('settings').get();
+       final url = doc.data()?['databaseURL'] as String?;
+       if (url != null && url.isNotEmpty) {
+         AppEnvironment.databaseUrl = url;
+         debugPrint("Loaded RTDB URL dynamically: $url");
+       }
+     } catch (e) {
+       debugPrint("Could not load RTDB URL from Firestore: $e");
+     }
 
      // Initialize App Check (Hybrid: Debug for local, Play Integrity for prod)
      await FirebaseAppCheck.instance.activate(

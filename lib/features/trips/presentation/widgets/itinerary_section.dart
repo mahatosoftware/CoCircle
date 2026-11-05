@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/itinerary_item_model.dart';
+import '../../domain/trip_model.dart';
 import '../trip_controller.dart';
 import '../trip_planner_controller.dart';
+import '../../../../core/ai/ai_provider.dart';
 
 class ItinerarySection extends ConsumerStatefulWidget {
   final String tripId;
@@ -46,94 +48,633 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
     }
   }
 
+  void _showAiItineraryBottomSheet(BuildContext screenContext, TripModel trip) {
+    final destinationController = TextEditingController(
+      text: (trip.location != null && trip.location!.isNotEmpty)
+          ? trip.location
+          : trip.name,
+    );
+    DateTime selectedDate = trip.startDate ?? DateTime.now();
+    int numberOfDays = 3;
+    if (trip.startDate != null && trip.endDate != null) {
+      final diff = trip.endDate!.difference(trip.startDate!).inDays + 1;
+      if (diff > 0 && diff <= 14) {
+        numberOfDays = diff;
+      }
+    }
+    String selectedVibe = 'balanced';
+
+    showModalBottomSheet(
+      context: screenContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final theme = Theme.of(context);
+            const vibes = [
+              _VibeOption('balanced', 'Balanced', Icons.tune_rounded),
+              _VibeOption('adventure', 'Adventure', Icons.terrain_rounded),
+              _VibeOption('relaxing', 'Relaxed', Icons.spa_rounded),
+              _VibeOption('foodie', 'Foodie', Icons.restaurant_rounded),
+              _VibeOption('cultural', 'Culture', Icons.museum_rounded),
+            ];
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            height: 4,
+                            width: 40,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.outlineVariant,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                theme.colorScheme.primary,
+                                const Color(0xFF9474D2),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: .18),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Plan it in a moment',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Tell us the essentials. We’ll shape the days around your pace.',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'WHERE ARE YOU GOING?',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: destinationController,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: InputDecoration(
+                            hintText: 'City or destination',
+                            prefixIcon: Icon(
+                              Icons.location_on_rounded,
+                              color: theme.colorScheme.primary,
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: .45),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outlineVariant,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        const Text(
+                          'WHEN & HOW LONG?',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _PlannerDetailCard(
+                                icon: Icons.calendar_month_rounded,
+                                label: 'START DATE',
+                                value: DateFormat.MMMd().format(selectedDate),
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: screenContext,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime.now().subtract(
+                                      const Duration(days: 30),
+                                    ),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 730),
+                                    ),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() => selectedDate = picked);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _PlannerDetailCard(
+                                icon: Icons.nights_stay_rounded,
+                                label: 'DURATION',
+                                value:
+                                    '$numberOfDays ${numberOfDays == 1 ? 'day' : 'days'}',
+                                onTap: () => _showDurationPicker(
+                                  context,
+                                  numberOfDays,
+                                  (value) =>
+                                      setModalState(() => numberOfDays = value),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 22),
+                        const Text(
+                          'WHAT’S THE MOOD?',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: vibes.map((vibe) {
+                            final selected = selectedVibe == vibe.value;
+                            return ChoiceChip(
+                              avatar: Icon(
+                                vibe.icon,
+                                size: 17,
+                                color: selected
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.primary,
+                              ),
+                              label: Text(vibe.label),
+                              selected: selected,
+                              showCheckmark: false,
+                              selectedColor: theme.colorScheme.primary,
+                              backgroundColor: theme
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: .45),
+                              labelStyle: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: selected
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                              side: BorderSide(
+                                color: selected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.outlineVariant,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              onSelected: (_) => setModalState(
+                                () => selectedVibe = vibe.value,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer
+                                .withValues(alpha: .55),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome_outlined,
+                                size: 18,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'You’ll get a flexible, day-by-day plan you can edit anytime.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.35,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              if (destinationController.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Add a destination to continue',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              Navigator.pop(bottomSheetContext);
+                              ref
+                                  .read(tripPlannerControllerProvider.notifier)
+                                  .generateAiItinerary(
+                                    tripId: widget.tripId,
+                                    destination: destinationController.text
+                                        .trim(),
+                                    startDate: selectedDate,
+                                    numberOfDays: numberOfDays,
+                                    vibe: selectedVibe,
+                                    context: context,
+                                  );
+                            },
+                            icon: const Icon(Icons.auto_awesome_rounded),
+                            label: const Text(
+                              'Create my itinerary',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            style: FilledButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showDurationPicker(
+    BuildContext context,
+    int currentValue,
+    ValueChanged<int> onChanged,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'How many days?',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose the pace that fits this trip.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: List.generate(10, (index) {
+                  final days = index + 1;
+                  return ChoiceChip(
+                    label: Text('$days ${days == 1 ? 'day' : 'days'}'),
+                    selected: currentValue == days,
+                    onSelected: (_) {
+                      onChanged(days);
+                      Navigator.pop(context);
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final itineraryAsync = ref.watch(tripItineraryProvider(widget.tripId));
     final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
+    final plannerState = ref.watch(tripPlannerControllerProvider);
+    final theme = Theme.of(context);
+
+    final trip = tripAsync.value;
 
     return Scaffold(
-      body: itineraryAsync.when(
-        data: (items) {
-          if (items.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.map_rounded,
-                    size: 64,
-                    color: Colors.grey.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No activities planned yet',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddActivityBottomSheet(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add First Activity'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Group items by day
-          final grouped = <String, List<ItineraryItemModel>>{};
-          for (final item in items) {
-            final key = DateFormat('yyyy-MM-dd').format(item.startTime);
-            grouped.putIfAbsent(key, () => []).add(item);
-          }
-
-          final sortedDates = grouped.keys.toList()..sort();
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: sortedDates.length,
-            itemBuilder: (context, index) {
-              final dateStr = sortedDates[index];
-              final dayItems = grouped[dateStr]!;
-              final parsedDate = DateTime.parse(dateStr);
-
-              // Calculate "Day X" label if trip start date is available
-              String dayLabel = DateFormat.yMMMMd().format(parsedDate);
-              tripAsync.whenData((trip) {
-                if (trip.startDate != null) {
-                  final diff = parsedDate.difference(trip.startDate!).inDays + 1;
-                  if (diff >= 1) {
-                    dayLabel = 'Day $diff - ${DateFormat.E().format(parsedDate)}, ${DateFormat.MMMd().format(parsedDate)}';
-                  }
-                }
-              });
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    child: Text(
-                      dayLabel,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
+      body: Stack(
+        children: [
+          itineraryAsync.when(
+            data: (items) {
+              if (items.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.1,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 56,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'No activities planned yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Let AI generate a customized day-by-day itinerary or add activities manually.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                        const SizedBox(height: 24),
+                        if (trip != null) ...[
+                          SizedBox(
+                            width: 240,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 3,
+                              ),
+                              onPressed: plannerState.isLoading
+                                  ? null
+                                  : () => _showAiItineraryBottomSheet(
+                                      context,
+                                      trip,
+                                    ),
+                              icon: const Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 20,
+                              ),
+                              label: const Text(
+                                'Generate with AI',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        SizedBox(
+                          width: 240,
+                          height: 44,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: plannerState.isLoading
+                                ? null
+                                : () => _showAddActivityBottomSheet(context),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Add Manually'),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  ...dayItems.map((item) => _buildActivityCard(context, item)),
-                ],
+                );
+              }
+
+              // Group items by day
+              final grouped = <String, List<ItineraryItemModel>>{};
+              for (final item in items) {
+                final key = DateFormat('yyyy-MM-dd').format(item.startTime);
+                grouped.putIfAbsent(key, () => []).add(item);
+              }
+
+              final sortedDates = grouped.keys.toList()..sort();
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: sortedDates.length,
+                itemBuilder: (context, index) {
+                  final dateStr = sortedDates[index];
+                  final dayItems = grouped[dateStr]!;
+                  final parsedDate = DateTime.parse(dateStr);
+
+                  // Calculate "Day X" label if trip start date is available
+                  String dayLabel = DateFormat.yMMMMd().format(parsedDate);
+                  if (trip != null && trip.startDate != null) {
+                    final diff =
+                        parsedDate.difference(trip.startDate!).inDays + 1;
+                    if (diff >= 1) {
+                      dayLabel =
+                          'Day $diff - ${DateFormat.E().format(parsedDate)}, ${DateFormat.MMMd().format(parsedDate)}';
+                    }
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 8,
+                        ),
+                        child: Text(
+                          dayLabel,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      ...dayItems.map(
+                        (item) => _buildActivityCard(context, item),
+                      ),
+                    ],
+                  );
+                },
               );
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(e.toString())),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text(e.toString())),
+          ),
+          if (plannerState.isLoading)
+            Positioned.fill(
+              child: ColoredBox(
+                color: theme.colorScheme.surface.withValues(alpha: .9),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: .08),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 42,
+                          width: 42,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'Creating your itinerary',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Finding a great flow for each day…',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddActivityBottomSheet(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trip != null) ...[
+            FloatingActionButton.extended(
+              heroTag: 'ai_itinerary_fab',
+              onPressed: plannerState.isLoading
+                  ? null
+                  : () => _showAiItineraryBottomSheet(context, trip),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.auto_awesome_rounded),
+              label: const Text('AI Plan'),
+            ),
+            const SizedBox(width: 12),
+          ],
+          FloatingActionButton(
+            heroTag: 'add_activity_fab',
+            onPressed: plannerState.isLoading
+                ? null
+                : () => _showAddActivityBottomSheet(context),
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -162,11 +703,7 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                 color: typeColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                typeIcon,
-                color: typeColor,
-                size: 24,
-              ),
+              child: Icon(typeIcon, color: typeColor, size: 24),
             ),
             const SizedBox(width: 12),
             // Title & details
@@ -200,12 +737,19 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             item.location!,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -219,7 +763,9 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                       item.notes!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.8,
+                        ),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -227,7 +773,10 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                   if (item.cost != null && item.cost! > 0) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -248,7 +797,11 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
             // Delete button
             IconButton(
               onPressed: () => _confirmDelete(context, item),
-              icon: Icon(Icons.delete_outline_rounded, color: theme.colorScheme.error, size: 20),
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: theme.colorScheme.error,
+                size: 20,
+              ),
             ),
           ],
         ),
@@ -269,13 +822,14 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(tripPlannerControllerProvider.notifier).deleteItineraryItem(
-                    itemId: item.id,
-                    context: context,
-                  );
+              ref
+                  .read(tripPlannerControllerProvider.notifier)
+                  .deleteItineraryItem(itemId: item.id, context: context);
               Navigator.pop(dialogCtx);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -297,10 +851,84 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
           minChildSize: 0.5,
           expand: false,
           builder: (context, scrollController) {
-            return _ActivityForm(tripId: widget.tripId, scrollController: scrollController);
+            return _ActivityForm(
+              tripId: widget.tripId,
+              scrollController: scrollController,
+            );
           },
         );
       },
+    );
+  }
+}
+
+class _VibeOption {
+  const _VibeOption(this.value, this.label, this.icon);
+
+  final String value;
+  final String label;
+  final IconData icon;
+}
+
+class _PlannerDetailCard extends StatelessWidget {
+  const _PlannerDetailCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: .45),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .7,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -389,13 +1017,19 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
 
       final cost = double.tryParse(_costController.text.trim());
 
-      ref.read(tripPlannerControllerProvider.notifier).createItineraryItem(
+      ref
+          .read(tripPlannerControllerProvider.notifier)
+          .createItineraryItem(
             tripId: widget.tripId,
             title: _titleController.text.trim(),
             type: _selectedType,
             startTime: combinedDateTime,
-            location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
-            notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+            location: _locationController.text.trim().isEmpty
+                ? null
+                : _locationController.text.trim(),
+            notes: _notesController.text.trim().isEmpty
+                ? null
+                : _notesController.text.trim(),
             cost: cost,
             context: context,
           );
@@ -438,7 +1072,8 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                 hintText: 'e.g. Flight to Paris, Dinner at Chez Paul',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a title' : null,
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Please enter a title' : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -448,10 +1083,12 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                 border: OutlineInputBorder(),
               ),
               items: _types
-                  .map((t) => DropdownMenuItem(
-                        value: t['value'],
-                        child: Text(t['label']!),
-                      ))
+                  .map(
+                    (t) => DropdownMenuItem(
+                      value: t['value'],
+                      child: Text(t['label']!),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) => setState(() => _selectedType = v!),
             ),
@@ -494,14 +1131,17 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                 prefixIcon: Icon(Icons.attach_money),
                 border: OutlineInputBorder(),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
               decoration: const InputDecoration(
                 labelText: 'Notes / Details',
-                hintText: 'e.g. Booking confirmation #ABCD123, dress code smart casual',
+                hintText:
+                    'e.g. Booking confirmation #ABCD123, dress code smart casual',
                 prefixIcon: Icon(Icons.notes_rounded),
                 border: OutlineInputBorder(),
               ),
@@ -514,9 +1154,14 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Add to Itinerary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Add to Itinerary',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 20),
           ],

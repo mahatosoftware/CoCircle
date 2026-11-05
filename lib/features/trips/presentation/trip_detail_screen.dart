@@ -6,6 +6,7 @@ import '../../polls/presentation/poll_list_view.dart';
 import '../../tasks/presentation/task_list_view.dart';
 import 'trip_controller.dart';
 import 'trip_plan_tab.dart';
+import '../../live_map/presentation/live_map_tab.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 
 class TripDetailScreen extends ConsumerStatefulWidget {
@@ -24,9 +25,9 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
-      initialIndex: widget.initialTabIndex >= 4 ? 0 : widget.initialTabIndex,
+      initialIndex: widget.initialTabIndex >= 5 ? 0 : widget.initialTabIndex,
     );
     _tabController.addListener(() {
       setState(() {}); // Rebuild for FAB update
@@ -55,6 +56,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
           controller: _tabController,
           tabs: [
             const Tab(text: 'Plan', icon: Icon(Icons.explore_outlined)),
+            const Tab(text: 'Live Map', icon: Icon(Icons.map_outlined)),
             Tab(text: l10n.finance, icon: const Icon(Icons.payments_outlined)),
             Tab(text: l10n.polls, icon: const Icon(Icons.poll_outlined)),
             const Tab(text: 'Tasks', icon: Icon(Icons.task_alt_outlined)),
@@ -146,6 +148,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
              controller: _tabController,
              children: [
                TripPlanTab(tripId: widget.tripId),
+               LiveMapTab(tripId: widget.tripId),
                FinanceGroupView(tripId: widget.tripId),
                PollListView(tripId: widget.tripId),
                TaskListView(tripId: widget.tripId),
@@ -155,7 +158,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.errorWithDetails(err.toString()))),
       ),
-      floatingActionButton: _tabController.index == 2
+      floatingActionButton: _tabController.index == 3
           ? Padding(
               padding: const EdgeInsets.only(bottom: 80),
               child: FloatingActionButton(
@@ -163,7 +166,7 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> with Single
                 child: const Icon(Icons.add),
               ),
             )
-          : _tabController.index == 1
+          : _tabController.index == 2
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 80),
                   child: FloatingActionButton(

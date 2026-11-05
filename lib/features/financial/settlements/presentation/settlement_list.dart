@@ -12,21 +12,22 @@ import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:cocircle/features/auth/domain/user_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
-import 'package:go_router/go_router.dart';
-import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
 import 'package:cocircle/core/utils/snackbar.dart';
 
 class SettlementList extends ConsumerWidget {
   final String tripId;
   final String currency;
-  const SettlementList({super.key, required this.tripId, required this.currency});
+  const SettlementList({
+    super.key,
+    required this.tripId,
+    required this.currency,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
     final activeSettlementsAsync = ref.watch(activeSettlementsProvider(tripId));
     final expensesAsync = ref.watch(tripExpensesProvider(tripId));
-    final currentUserAsync = ref.watch(authStateChangesProvider);
     final l10n = AppLocalizations.of(context)!;
 
     return tripAsync.when(
@@ -39,53 +40,16 @@ class SettlementList extends ConsumerWidget {
               data: (members) {
                 return expensesAsync.when(
                   data: (expenses) {
-                    final currentUser = currentUserAsync.value;
-                    final isUserVpaEmpty = currentUser == null || currentUser.vpa == null || currentUser.vpa!.isEmpty;
-
-                    final isAnyReceiverVpaEmpty = settlements.any((t) {
-                      final receiver = members.firstWhereOrNull((m) => m.uid == t.toUid);
-                      return receiver == null || receiver.vpa == null || receiver.vpa!.isEmpty;
-                    });
-
-                    final isInr = currency.toUpperCase() == 'INR' || currency == '₹';
-                    final showUpiMessage = isInr && (isUserVpaEmpty || isAnyReceiverVpaEmpty);
-                    final history = expenses.where((e) => e.category == ExpenseCategory.settlement.name).toList();
+                    final history = expenses
+                        .where(
+                          (e) => e.category == ExpenseCategory.settlement.name,
+                        )
+                        .toList();
 
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (showUpiMessage)
-                          Container(
-                            margin: const EdgeInsets.all(16),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.info_outline, color: Colors.blue),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        l10n.enableUpiMessage,
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                TextButton(
-                                  onPressed: () => context.push('/profile'),
-                                  child: Text(l10n.goToProfile),
-                                ),
-                              ],
-                            ),
-                          ),
                         if (settlements.isEmpty && history.isEmpty)
                           _buildEmptyState(context, ref)
                         else ...[
@@ -94,23 +58,42 @@ class SettlementList extends ConsumerWidget {
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                               child: Text(
                                 l10n.activeSettlements,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             ...settlements.asMap().entries.map((entry) {
                               final t = entry.value;
-                              return _buildActiveSettlementCard(context, ref, t, members);
+                              return _buildActiveSettlementCard(
+                                context,
+                                ref,
+                                t,
+                                members,
+                              );
                             }),
                           ],
                           if (history.isNotEmpty) ...[
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 32, 16, 12),
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                32,
+                                16,
+                                12,
+                              ),
                               child: Text(
                                 l10n.settlementHistory,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                            ...history.map((expense) => _buildHistoryTile(context, expense, members)),
+                            ...history.map(
+                              (expense) =>
+                                  _buildHistoryTile(context, expense, members),
+                            ),
                           ],
                           const SizedBox(height: 100),
                         ],
@@ -123,7 +106,8 @@ class SettlementList extends ConsumerWidget {
                       child: CircularProgressIndicator(),
                     ),
                   ),
-                  error: (e, _) => Center(child: Text('Error loading history: $e')),
+                  error: (e, _) =>
+                      Center(child: Text('Error loading history: $e')),
                 );
               },
               loading: () => const Center(
@@ -132,7 +116,8 @@ class SettlementList extends ConsumerWidget {
                   child: CircularProgressIndicator(),
                 ),
               ),
-              error: (err, _) => Center(child: Text('Error loading members: $err')),
+              error: (err, _) =>
+                  Center(child: Text('Error loading members: $err')),
             );
           },
           loading: () => const Center(
@@ -141,11 +126,13 @@ class SettlementList extends ConsumerWidget {
               child: CircularProgressIndicator(),
             ),
           ),
-          error: (e, _) => Center(child: Text(l10n.calculateSettlementsError(e.toString()))),
+          error: (e, _) =>
+              Center(child: Text(l10n.calculateSettlementsError(e.toString()))),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text(l10n.loadTripError(err.toString()))),
+      error: (err, stack) =>
+          Center(child: Text(l10n.loadTripError(err.toString()))),
     );
   }
 
@@ -157,11 +144,19 @@ class SettlementList extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.green[100]),
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 80,
+            color: Colors.green[100],
+          ),
           const SizedBox(height: 24),
           Text(
             l10n.allSettledUp,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -174,7 +169,12 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
-  Widget _buildActiveSettlementCard(BuildContext context, WidgetRef ref, SettlementTransaction t, List<UserModel> members) {
+  Widget _buildActiveSettlementCard(
+    BuildContext context,
+    WidgetRef ref,
+    SettlementTransaction t,
+    List<UserModel> members,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final fromMember = members.firstWhereOrNull((m) => m.uid == t.fromUid);
     final toMember = members.firstWhereOrNull((m) => m.uid == t.toUid);
@@ -202,38 +202,52 @@ class SettlementList extends ConsumerWidget {
                 text: TextSpan(
                   style: const TextStyle(color: Colors.black87, fontSize: 14),
                   children: [
-                    TextSpan(text: fromName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    TextSpan(text: ' ${l10n.paysLabel('', '').split('  ').first.split('pays').first.isEmpty ? ' pays ' : l10n.paysLabel('', '').replaceAll('{from}', '').replaceAll('{to}', '')} '),
-                    TextSpan(text: toName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    TextSpan(
+                      text: fromName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text:
+                          ' ${l10n.paysLabel('', '').split('  ').first.split('pays').first.isEmpty ? ' pays ' : l10n.paysLabel('', '').replaceAll('{from}', '').replaceAll('{to}', '')} ',
+                    ),
+                    TextSpan(
+                      text: toName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ),
               trailing: Text(
                 '$currency${t.amount.toStringAsFixed(2)}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.green,
+                ),
               ),
             ),
-//             if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
-//               Padding(
-//                 padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-//                 child: SizedBox(
-//                   width: double.infinity,
-//                   child: OutlinedButton.icon(
-//                     onPressed: () => _initiateUpiTransaction(context, t, toMember!, currency),
-//                     icon: const Icon(Icons.account_balance_outlined, size: 18),
-//                     label: const Text('Pay via UPI'),
-//                     style: OutlinedButton.styleFrom(
-//                       foregroundColor: Colors.green,
-//                       side: const BorderSide(color: Colors.green),
-//                     ),
-//                   ),
-//                 ),
-//               ),
+            //             if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
+            //               Padding(
+            //                 padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+            //                 child: SizedBox(
+            //                   width: double.infinity,
+            //                   child: OutlinedButton.icon(
+            //                     onPressed: () => _initiateUpiTransaction(context, t, toMember!, currency),
+            //                     icon: const Icon(Icons.account_balance_outlined, size: 18),
+            //                     label: const Text('Pay via UPI'),
+            //                     style: OutlinedButton.styleFrom(
+            //                       foregroundColor: Colors.green,
+            //                       side: const BorderSide(color: Colors.green),
+            //                     ),
+            //                   ),
+            //                 ),
+            //               ),
             if (isPayer || isReceiver)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _confirmSettleUp(context, ref, t, fromName, toName),
+                  onPressed: () =>
+                      _confirmSettleUp(context, ref, t, fromName, toName),
                   icon: const Icon(Icons.check),
                   label: Text(l10n.settleUp),
                   style: ElevatedButton.styleFrom(
@@ -248,7 +262,11 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryTile(BuildContext context, ExpenseModel expense, List<UserModel> members) {
+  Widget _buildHistoryTile(
+    BuildContext context,
+    ExpenseModel expense,
+    List<UserModel> members,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final fromUid = expense.payerId;
     final toUid = expense.splitDetails.keys.first;
@@ -270,7 +288,13 @@ class SettlementList extends ConsumerWidget {
     );
   }
 
-  void _confirmSettleUp(BuildContext context, WidgetRef ref, SettlementTransaction t, String fromName, String toName) {
+  void _confirmSettleUp(
+    BuildContext context,
+    WidgetRef ref,
+    SettlementTransaction t,
+    String fromName,
+    String toName,
+  ) {
     final currentUser = FirebaseAuth.instance.currentUser;
     final isPayer = currentUser?.uid == t.fromUid;
 
@@ -280,9 +304,11 @@ class SettlementList extends ConsumerWidget {
         final l10n = AppLocalizations.of(context)!;
         return AlertDialog(
           title: Text(l10n.settleUp),
-          content: Text(isPayer
-              ? l10n.confirmPaidMessage(currency, t.amount, toName)
-              : l10n.confirmReceivedMessage(currency, t.amount, fromName)),
+          content: Text(
+            isPayer
+                ? l10n.confirmPaidMessage(currency, t.amount, toName)
+                : l10n.confirmReceivedMessage(currency, t.amount, fromName),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -290,7 +316,9 @@ class SettlementList extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                ref.read(settlementControllerProvider.notifier).settleUp(
+                ref
+                    .read(settlementControllerProvider.notifier)
+                    .settleUp(
                       tripId: tripId,
                       fromUid: t.fromUid,
                       toUid: t.toUid,
@@ -344,11 +372,17 @@ class SettlementList extends ConsumerWidget {
             ),
             Text(
               'Review Payment',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            _buildReviewRow('Amount', '$currency${t.amount.toStringAsFixed(2)}', isBold: true),
+            _buildReviewRow(
+              'Amount',
+              '$currency${t.amount.toStringAsFixed(2)}',
+              isBold: true,
+            ),
             const Divider(height: 32),
             _buildReviewRow('To', receiver.displayName),
             const SizedBox(height: 8),
@@ -386,9 +420,14 @@ class SettlementList extends ConsumerWidget {
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Open UPI App', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Open UPI App',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 12),
             TextButton(
@@ -436,12 +475,18 @@ class SettlementList extends ConsumerWidget {
     if (receiver.vpa == null) return;
 
     final String receiverVpa = receiver.vpa!;
-    final String receiverName = receiver.displayName.replaceAll(RegExp(r'[^\w\s]'), '');
+    final String receiverName = receiver.displayName.replaceAll(
+      RegExp(r'[^\w\s]'),
+      '',
+    );
     final String amount = t.amount.toStringAsFixed(2);
-    final String transactionRef = DateTime.now().millisecondsSinceEpoch.toString().substring(3, 13);
+    final String transactionRef = DateTime.now().millisecondsSinceEpoch
+        .toString()
+        .substring(3, 13);
     const String transactionNote = 'CoCircle Settlement';
 
-    final String query = 'pa=${Uri.encodeComponent(receiverVpa)}'
+    final String query =
+        'pa=${Uri.encodeComponent(receiverVpa)}'
         '&pn=${Uri.encodeComponent(receiverName)}'
         '&am=$amount'
         '&tr=$transactionRef'
@@ -456,7 +501,8 @@ class SettlementList extends ConsumerWidget {
       if (await canLaunchUrl(upiUri)) {
         await launchUrl(upiUri, mode: LaunchMode.externalApplication);
       } else {
-        if (context.mounted) showSnackBar(context, 'No UPI apps found to handle this request.');
+        if (context.mounted)
+          showSnackBar(context, 'No UPI apps found to handle this request.');
       }
       return;
     }
@@ -483,7 +529,8 @@ class SettlementList extends ConsumerWidget {
       if (await canLaunchUrl(genericUri)) {
         await launchUrl(genericUri, mode: LaunchMode.externalApplication);
       } else {
-        if (context.mounted) showSnackBar(context, 'No UPI apps found on this device.');
+        if (context.mounted)
+          showSnackBar(context, 'No UPI apps found on this device.');
       }
       return;
     }
@@ -497,23 +544,37 @@ class SettlementList extends ConsumerWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.all(16.0),
-                child: Text('Select UPI App', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Select UPI App',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
-              ...installedApps.map((app) => ListTile(
-                    leading: const Icon(Icons.account_balance_wallet_outlined, color: Colors.green),
-                    title: Text(app.name),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final Uri launchUri = Uri.parse('${app.scheme}$query');
-                      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
-                    },
-                  )),
+              ...installedApps.map(
+                (app) => ListTile(
+                  leading: const Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: Colors.green,
+                  ),
+                  title: Text(app.name),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final Uri launchUri = Uri.parse('${app.scheme}$query');
+                    await launchUrl(
+                      launchUri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                ),
+              ),
               ListTile(
                 leading: const Icon(Icons.open_in_new),
                 title: const Text('Default UPI App'),
                 onTap: () async {
                   Navigator.pop(context);
-                  await launchUrl(Uri.parse('upi://pay?$query'), mode: LaunchMode.externalApplication);
+                  await launchUrl(
+                    Uri.parse('upi://pay?$query'),
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
               ),
               const SizedBox(height: 16),

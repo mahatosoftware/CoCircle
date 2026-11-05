@@ -150,10 +150,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                   final tab = state.uri.queryParameters['tab'];
                   int initialTab = 0;
                   if (tab == 'plan') initialTab = 0;
-                  if (tab == 'finance') initialTab = 1;
-                  if (tab == 'polls') initialTab = 2;
-                  if (tab == 'tasks') initialTab = 3;
-                  if (tab == 'settlements' || tab == 'insights' || tab == 'audit') initialTab = 1;
+                  if (tab == 'map') initialTab = 1;
+                  if (tab == 'finance') initialTab = 2;
+                  if (tab == 'polls') initialTab = 3;
+                  if (tab == 'tasks') initialTab = 4;
+                  if (tab == 'settlements' || tab == 'insights' || tab == 'audit') initialTab = 2;
                   
                   return TripDetailScreen(tripId: tripId, initialTabIndex: initialTab);
                 },
