@@ -98,12 +98,17 @@ class PushNotificationService {
         await _saveTokenToFirestore(userId, token);
       }
 
-      // 3. Listen for token refresh events
+      // 3. Listen for token registration & refresh events
       await _tokenRefreshSubscription?.cancel();
-      _tokenRefreshSubscription = _fcm.onTokenRefresh.listen((newToken) async {
-        debugPrint('FCM: Device token refreshed for user $userId: $newToken');
+      _tokenRefreshSubscription = _fcm.onRegistered.listen((newToken) async {
+        debugPrint('FCM: Device token registered/refreshed for user $userId: $newToken');
         await _saveTokenToFirestore(userId, newToken);
       });
+      try {
+        await _fcm.register();
+      } catch (e) {
+        debugPrint('FCM: register() error: $e');
+      }
     } catch (e) {
       debugPrint('FCM: Could not fetch/sync device token: $e');
     }

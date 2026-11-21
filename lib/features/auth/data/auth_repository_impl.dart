@@ -148,17 +148,6 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserModel>> signInWithGoogle() async {
     try {
-      try {
-        final serverClientId = AppEnvironment.googleServerClientId;
-        if (serverClientId.isNotEmpty) {
-          await _googleSignIn.initialize(
-            serverClientId: serverClientId,
-          );
-        }
-      } catch (initErr) {
-        debugPrint("Google Sign-In initialize check notice: $initErr");
-      }
-
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
       
       debugPrint("Google Sign-In: Account obtained: ${googleUser.email}");
@@ -222,9 +211,29 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e, stack) {
       debugPrint("Google Sign-In Error: $e");
       debugPrint("Stack trace: $stack");
-      if (e is GoogleSignInException && e.code == GoogleSignInExceptionCode.canceled) {
-        return left(Failure('Sign in canceled'));
+
+      // Reset any partially held credential state in Credential Manager
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      if (e is GoogleSignInException) {
+        final desc = e.description ?? '';
+        final isReauthFailure = desc.contains('16') ||
+            desc.toLowerCase().contains('reauth') ||
+            desc.toLowerCase().contains('account reauth failed');
+
+        if (isReauthFailure) {
+          return left(Failure(
+            'Google Sign-In failed: Re-authentication rejected [16]. Check if: 1) Your email is added to Test Users in Google Cloud OAuth consent screen (if status is Testing), 2) SHA-256 fingerprint (B7:FF:F0:...) is added to Firebase Console, or 3) Google provider is enabled in Firebase Auth.',
+          ));
+        }
+
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          return left(Failure('Sign in canceled'));
+        }
       }
+
       final errStr = e.toString();
       if (errStr.contains('28444') || errStr.contains('Developer console is not set up correctly')) {
         return left(Failure(

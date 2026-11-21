@@ -70,6 +70,11 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713"/> -->
 
+        <!-- Required by Firebase Messaging 17.x for installation ID and register() support -->
+        <meta-data
+            android:name="firebase_messaging_installation_id_enabled"
+            android:value="true" />
+
         <!-- Keep GeolocatorLocationService as standard bound service without foregroundServiceType -->
         <service
             android:name="com.baseflow.geolocator.GeolocatorLocationService"

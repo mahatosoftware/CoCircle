@@ -30,11 +30,11 @@ dependencies:
   flutter_riverpod:
   riverpod_annotation:
   go_router: ^17.1.0
-  firebase_core: 4.11.0
-  firebase_auth: 6.5.4
-  cloud_firestore: 6.6.0
-  firebase_messaging: 16.4.1
-  firebase_app_check: 0.4.5
+  firebase_core: ^5.2.0
+  firebase_auth: ^7.1.0
+  cloud_firestore: ^7.2.0
+  firebase_messaging: ^17.1.0
+  firebase_app_check: ^0.5.2
   google_fonts: ^8.0.1
   fpdart:
   freezed_annotation:
@@ -56,7 +56,7 @@ dependencies:
   flutter_map_marker_cluster: ^8.2.2
   geolocator: ^14.0.2
   latlong2: ^0.9.1
-  firebase_database: 12.4.4
+  firebase_database: ^13.1.0
   http: ^1.6.0
   path_provider: ^2.1.6
   image_picker: ^1.2.4

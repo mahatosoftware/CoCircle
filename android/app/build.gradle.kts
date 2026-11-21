@@ -59,9 +59,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig = null
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("release")
             
             proguardFiles(
@@ -78,10 +79,12 @@ android {
             applicationIdSuffix = ".dev"
             resValue("string", "app_name", "CoCircle Dev")
             versionNameSuffix = "-dev"
+            signingConfig = signingConfigs.getByName("debug")
         }
         create("prod") {
             dimension = "default"
             resValue("string", "app_name", "CoCircle")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -119,8 +122,8 @@ configurations.all {
 }
 
 dependencies {
-    // Import the BoM to keep all Firebase versions in sync
-    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    // Import the BoM to keep all Firebase versions in sync with FlutterFire (firebase_core 5.2.0)
+    implementation(platform("com.google.firebase:firebase-bom:35.2.0"))
 
     // Firebase Auth (No version needed if using BoM)
     implementation("com.google.firebase:firebase-auth")
