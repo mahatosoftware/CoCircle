@@ -288,7 +288,7 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
   Stream<Map<String, Map<String, dynamic>>> streamVehicles(String tripId) {
     return _db.ref('trip_vehicles/$tripId').onValue.map((event) {
       final snapshot = event.snapshot;
-      if (!snapshot.exists || snapshot.value == null) return {};
+      if (!snapshot.exists || snapshot.value == null) return <String, Map<String, dynamic>>{};
 
       final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
       final Map<String, Map<String, dynamic>> map = {};
@@ -299,6 +299,8 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
         }
       });
       return map;
+    }).handleError((error) {
+      return <String, Map<String, dynamic>>{};
     });
   }
 

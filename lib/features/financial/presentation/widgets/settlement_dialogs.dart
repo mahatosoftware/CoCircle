@@ -60,8 +60,8 @@ class _RecordPaymentSheetState extends State<RecordPaymentSheet> {
       _fromId = widget.participants!.length > 1 ? widget.participants![1].id : widget.participants!.first.id;
       _toId = widget.participants!.first.id;
     } else {
-      _fromId = widget.memberNames.length > 1 ? widget.memberNames[1] : (widget.memberNames.isNotEmpty ? widget.memberNames.first : 'Priya');
-      _toId = widget.memberNames.isNotEmpty ? widget.memberNames.first : 'Rahul';
+      _fromId = widget.memberNames.length > 1 ? widget.memberNames[1] : (widget.memberNames.isNotEmpty ? widget.memberNames.first : '');
+      _toId = widget.memberNames.isNotEmpty ? widget.memberNames.first : '';
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../core/config/map_tile_config.dart';
 import '../../../../core/utils/navigation_helper.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../trips/presentation/trip_controller.dart';
@@ -381,6 +382,7 @@ class _LiveMapTabState extends ConsumerState<LiveMapTab> {
     }
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final hasEmergency = mapState.sosAlerts.isNotEmpty;
 
     return Scaffold(
@@ -407,8 +409,9 @@ class _LiveMapTabState extends ConsumerState<LiveMapTab> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'in.mahato.cocircle',
+                  urlTemplate: MapTileConfig.getUrlTemplate(isDark: isDark),
+                  subdomains: MapTileConfig.subdomains,
+                  userAgentPackageName: MapTileConfig.userAgentPackageName,
                   tileProvider: tileProvider,
                 ),
 

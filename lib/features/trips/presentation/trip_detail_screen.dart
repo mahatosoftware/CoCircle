@@ -123,12 +123,14 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  StatusBadge.fromTripStatus('Planning'),
+                  StatusBadge.fromTripStatus(trip.status.isNotEmpty ? trip.status : 'Planning'),
                 ],
               ),
               const SizedBox(height: 2),
               Text(
-                '${trip.location ?? "Coorg, Karnataka"} • $datesText',
+                trip.location != null && trip.location!.isNotEmpty
+                    ? '${trip.location} • $datesText'
+                    : datesText,
                 style: const TextStyle(fontSize: 11, color: AppPallete.gray),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -631,35 +633,30 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             }),
           ],
         ] else ...[
-          _buildMemberBalanceTile(
-            name: 'Rahul',
-            statusText: 'Receive ₹2,360',
-            statusColor: const Color(0xFF059669),
-            isDark: isDark,
-          ),
-          const SizedBox(height: 8),
-          _buildMemberBalanceTile(
-            name: 'Priya',
-            statusText: 'To Pay ₹1,250',
-            statusColor: const Color(0xFFDC2626),
-            isDark: isDark,
-          ),
-          const SizedBox(height: 8),
-          _buildMemberBalanceTile(
-            name: 'Amit',
-            statusText: 'To Pay ₹1,110',
-            statusColor: const Color(0xFFDC2626),
-            isGuest: true,
-            isDark: isDark,
-          ),
-          const SizedBox(height: 8),
-          _buildMemberBalanceTile(
-            name: 'Neha',
-            statusText: 'Settled',
-            statusColor: const Color(0xFF059669),
-            isSettled: true,
-            isGuest: true,
-            isDark: isDark,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppPallete.surfaceDark : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, color: AppPallete.gray, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'No participants or balances to display yet.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? const Color(0xFF94A3B8) : AppPallete.gray,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
 

@@ -117,7 +117,7 @@ class _FinanceGroupViewState extends ConsumerState<FinanceGroupView>
         final members = membersAsync.asData?.value;
         final List<String> memberNames = (members != null && members.isNotEmpty)
             ? members.map((m) => m.displayName.isNotEmpty ? m.displayName : 'Member').toList()
-            : const ['Rahul', 'Priya', 'Amit', 'Neha'];
+            : <String>[];
 
         return circleAsync.when(
           data: (circle) => Scaffold(

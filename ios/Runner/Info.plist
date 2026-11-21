@@ -49,6 +49,8 @@
 	<string>This app needs camera access to scan QR codes for joining circles.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
+		<string>comgooglemaps</string>
+		<string>maps</string>
 		<string>upi</string>
 		<string>phonepe</string>
 		<string>tez</string>

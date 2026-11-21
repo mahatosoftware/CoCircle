@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 enum RoadTripBudgetCategory {
   fuel,
@@ -61,6 +62,56 @@ extension RoadTripBudgetCategoryExtension on RoadTripBudgetCategory {
         return 'Emergency';
       case RoadTripBudgetCategory.misc:
         return 'Misc';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case RoadTripBudgetCategory.fuel:
+        return Icons.local_gas_station_rounded;
+      case RoadTripBudgetCategory.accommodation:
+        return Icons.hotel_rounded;
+      case RoadTripBudgetCategory.food:
+        return Icons.restaurant_rounded;
+      case RoadTripBudgetCategory.toll:
+        return Icons.toll_rounded;
+      case RoadTripBudgetCategory.parking:
+        return Icons.local_parking_rounded;
+      case RoadTripBudgetCategory.transport:
+        return Icons.directions_car_rounded;
+      case RoadTripBudgetCategory.activities:
+        return Icons.attractions_rounded;
+      case RoadTripBudgetCategory.shopping:
+        return Icons.shopping_bag_rounded;
+      case RoadTripBudgetCategory.emergency:
+        return Icons.health_and_safety_rounded;
+      case RoadTripBudgetCategory.misc:
+        return Icons.category_rounded;
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case RoadTripBudgetCategory.fuel:
+        return const Color(0xFFEF4444);
+      case RoadTripBudgetCategory.accommodation:
+        return const Color(0xFF6366F1);
+      case RoadTripBudgetCategory.food:
+        return const Color(0xFFF59E0B);
+      case RoadTripBudgetCategory.toll:
+        return const Color(0xFF0EA5E9);
+      case RoadTripBudgetCategory.parking:
+        return const Color(0xFF64748B);
+      case RoadTripBudgetCategory.transport:
+        return const Color(0xFF8B5CF6);
+      case RoadTripBudgetCategory.activities:
+        return const Color(0xFF10B981);
+      case RoadTripBudgetCategory.shopping:
+        return const Color(0xFFEC4899);
+      case RoadTripBudgetCategory.emergency:
+        return const Color(0xFFF97316);
+      case RoadTripBudgetCategory.misc:
+        return const Color(0xFF6B7280);
     }
   }
 }

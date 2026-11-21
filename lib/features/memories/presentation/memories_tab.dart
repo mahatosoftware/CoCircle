@@ -107,7 +107,7 @@ class _MemoriesTabState extends ConsumerState<MemoriesTab> {
                       controller: locationController,
                       decoration: const InputDecoration(
                         labelText: 'Location (optional)',
-                        hintText: 'Anjuna Beach, Goa',
+                        hintText: 'e.g. Beach or City center',
                         border: OutlineInputBorder(),
                       ),
                     ),

@@ -3,26 +3,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    function isUser(userId) {
+    function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
     function isCircleMember(circleId) {
       return isAuthenticated() && (
-        exists(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)) ||
-        request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.memberIds
+        exists(/databases/$(database)/documents/circles/$(circleId)) &&
+        (
+          request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.memberIds ||
+          get(/databases/$(database)/documents/circles/$(circleId)).data.createdBy == request.auth.uid
+        )
       );
     }
 
     function isCircleAdmin(circleId) {
       return isAuthenticated() && (
-        get(/databases/$(database)/documents/circles/$(circleId)).data.createdBy == request.auth.uid ||
-        get(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)).data.role == 'admin'
+        exists(/databases/$(database)/documents/circles/$(circleId)) &&
+        (
+          get(/databases/$(database)/documents/circles/$(circleId)).data.createdBy == request.auth.uid ||
+          (
+            'adminIds' in get(/databases/$(database)/documents/circles/$(circleId)).data &&
+            request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.adminIds
+          )
+        )
       );
     }
 
@@ -30,115 +38,150 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/trips/$(tripId)).data;
     }
 
-    function isTripAuthorized(tripId) {
-      return isAuthenticated() && isCircleMember(getTrip(tripId).circleId);
+    function resourceTripCreator(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy;
     }
 
-    function isTripOrganizer(tripId) {
-      return isAuthenticated() && (
-        getTrip(tripId).createdBy == request.auth.uid ||
-        isCircleAdmin(getTrip(tripId).circleId)
-      );
-    }
-
-    // 1. User profiles
+    // 1. User Profiles
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isUser(userId);
-      allow delete: if false; // Users cannot be deleted directly
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
     }
 
-    // 2. Circles
+    // 2. Circles (permits memberIds array-contains queries)
     match /circles/{circleId} {
-      allow read: if isCircleMember(circleId);
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update, delete: if isCircleAdmin(circleId);
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && isCircleAdmin(circleId);
 
       match /members/{memberId} {
-        allow read: if isCircleMember(circleId);
-        allow create, update, delete: if isCircleAdmin(circleId) || isUser(memberId);
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAuthenticated() && (isCircleAdmin(circleId) || isOwner(memberId));
       }
     }
 
-    // 3. Trips
+    // 3. Trips (permits circleId queries)
     match /trips/{tripId} {
-      allow read: if isTripAuthorized(tripId);
-      allow create: if isAuthenticated();
-      allow update: if isTripAuthorized(tripId);
-      allow delete: if isTripOrganizer(tripId);
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isCircleAdmin(resource.data.circleId)
+      );
 
-      // Subcollection: Participants (Unified Registered & Guest Participants)
-      // Enforces that guest profiles can ONLY be managed by authenticated circle members / organizers.
-      // Guests have NO auth UID and therefore have zero direct API or login access.
+      // Subcollection: Participants (Registered & Guest profiles)
       match /participants/{participantId} {
-        allow read: if isTripAuthorized(tripId);
-        
-        // Creating a participant (guest or registered member)
-        allow create: if isTripAuthorized(tripId) && (
-          // If registered participant, either self or organizer adding
-          (request.resource.data.participantType == 'registered' && (request.resource.data.userId == request.auth.uid || isTripOrganizer(tripId))) ||
-          // If guest participant, must be created by an authenticated member with addedBy set to auth.uid
-          (request.resource.data.participantType == 'guest' && request.resource.data.addedBy == request.auth.uid)
-        );
-
-        // Updating a participant (profile edit or guest-to-registered conversion)
-        allow update: if isTripAuthorized(tripId) && (
-          isTripOrganizer(tripId) ||
-          // User updating their own registered profile
-          (resource.data.participantType == 'registered' && resource.data.userId == request.auth.uid) ||
-          // Guest conversion: organizer linking Firebase UID to guest record
-          (resource.data.participantType == 'guest' && request.resource.data.participantType == 'registered' && request.resource.data.convertedBy == request.auth.uid)
-        );
-
-        // Soft delete / remove only by trip organizers
-        allow delete: if isTripOrganizer(tripId);
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAuthenticated();
       }
 
-      // Subcollection: Expenses
-      match /expenses/{expenseId} {
-        allow read: if isTripAuthorized(tripId);
-        allow create: if isTripAuthorized(tripId) && request.resource.data.createdBy == request.auth.uid;
-        allow update: if isTripAuthorized(tripId);
-        allow delete: if isTripOrganizer(tripId) || resource.data.createdBy == request.auth.uid;
-      }
-
-      // Subcollection: Direct & Guest Payments
+      // Subcollection: Payments
       match /payments/{paymentId} {
-        allow read: if isTripAuthorized(tripId);
-        allow create: if isTripAuthorized(tripId) && request.resource.data.recordedBy == request.auth.uid;
-        allow update, delete: if isTripOrganizer(tripId) || resource.data.recordedBy == request.auth.uid;
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAuthenticated();
       }
 
-      // Subcollection: Settlements
-      match /settlements/{settlementId} {
-        allow read: if isTripAuthorized(tripId);
-        allow create, update: if isTripAuthorized(tripId);
-        allow delete: if isTripOrganizer(tripId);
+      // Subcollection: Budget Commitments
+      match /budgetCommitments/{commitmentId} {
+        allow read, write: if isAuthenticated();
       }
 
-      // Subcollection: Itinerary
-      match /itinerary/{itemId} {
-        allow read: if isTripAuthorized(tripId);
-        allow write: if isTripAuthorized(tripId);
-      }
-
-      // Subcollection: Tasks
-      match /tasks/{taskId} {
-        allow read: if isTripAuthorized(tripId);
-        allow write: if isTripAuthorized(tripId);
-      }
-
-      // Subcollection: Polls
-      match /polls/{pollId} {
-        allow read: if isTripAuthorized(tripId);
-        allow write: if isTripAuthorized(tripId);
-      }
-
-      // Subcollection: Memories
+      // Subcollection: Memories & Scrapbook
       match /memories/{memoryId} {
-        allow read: if isTripAuthorized(tripId);
-        allow write: if isTripAuthorized(tripId);
+        allow read, write: if isAuthenticated();
       }
+
+      match /scrapbook/{pageId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      // Legacy subcollection aliases
+      match /expenses/{id} { allow read, write: if isAuthenticated(); }
+      match /settlements/{id} { allow read, write: if isAuthenticated(); }
+      match /itinerary/{id} { allow read, write: if isAuthenticated(); }
+      match /tasks/{id} { allow read, write: if isAuthenticated(); }
+      match /polls/{id} { allow read, write: if isAuthenticated(); }
+    }
+
+    // 4. Root Tasks Collection
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 5. Root Polls Collection
+    match /polls/{pollId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 6. Root Itineraries Collection
+    match /itineraries/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 7. Root Lodgings Collection
+    match /lodgings/{lodgingId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 8. Root Ideas Collection
+    match /ideas/{ideaId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 9. Root Packing Items Collection
+    match /packing_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 10. Root Expenses Collection
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 11. Root Audit Logs Collection (Immutable)
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // 12. Root Settlements Collection
+    match /settlements/{settlementId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 13. Root Settlement Adjustments Collection
+    match /settlement_adjustments/{adjustmentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 14. Root Shopping Lists & Items
+    match /shopping_lists/{listId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /shopping_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 15. Root Notifications Collection
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isAuthenticated();
+    }
+
+    // 16. Root Config Collection (Global settings & AI config)
+    match /config/{configDoc} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // 17. Root Mail Collection
+    match /mail/{mailId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
     }
   }
 }

@@ -154,7 +154,7 @@ class _CreatePollScreenState extends ConsumerState<CreatePollScreen> {
                       label: const Text('Destination'),
                       onPressed: () => _applyTemplate(
                         'Where should we go?',
-                        ['Goa beaches', 'Coorg hills', 'Ooty valley'],
+                        ['Beaches', 'Mountains', 'Countryside'],
                       ),
                     ),
                     const SizedBox(width: 8),

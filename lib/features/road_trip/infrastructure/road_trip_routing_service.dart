@@ -171,13 +171,30 @@ class RoadTripRoutingService {
       mode: mode,
     );
 
+    // 1. Try launching in Google Maps app / external app directly
     try {
-      if (await canLaunchUrl(uri)) {
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (launched) return true;
     } catch (e) {
-      debugPrint('Error launching Google Maps directions URL: $e');
+      debugPrint('External Google Maps launch failed, falling back: $e');
     }
+
+    // 2. Fallback to platform default browser / viewer
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      if (launched) return true;
+    } catch (e) {
+      debugPrint('Platform default launch failed: $e');
+    }
+
+    // 3. Fallback geo URI if waypoints are empty
+    if (waypoints.isEmpty) {
+      try {
+        final geoUri = Uri.parse('geo:$destinationLat,$destinationLng?q=$destinationLat,$destinationLng');
+        return await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+      } catch (_) {}
+    }
+
     return false;
   }
 

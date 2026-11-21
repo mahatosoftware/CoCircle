@@ -10,6 +10,7 @@ import '../../circles/presentation/circle_controller.dart';
 import '../../trips/domain/trip_model.dart';
 import '../../trips/presentation/trip_controller.dart';
 import '../../activity_center/application/activity_center_notifier.dart';
+import '../../activity_center/domain/action_item_model.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -24,7 +25,7 @@ class HomeScreen extends ConsumerWidget {
 
     final displayName = (user != null && user.displayName.isNotEmpty)
         ? user.displayName.split(' ').first
-        : 'Rahul';
+        : (user?.email != null && user!.email.isNotEmpty ? user.email.split('@').first : 'Traveler');
 
     return Scaffold(
       backgroundColor: isDark ? AppPallete.backgroundDark : AppPallete.background,
@@ -138,16 +139,16 @@ class HomeScreen extends ConsumerWidget {
 
               // Calculate action counts
               final taskActions = pendingActions
-                  .where((a) => a.type == 'task' || a.title.toLowerCase().contains('task'))
+                  .where((a) => a.type == ActionItemType.task || a.title.toLowerCase().contains('task'))
                   .length;
               final pollActions = pendingActions
-                  .where((a) => a.type == 'poll' || a.title.toLowerCase().contains('poll') || a.title.toLowerCase().contains('vote'))
+                  .where((a) => a.type == ActionItemType.poll || a.title.toLowerCase().contains('poll') || a.title.toLowerCase().contains('vote'))
                   .length;
               final settleActions = pendingActions
-                  .where((a) => a.type == 'settle' || a.title.toLowerCase().contains('settle') || a.title.toLowerCase().contains('pay'))
+                  .where((a) => a.type == ActionItemType.settlement || a.title.toLowerCase().contains('settle') || a.title.toLowerCase().contains('pay'))
                   .length;
               final inviteActions = pendingActions
-                  .where((a) => a.type == 'invite' || a.title.toLowerCase().contains('invite'))
+                  .where((a) => a.type == ActionItemType.invitation || a.title.toLowerCase().contains('invite'))
                   .length;
 
               return RefreshIndicator(
@@ -167,12 +168,12 @@ class HomeScreen extends ConsumerWidget {
 
                     const SizedBox(height: 24),
 
-                    // 2. Your Actions (4) Section Header & Grid
+                    // 2. Your Actions Section Header & Grid
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Your Actions (${pendingActions.isEmpty ? 4 : pendingActions.length})',
+                          'Your Actions (${pendingActions.length})',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -198,10 +199,10 @@ class HomeScreen extends ConsumerWidget {
                     _buildYourActionsGrid(
                       context,
                       isDark: isDark,
-                      tasksCount: taskActions > 0 ? taskActions : 2,
-                      pollsCount: pollActions > 0 ? pollActions : 1,
-                      settleAmount: settleActions > 0 ? '₹${settleActions * 625}' : '₹1,250',
-                      invitesCount: inviteActions > 0 ? inviteActions : 1,
+                      tasksCount: taskActions,
+                      pollsCount: pollActions,
+                      settleAmount: settleActions > 0 ? '₹${settleActions * 625}' : '₹0',
+                      invitesCount: inviteActions,
                       heroTripId: heroTrip?.id,
                     ),
 
@@ -236,7 +237,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     if (upcomingTrips.isEmpty)
-                      _buildDemoUpcomingTripCard(context, isDark)
+                      _buildNoUpcomingTripsCard(context, circles.first.id, isDark)
                     else
                       ...upcomingTrips.map((trip) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
@@ -264,19 +265,26 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildHeroTripCard(BuildContext context, TripModel trip, bool isDark) {
-    // Format duration text e.g. "Day 2 of 4 • 6 members"
-    String dayText = 'Day 2 of 4';
+    String dayText = 'Upcoming';
     if (trip.startDate != null && trip.endDate != null) {
       final totalDays = trip.endDate!.difference(trip.startDate!).inDays + 1;
-      final currentDay = DateTime.now().difference(trip.startDate!).inDays + 1;
-      if (currentDay > 0 && currentDay <= totalDays) {
+      final now = DateTime.now();
+      final currentDay = now.difference(trip.startDate!).inDays + 1;
+      if (now.isBefore(trip.startDate!)) {
+        final daysUntil = trip.startDate!.difference(now).inDays + 1;
+        dayText = daysUntil == 1 ? 'Starts tomorrow' : 'Starts in $daysUntil days';
+      } else if (currentDay > 0 && currentDay <= totalDays) {
         dayText = 'Day $currentDay of $totalDays';
       } else {
         dayText = '$totalDays Days';
       }
+    } else if (trip.startDate != null) {
+      dayText = DateFormat('d MMM').format(trip.startDate!);
+    } else {
+      dayText = 'Dates pending';
     }
-    final membersCount = trip.participantIds.isNotEmpty ? trip.participantIds.length : 6;
-    final subtitle = '$dayText • $membersCount members';
+    final membersCount = trip.participantIds.isNotEmpty ? trip.participantIds.length : 1;
+    final subtitle = '$dayText • $membersCount ${membersCount == 1 ? "member" : "members"}';
 
     return Container(
       height: 210,
@@ -345,7 +353,7 @@ class HomeScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      trip.name.isNotEmpty ? trip.name : 'Coorg Weekend',
+                      trip.name.isNotEmpty ? trip.name : 'Untitled Trip',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -616,8 +624,8 @@ class HomeScreen extends ConsumerWidget {
       final endFmt = trip.endDate != null ? DateFormat('d MMM').format(trip.endDate!) : '';
       dateRange = endFmt.isNotEmpty ? '$startFmt - $endFmt' : startFmt;
     }
-    final membersCount = trip.participantIds.isNotEmpty ? trip.participantIds.length : 5;
-    final subtitle = '$dateRange • $membersCount members';
+    final membersCount = trip.participantIds.isNotEmpty ? trip.participantIds.length : 1;
+    final subtitle = '$dateRange • $membersCount ${membersCount == 1 ? "member" : "members"}';
 
     return Container(
       decoration: BoxDecoration(
@@ -650,11 +658,17 @@ class HomeScreen extends ConsumerWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    image: const DecorationImage(
-                      image: NetworkImage(
-                        'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=300&q=80',
-                      ),
-                      fit: BoxFit.cover,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.flight_takeoff_rounded,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
                 ),
@@ -697,8 +711,10 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDemoUpcomingTripCard(BuildContext context, bool isDark) {
+  Widget _buildNoUpcomingTripsCard(BuildContext context, String defaultCircleId, bool isDark) {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: isDark ? AppPallete.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -707,50 +723,56 @@ class HomeScreen extends ConsumerWidget {
           width: 1,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=300&q=80',
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppPallete.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Goa Getaway',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : AppPallete.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '21 - 25 Apr • 5 members',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? const Color(0xFF94A3B8) : AppPallete.gray,
-                    ),
-                  ),
-                ],
-              ),
+            child: const Icon(
+              Icons.luggage_outlined,
+              color: AppPallete.primary,
+              size: 28,
             ),
-            StatusBadge.fromTripStatus('Planning'),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No upcoming trips',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : AppPallete.navy,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Plan your next getaway with your circle to keep everyone aligned.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? const Color(0xFF94A3B8) : AppPallete.gray,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: () => context.push('/circle/$defaultCircleId/create-trip'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppPallete.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text(
+              'Plan a Trip',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

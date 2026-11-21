@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_pallete.dart';
+import '../../../activity_center/application/trip_readiness_service.dart';
 import '../../../circles/presentation/circle_controller.dart';
+import '../../../polls/domain/poll_model.dart';
+import '../../../polls/presentation/poll_controller.dart';
+import '../../../tasks/domain/task_model.dart';
+import '../../../tasks/presentation/task_controller.dart';
 import '../trip_controller.dart';
 import '../trip_participant_controller.dart';
 
@@ -30,6 +35,9 @@ class TripOverviewTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tripAsync = ref.watch(tripDetailsProvider(tripId));
     final participantsAsync = ref.watch(tripParticipantsProvider(tripId));
+    final readiness = ref.watch(tripReadinessProvider(tripId));
+    final tasksAsync = ref.watch(tripTasksProvider(tripId));
+    final pollsAsync = ref.watch(tripPollsProvider(tripId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return tripAsync.when(
@@ -42,7 +50,7 @@ class TripOverviewTab extends ConsumerWidget {
             ? participants.length 
             : (trip.participantIds.isNotEmpty ? trip.participantIds.length : (memberNames.length > 1 ? memberNames.length : 1));
 
-        String datesText = '12 - 15 Mar (4 days)';
+        String datesText = 'Dates pending';
         if (trip.startDate != null) {
           final startStr = DateFormat('d MMM').format(trip.startDate!);
           final endStr = trip.endDate != null ? DateFormat('d MMM').format(trip.endDate!) : '';
@@ -50,13 +58,13 @@ class TripOverviewTab extends ConsumerWidget {
           datesText = endStr.isNotEmpty ? '$startStr - $endStr ($days days)' : '$startStr ($days day)';
         }
 
-        final locationText = trip.location?.isNotEmpty == true ? trip.location! : 'Coorg, Karnataka';
-        final budgetText = trip.totalBudget > 0 ? '₹${trip.totalBudget.toStringAsFixed(0)}' : '₹60,000';
+        final locationText = trip.location?.isNotEmpty == true ? trip.location! : 'Location pending';
+        final budgetText = trip.totalBudget > 0 ? '₹${trip.totalBudget.toStringAsFixed(0)}' : 'Budget not set';
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
           children: [
-            // 1. Trip Progress Card (68% with Checklist)
+            // 1. Trip Progress Card (Realtime calculated with categories)
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -89,12 +97,12 @@ class TripOverviewTab extends ConsumerWidget {
                           letterSpacing: -0.2,
                         ),
                       ),
-                      const Text(
-                        '68%',
+                      Text(
+                        '${readiness.overallScore}%',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: AppPallete.indigo,
+                          color: readiness.scoreColor,
                         ),
                       ),
                     ],
@@ -102,32 +110,27 @@ class TripOverviewTab extends ConsumerWidget {
                   const SizedBox(height: 10),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: const LinearProgressIndicator(
-                      value: 0.68,
+                    child: LinearProgressIndicator(
+                      value: (readiness.overallScore / 100.0).clamp(0.0, 1.0),
                       minHeight: 8,
-                      backgroundColor: Color(0xFFEEF2FF),
-                      valueColor: AlwaysStoppedAnimation<Color>(AppPallete.indigo),
+                      backgroundColor: const Color(0xFFEEF2FF),
+                      valueColor: AlwaysStoppedAnimation<Color>(readiness.scoreColor),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Progress Checklist
-                  _buildProgressItem('Destination & dates', isDone: true, isDark: isDark),
-                  const SizedBox(height: 8),
-                  _buildProgressItem('Itinerary (3/4 days)', isDone: true, isDark: isDark),
-                  const SizedBox(height: 8),
-                  _buildProgressItem('Key bookings', isDone: false, isDark: isDark),
-                  const SizedBox(height: 8),
-                  _buildProgressItem('Tasks (5 open)', isDone: false, isDark: isDark),
-                  const SizedBox(height: 8),
-                  _buildProgressItem('Final confirmation', isDone: false, isDark: isDark),
+                  ...readiness.categories.map((c) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _buildProgressItem('${c.title} • ${c.statusText}', isDone: c.isReady, isDark: isDark),
+                      )),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 2. Next Actions Section (Wireframe 2 Planning Workspace)
+            // 2. Next Actions Section
             Text(
               'Next Actions',
               style: TextStyle(
@@ -139,36 +142,11 @@ class TripOverviewTab extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
 
-            _buildActionItem(
-              icon: Icons.how_to_vote_rounded,
-              iconColor: const Color(0xFF5B42F3),
-              iconBgColor: const Color(0xFFEEF2FF),
-              title: 'Vote: Choose a stay option',
-              subtitle: 'Ends in 2 days',
+            _buildNextActions(
+              context,
+              tasks: tasksAsync.value ?? [],
+              polls: pollsAsync.value ?? [],
               isDark: isDark,
-              onTap: onNavigateToPolls,
-            ),
-            const SizedBox(height: 10),
-
-            _buildActionItem(
-              icon: Icons.assignment_turned_in_rounded,
-              iconColor: const Color(0xFF0284C7),
-              iconBgColor: const Color(0xFFE0F2FE),
-              title: 'Task: Book accommodation',
-              subtitle: 'Assigned to Priya • Due in 3 days',
-              isDark: isDark,
-              onTap: onNavigateToTasks,
-            ),
-            const SizedBox(height: 10),
-
-            _buildActionItem(
-              icon: Icons.edit_calendar_rounded,
-              iconColor: const Color(0xFFF59E0B),
-              iconBgColor: const Color(0xFFFEF3C7),
-              title: 'Finalize Day 3 itinerary',
-              subtitle: '2 suggestions ready',
-              isDark: isDark,
-              onTap: onNavigateToItinerary,
             ),
 
             const SizedBox(height: 20),
@@ -251,6 +229,75 @@ class TripOverviewTab extends ConsumerWidget {
             color: isDark ? Colors.white : AppPallete.navy,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildNextActions(
+    BuildContext context, {
+    required List<TaskModel> tasks,
+    required List<PollModel> polls,
+    required bool isDark,
+  }) {
+    final activePolls = polls.where((p) => p.isActive == true).take(2).toList();
+    final pendingTasks = tasks.where((t) => t.isCompleted == false).take(2).toList();
+
+    if (activePolls.isEmpty && pendingTasks.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isDark ? AppPallete.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'All caught up! No pending tasks or open polls for this trip.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? const Color(0xFF94A3B8) : AppPallete.gray,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        ...activePolls.map((poll) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildActionItem(
+                icon: Icons.how_to_vote_rounded,
+                iconColor: const Color(0xFF5B42F3),
+                iconBgColor: const Color(0xFFEEF2FF),
+                title: 'Vote: ${poll.question}',
+                subtitle: '${poll.options.length} options • Tap to vote',
+                isDark: isDark,
+                onTap: onNavigateToPolls,
+              ),
+            )),
+        ...pendingTasks.map((task) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildActionItem(
+                icon: Icons.assignment_turned_in_rounded,
+                iconColor: const Color(0xFF0284C7),
+                iconBgColor: const Color(0xFFE0F2FE),
+                title: 'Task: ${task.title}',
+                subtitle: task.assignedTo != null && task.assignedTo!.isNotEmpty
+                    ? 'Assigned • Tap to view'
+                    : 'Pending task • Tap to view',
+                isDark: isDark,
+                onTap: onNavigateToTasks,
+              ),
+            )),
       ],
     );
   }

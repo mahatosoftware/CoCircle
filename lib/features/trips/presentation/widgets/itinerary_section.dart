@@ -690,7 +690,10 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
       ),
-      child: Padding(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _showAddActivityBottomSheet(context, existingItem: item),
+        child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -723,11 +726,19 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                         ),
                       ),
                       Text(
-                        DateFormat.jm().format(item.startTime),
+                        item.hasStartTime
+                            ? (item.endTime != null
+                                ? '${DateFormat.jm().format(item.startTime)} - ${DateFormat.jm().format(item.endTime!)}'
+                                : DateFormat.jm().format(item.startTime))
+                            : (item.endTime != null
+                                ? 'Until ${DateFormat.jm().format(item.endTime!)}'
+                                : 'Flexible'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.primary,
+                          color: item.hasStartTime
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
                         ),
                       ),
                     ],
@@ -793,7 +804,16 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                 ],
               ),
             ),
-            // Delete button
+            // Edit & Delete buttons
+            IconButton(
+              onPressed: () => _showAddActivityBottomSheet(context, existingItem: item),
+              icon: Icon(
+                Icons.edit_outlined,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              tooltip: 'Edit Activity',
+            ),
             IconButton(
               onPressed: () => _confirmDelete(context, item),
               icon: Icon(
@@ -801,9 +821,11 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
                 color: theme.colorScheme.error,
                 size: 20,
               ),
+              tooltip: 'Delete Activity',
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -836,7 +858,7 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
     );
   }
 
-  void _showAddActivityBottomSheet(BuildContext context) {
+  void _showAddActivityBottomSheet(BuildContext context, {ItineraryItemModel? existingItem}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -853,6 +875,7 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
             return _ActivityForm(
               tripId: widget.tripId,
               scrollController: scrollController,
+              existingItem: existingItem,
             );
           },
         );
@@ -935,7 +958,13 @@ class _PlannerDetailCard extends StatelessWidget {
 class _ActivityForm extends ConsumerStatefulWidget {
   final String tripId;
   final ScrollController scrollController;
-  const _ActivityForm({required this.tripId, required this.scrollController});
+  final ItineraryItemModel? existingItem;
+
+  const _ActivityForm({
+    required this.tripId,
+    required this.scrollController,
+    this.existingItem,
+  });
 
   @override
   ConsumerState<_ActivityForm> createState() => _ActivityFormState();
@@ -943,14 +972,15 @@ class _ActivityForm extends ConsumerStatefulWidget {
 
 class _ActivityFormState extends ConsumerState<_ActivityForm> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _notesController = TextEditingController();
-  final _costController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _notesController;
+  late final TextEditingController _costController;
 
-  String _selectedType = 'general';
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
+  late String _selectedType;
+  late DateTime _selectedDate;
+  TimeOfDay? _selectedStartTime;
+  TimeOfDay? _selectedEndTime;
 
   final List<Map<String, String>> _types = [
     {'value': 'general', 'label': 'General / Other'},
@@ -958,19 +988,39 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
     {'value': 'lodging', 'label': 'Lodging stay'},
     {'value': 'dining', 'label': 'Dining / Restaurant'},
     {'value': 'sightseeing', 'label': 'Sightseeing'},
+    {'value': 'fuel', 'label': 'Fuel / EV Charging'},
+    {'value': 'adventure', 'label': 'Adventure'},
   ];
 
   @override
   void initState() {
     super.initState();
-    // Default form date to trip start date if available
-    ref.read(tripDetailsProvider(widget.tripId)).whenData((trip) {
-      if (trip.startDate != null) {
-        setState(() {
-          _selectedDate = trip.startDate!;
-        });
-      }
-    });
+    final item = widget.existingItem;
+    _titleController = TextEditingController(text: item?.title ?? '');
+    _locationController = TextEditingController(text: item?.location ?? '');
+    _notesController = TextEditingController(text: item?.notes ?? '');
+    _costController = TextEditingController(
+      text: item?.cost != null && item!.cost! > 0 ? item.cost!.toStringAsFixed(0) : '',
+    );
+    _selectedType = item?.type ?? 'general';
+    _selectedDate = item?.startTime ?? DateTime.now();
+    _selectedStartTime = (item != null && item.hasStartTime)
+        ? TimeOfDay.fromDateTime(item.startTime)
+        : (item != null ? null : const TimeOfDay(hour: 9, minute: 0));
+    _selectedEndTime = item?.endTime != null
+        ? TimeOfDay.fromDateTime(item!.endTime!)
+        : null;
+
+    if (item == null) {
+      // Default form date to trip start date if available
+      ref.read(tripDetailsProvider(widget.tripId)).whenData((trip) {
+        if (trip.startDate != null) {
+          setState(() {
+            _selectedDate = trip.startDate!;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -994,49 +1044,75 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
     }
   }
 
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
-    }
-  }
-
   void _saveForm() {
     if (_formKey.currentState!.validate()) {
+      final bool hasStartTime = _selectedStartTime != null;
       final combinedDateTime = DateTime(
         _selectedDate.year,
         _selectedDate.month,
         _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
+        _selectedStartTime?.hour ?? 10,
+        _selectedStartTime?.minute ?? 0,
       );
+
+      final combinedEndTime = _selectedEndTime != null
+          ? DateTime(
+              _selectedDate.year,
+              _selectedDate.month,
+              _selectedDate.day,
+              _selectedEndTime!.hour,
+              _selectedEndTime!.minute,
+            )
+          : null;
 
       final cost = double.tryParse(_costController.text.trim());
 
-      ref
-          .read(tripPlannerControllerProvider.notifier)
-          .createItineraryItem(
-            tripId: widget.tripId,
-            title: _titleController.text.trim(),
-            type: _selectedType,
-            startTime: combinedDateTime,
-            location: _locationController.text.trim().isEmpty
-                ? null
-                : _locationController.text.trim(),
-            notes: _notesController.text.trim().isEmpty
-                ? null
-                : _notesController.text.trim(),
-            cost: cost,
-            context: context,
-          );
+      if (widget.existingItem != null) {
+        final updated = widget.existingItem!.copyWith(
+          title: _titleController.text.trim(),
+          type: _selectedType,
+          startTime: combinedDateTime,
+          endTime: combinedEndTime,
+          clearEndTime: combinedEndTime == null,
+          hasStartTime: hasStartTime,
+          location: _locationController.text.trim().isEmpty
+              ? null
+              : _locationController.text.trim(),
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+          cost: cost,
+        );
+        ref
+            .read(tripPlannerControllerProvider.notifier)
+            .updateItineraryItem(item: updated, context: context);
+        Navigator.pop(context);
+      } else {
+        ref
+            .read(tripPlannerControllerProvider.notifier)
+            .createItineraryItem(
+              tripId: widget.tripId,
+              title: _titleController.text.trim(),
+              type: _selectedType,
+              startTime: combinedDateTime,
+              endTime: combinedEndTime,
+              hasStartTime: hasStartTime,
+              location: _locationController.text.trim().isEmpty
+                  ? null
+                  : _locationController.text.trim(),
+              notes: _notesController.text.trim().isEmpty
+                  ? null
+                  : _notesController.text.trim(),
+              cost: cost,
+              context: context,
+            );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.existingItem != null;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -1052,9 +1128,9 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Add Activity',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  isEditing ? 'Edit Activity' : 'Add Activity',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -1076,7 +1152,7 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration: const InputDecoration(
                 labelText: 'Activity Type',
                 border: OutlineInputBorder(),
@@ -1089,7 +1165,9 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                     ),
                   )
                   .toList(),
-              onChanged: (v) => setState(() => _selectedType = v!),
+              onChanged: (v) {
+                if (v != null) setState(() => _selectedType = v);
+              },
             ),
             const SizedBox(height: 16),
             Row(
@@ -1097,16 +1175,86 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _pickDate,
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(DateFormat.yMMMd().format(_selectedDate)),
+                    icon: const Icon(Icons.calendar_today, size: 16),
+                    label: Text(DateFormat.yMMMd().format(_selectedDate), style: const TextStyle(fontSize: 12)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _selectedStartTime ?? const TimeOfDay(hour: 9, minute: 0),
+                      );
+                      if (picked != null) {
+                        setState(() => _selectedStartTime = picked);
+                      }
+                    },
+                    icon: const Icon(Icons.access_time, size: 16),
+                    label: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selectedStartTime != null
+                                ? 'Start: ${_selectedStartTime!.format(context)}'
+                                : 'Start: Flexible',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        if (_selectedStartTime != null)
+                          GestureDetector(
+                            onTap: () => setState(() => _selectedStartTime = null),
+                            child: const Icon(Icons.close, size: 14),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _pickTime,
-                    icon: const Icon(Icons.access_time),
-                    label: Text(_selectedTime.format(context)),
+                    onPressed: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _selectedEndTime ??
+                            (_selectedStartTime != null
+                                ? TimeOfDay(
+                                    hour: (_selectedStartTime!.hour + 1) % 24,
+                                    minute: _selectedStartTime!.minute,
+                                  )
+                                : const TimeOfDay(hour: 12, minute: 0)),
+                      );
+                      if (picked != null) {
+                        setState(() => _selectedEndTime = picked);
+                      }
+                    },
+                    icon: const Icon(Icons.access_time_filled, size: 16),
+                    label: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selectedEndTime != null
+                                ? 'End: ${_selectedEndTime!.format(context)}'
+                                : 'End: None',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        if (_selectedEndTime != null)
+                          GestureDetector(
+                            onTap: () => setState(() => _selectedEndTime = null),
+                            child: const Icon(Icons.close, size: 14),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1157,9 +1305,9 @@ class _ActivityFormState extends ConsumerState<_ActivityForm> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Add to Itinerary',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              child: Text(
+                isEditing ? 'Save Changes' : 'Add to Itinerary',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 20),

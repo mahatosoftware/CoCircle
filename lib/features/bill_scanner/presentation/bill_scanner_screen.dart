@@ -284,7 +284,7 @@ class _BillScannerScreenState extends ConsumerState<BillScannerScreen> {
                           const SizedBox(width: 8),
                           ActionChip(
                             avatar: const Icon(Icons.restaurant, size: 14),
-                            label: const Text('Goa Beach Shack (₹3,500)', style: TextStyle(fontSize: 11)),
+                            label: const Text('Restaurant Bill (₹3,500)', style: TextStyle(fontSize: 11)),
                             onPressed: () => _loadSample(BillScannerService.getSampleRestaurantBill()),
                           ),
                           const SizedBox(width: 8),

@@ -9,6 +9,7 @@ class TaskModel {
   final bool isCompleted;
   final String? completedBy;
   final DateTime? completedAt;
+  final String? assignedTo;
 
   const TaskModel({
     required this.id,
@@ -19,6 +20,7 @@ class TaskModel {
     this.isCompleted = false,
     this.completedBy,
     this.completedAt,
+    this.assignedTo,
   });
 
   TaskModel copyWith({
@@ -30,8 +32,10 @@ class TaskModel {
     bool? isCompleted,
     String? completedBy,
     DateTime? completedAt,
+    String? assignedTo,
     bool clearCompletedBy = false,
     bool clearCompletedAt = false,
+    bool clearAssignedTo = false,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -42,6 +46,7 @@ class TaskModel {
       isCompleted: isCompleted ?? this.isCompleted,
       completedBy: clearCompletedBy ? null : (completedBy ?? this.completedBy),
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      assignedTo: clearAssignedTo ? null : (assignedTo ?? this.assignedTo),
     );
   }
 
@@ -55,6 +60,7 @@ class TaskModel {
       'isCompleted': isCompleted,
       'completedBy': completedBy,
       'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'assignedTo': assignedTo,
     };
   }
 
@@ -83,6 +89,7 @@ class TaskModel {
       isCompleted: json['isCompleted'] as bool? ?? false,
       completedBy: json['completedBy'] as String?,
       completedAt: parseNullableDate(json['completedAt']),
+      assignedTo: json['assignedTo'] as String?,
     );
   }
 }

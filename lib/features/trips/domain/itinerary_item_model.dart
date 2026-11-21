@@ -23,6 +23,7 @@ class ItineraryItemModel {
   final List<String> assignedUserIds;
   final bool isOptional;
   final bool isCompleted;
+  final bool hasStartTime;
 
   const ItineraryItemModel({
     required this.id,
@@ -45,6 +46,7 @@ class ItineraryItemModel {
     this.assignedUserIds = const [],
     this.isOptional = false,
     this.isCompleted = false,
+    this.hasStartTime = true,
   });
 
   ItineraryItemModel copyWith({
@@ -69,6 +71,7 @@ class ItineraryItemModel {
     List<String>? assignedUserIds,
     bool? isOptional,
     bool? isCompleted,
+    bool? hasStartTime,
   }) {
     return ItineraryItemModel(
       id: id ?? this.id,
@@ -91,6 +94,7 @@ class ItineraryItemModel {
       assignedUserIds: assignedUserIds ?? this.assignedUserIds,
       isOptional: isOptional ?? this.isOptional,
       isCompleted: isCompleted ?? this.isCompleted,
+      hasStartTime: hasStartTime ?? this.hasStartTime,
     );
   }
 
@@ -116,6 +120,7 @@ class ItineraryItemModel {
       'assignedUserIds': assignedUserIds,
       'isOptional': isOptional,
       'isCompleted': isCompleted,
+      'hasStartTime': hasStartTime,
     };
   }
 
@@ -159,6 +164,7 @@ class ItineraryItemModel {
       assignedUserIds: assigned,
       isOptional: json['isOptional'] as bool? ?? false,
       isCompleted: json['isCompleted'] as bool? ?? false,
+      hasStartTime: json['hasStartTime'] as bool? ?? true,
     );
   }
 }

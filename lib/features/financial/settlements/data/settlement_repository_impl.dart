@@ -53,7 +53,6 @@ class SettlementRepositoryImpl implements SettlementRepository {
       print('SETTLEMENT_LOG: Fetching all settlements for trip $tripId...');
       final query = await _settlements
           .where('tripId', isEqualTo: tripId)
-          .orderBy('timestamp', descending: true)
           .get();
       
       final settlements = query.docs.map((d) {
@@ -64,6 +63,7 @@ class SettlementRepositoryImpl implements SettlementRepository {
           rethrow;
         }
       }).toList();
+      settlements.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       print('SETTLEMENT_LOG: Fetched ${settlements.length} settlements');
       return right(settlements);
     } catch (e) {
@@ -76,11 +76,10 @@ class SettlementRepositoryImpl implements SettlementRepository {
   Stream<List<SettlementModel>> getSettlementsStream(String tripId) {
     return _settlements
         .where('tripId', isEqualTo: tripId)
-        .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
           try {
-            return snapshot.docs.map((d) {
+            final list = snapshot.docs.map((d) {
               try {
                 return SettlementModel.fromJson(d.data());
               } catch (e) {
@@ -89,6 +88,8 @@ class SettlementRepositoryImpl implements SettlementRepository {
                 rethrow;
               }
             }).toList();
+            list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+            return list;
           } catch (e) {
             print('SETTLEMENT_STREAM_ERROR: $e');
             rethrow;
@@ -110,10 +111,11 @@ class SettlementRepositoryImpl implements SettlementRepository {
   Stream<List<SettlementAdjustmentModel>> getAdjustmentsStream(String tripId) {
     return _adjustments
         .where('tripId', isEqualTo: tripId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((d) => SettlementAdjustmentModel.fromJson(d.data())).toList();
+      final list = snapshot.docs.map((d) => SettlementAdjustmentModel.fromJson(d.data())).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
     });
   }
 
@@ -122,9 +124,9 @@ class SettlementRepositoryImpl implements SettlementRepository {
     try {
       final query = await _adjustments
           .where('tripId', isEqualTo: tripId)
-          .orderBy('createdAt', descending: true)
           .get();
       final list = query.docs.map((d) => SettlementAdjustmentModel.fromJson(d.data())).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return right(list);
     } catch (e) {
       return left(Failure(e.toString()));

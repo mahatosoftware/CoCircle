@@ -17,9 +17,11 @@ class NavigationHelper {
       final appleMapsUri = Uri.parse(
         'https://maps.apple.com/?daddr=$latitude,$longitude&dirflg=d&q=$encodedLabel',
       );
-      if (await canLaunchUrl(appleMapsUri)) {
-        return await launchUrl(appleMapsUri, mode: LaunchMode.externalApplication);
-      }
+      try {
+        if (await launchUrl(appleMapsUri, mode: LaunchMode.externalApplication)) {
+          return true;
+        }
+      } catch (_) {}
     }
 
     // 2. Google Maps Navigation Intent (Android and Universal)
@@ -27,18 +29,25 @@ class NavigationHelper {
       'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&travelmode=driving',
     );
 
-    if (await canLaunchUrl(googleMapsDirectionsUri)) {
-      return await launchUrl(
-        googleMapsDirectionsUri,
-        mode: LaunchMode.externalApplication,
-      );
-    }
+    try {
+      if (await launchUrl(googleMapsDirectionsUri, mode: LaunchMode.externalApplication)) {
+        return true;
+      }
+    } catch (_) {}
+
+    try {
+      if (await launchUrl(googleMapsDirectionsUri, mode: LaunchMode.platformDefault)) {
+        return true;
+      }
+    } catch (_) {}
 
     // 3. Fallback generic geo URI
     final geoUri = Uri.parse('geo:$latitude,$longitude?q=$latitude,$longitude($encodedLabel)');
-    if (await canLaunchUrl(geoUri)) {
-      return await launchUrl(geoUri, mode: LaunchMode.externalApplication);
-    }
+    try {
+      if (await launchUrl(geoUri, mode: LaunchMode.externalApplication)) {
+        return true;
+      }
+    } catch (_) {}
 
     debugPrint('Could not launch any navigation app for $latitude, $longitude');
     return false;

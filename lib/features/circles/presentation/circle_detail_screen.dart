@@ -283,7 +283,7 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen>
                 _buildMembersTab(context, circle, membersAsync, tripsAsync, isDark),
 
                 // TAB 3: ACTIVITY
-                _buildActivityTab(context, isDark),
+                _buildActivityTab(context, tripsAsync, isDark),
               ],
             ),
           ),
@@ -834,53 +834,78 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen>
     );
   }
 
-  Widget _buildActivityTab(BuildContext context, bool isDark) {
-    final activities = [
-      {'title': 'Rahul created Goa Getaway trip', 'time': '2 hours ago', 'icon': Icons.flight_takeoff_rounded},
-      {'title': 'Priya added 3 items to Coorg Itinerary', 'time': 'Yesterday', 'icon': Icons.map_rounded},
-      {'title': 'Amit settled ₹1,250 with Rahul', 'time': '2 days ago', 'icon': Icons.receipt_long_rounded},
-    ];
+  Widget _buildActivityTab(BuildContext context, AsyncValue<List<TripModel>> tripsAsync, bool isDark) {
+    return tripsAsync.when(
+      data: (trips) {
+        if (trips.isEmpty) {
+          return const EmptyStateWidget(
+            icon: Icons.notifications_none_rounded,
+            title: 'No Circle Activity Yet',
+            description: 'When trips are created, itineraries updated, or expenses logged, you will see updates here.',
+          );
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      itemCount: activities.length,
-      itemBuilder: (context, index) {
-        final act = activities[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppPallete.surfaceDark : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-              ),
-            ),
-            child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
+        final activities = trips.map((t) {
+          final timeStr = DateFormat('d MMM yyyy').format(t.createdAt);
+          return {
+            'title': 'Trip "${t.name}" planned for ${t.location?.isNotEmpty == true ? t.location! : "group adventure"}',
+            'time': timeStr,
+            'icon': Icons.flight_takeoff_rounded,
+            'tripId': t.id,
+          };
+        }).toList();
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          itemCount: activities.length,
+          itemBuilder: (context, index) {
+            final act = activities[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
                 decoration: BoxDecoration(
-                  color: AppPallete.indigo.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+                  color: isDark ? AppPallete.surfaceDark : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                  ),
                 ),
-                child: Icon(act['icon'] as IconData, color: AppPallete.indigo, size: 20),
-              ),
-              title: Text(
-                act['title'] as String,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: isDark ? Colors.white : AppPallete.navy,
+                child: ListTile(
+                  onTap: () {
+                    final tripId = act['tripId'] as String?;
+                    if (tripId != null) {
+                      context.push('/trip/$tripId');
+                    }
+                  },
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppPallete.indigo.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(act['icon'] as IconData, color: AppPallete.indigo, size: 20),
+                  ),
+                  title: Text(
+                    act['title'] as String,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: isDark ? Colors.white : AppPallete.navy,
+                    ),
+                  ),
+                  subtitle: Text(
+                    act['time'] as String,
+                    style: const TextStyle(fontSize: 12, color: AppPallete.gray),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppPallete.gray),
                 ),
               ),
-              subtitle: Text(
-                act['time'] as String,
-                style: const TextStyle(fontSize: 12, color: AppPallete.gray),
-              ),
-            ),
-          ),
+            );
+          },
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const Center(child: Text('Unable to load activities')),
     );
   }
 

@@ -21,16 +21,16 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   final int _totalSteps = 5;
 
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Goa Getaway');
-  final _descriptionController = TextEditingController(text: 'beach, food and fun with the gang!');
-  final _locationController = TextEditingController(text: 'Goa');
-  final _budgetController = TextEditingController(text: '60000');
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _budgetController = TextEditingController();
 
   final List<TripParticipantModel> _initialParticipants = [];
 
   String _selectedCategory = 'Leisure';
-  DateTime? _startDate = DateTime.now().add(const Duration(days: 7));
-  DateTime? _endDate = DateTime.now().add(const Duration(days: 11));
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   final List<String> _categories = [
     'Leisure',
@@ -313,7 +313,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
         TextFormField(
           controller: _nameController,
           decoration: InputDecoration(
-            hintText: 'e.g. Goa Getaway',
+            hintText: 'e.g. Summer Roadtrip',
             filled: true,
             fillColor: isDark ? AppPallete.surfaceDark : Colors.white,
             border: OutlineInputBorder(
@@ -687,7 +687,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
               const Divider(height: 20),
               _buildReviewRow('Category', _selectedCategory),
               const Divider(height: 20),
-              _buildReviewRow('Destination', _locationController.text.isNotEmpty ? _locationController.text : 'Coorg, Karnataka'),
+              _buildReviewRow('Destination', _locationController.text.isNotEmpty ? _locationController.text : 'Not specified'),
               const Divider(height: 20),
               _buildReviewRow(
                 'Dates',
@@ -696,7 +696,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                     : 'Flexible',
               ),
               const Divider(height: 20),
-              _buildReviewRow('Target Budget', '₹${_budgetController.text}'),
+              _buildReviewRow('Target Budget', _budgetController.text.isNotEmpty ? '₹${_budgetController.text}' : 'Not set'),
               const Divider(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

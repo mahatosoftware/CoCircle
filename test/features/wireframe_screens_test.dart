@@ -86,6 +86,10 @@ void main() {
       expect(find.text('Next ->'), findsOneWidget);
       expect(find.byIcon(Icons.backpack_rounded), findsOneWidget);
 
+      // Enter trip name to satisfy validation
+      await tester.enterText(find.byType(TextFormField).first, 'Mountain Retreat');
+      await tester.pumpAndSettle();
+
       // Advance to step 2
       await tester.tap(find.text('Next ->'));
       await tester.pumpAndSettle();

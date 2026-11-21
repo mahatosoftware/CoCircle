@@ -265,8 +265,8 @@ class _AllTripsScreenState extends ConsumerState<AllTripsScreen> {
       final endFmt = trip.endDate != null ? DateFormat('d MMM').format(trip.endDate!) : '';
       dateRange = endFmt.isNotEmpty ? '$startFmt - $endFmt' : startFmt;
     }
-    final membersCount = trip.participantIds.isNotEmpty ? trip.participantIds.length : 6;
-    final subtitle = '$dateRange • $membersCount members';
+    final membersCount = trip.participantIds.isNotEmpty ? trip.participantIds.length : 1;
+    final subtitle = '$dateRange • $membersCount ${membersCount == 1 ? "member" : "members"}';
 
     return Container(
       decoration: BoxDecoration(
@@ -299,11 +299,17 @@ class _AllTripsScreenState extends ConsumerState<AllTripsScreen> {
                   height: 58,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    image: const DecorationImage(
-                      image: NetworkImage(
-                        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80',
-                      ),
-                      fit: BoxFit.cover,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.flight_takeoff_rounded,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
                 ),

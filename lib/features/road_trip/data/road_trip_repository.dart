@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/road_trip_route_model.dart';
 import '../domain/vehicle_fuel_model.dart';
@@ -18,11 +19,24 @@ class RoadTripRepository {
       _firestore.collection('trips').doc(tripId);
 
   // --- 1. Route Management ---
-  Stream<RoadTripRouteModel?> getRouteStream(String tripId) {
-    return _tripDoc(tripId).collection('roadTripRoutes').doc('current').snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return RoadTripRouteModel.fromJson(doc.data()!);
-    });
+  Stream<RoadTripRouteModel?> getRouteStream(String tripId) async* {
+    try {
+      await for (final doc in _tripDoc(tripId).collection('roadTripRoutes').doc('current').snapshots()) {
+        if (!doc.exists || doc.data() == null) {
+          yield null;
+        } else {
+          try {
+            yield RoadTripRouteModel.fromJson(doc.data()!);
+          } catch (e) {
+            debugPrint("RoadTripRepository: Error parsing RoadTripRouteModel: $e");
+            yield null;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("RoadTripRepository: getRouteStream error: $e");
+      yield null;
+    }
   }
 
   Future<void> saveRoute(RoadTripRouteModel route) async {
@@ -33,10 +47,15 @@ class RoadTripRepository {
   }
 
   // --- 2. Vehicle & Fuel Management ---
-  Stream<List<VehicleFuelModel>> getVehiclesStream(String tripId) {
-    return _tripDoc(tripId).collection('vehicles').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => VehicleFuelModel.fromJson(doc.data())).toList();
-    });
+  Stream<List<VehicleFuelModel>> getVehiclesStream(String tripId) async* {
+    try {
+      await for (final snapshot in _tripDoc(tripId).collection('vehicles').snapshots()) {
+        yield snapshot.docs.map((doc) => VehicleFuelModel.fromJson(doc.data())).toList();
+      }
+    } catch (e) {
+      debugPrint("RoadTripRepository: getVehiclesStream error: $e");
+      yield [];
+    }
   }
 
   Future<void> saveVehicle(VehicleFuelModel vehicle) async {
@@ -51,11 +70,24 @@ class RoadTripRepository {
   }
 
   // --- 3. Road Trip Budget ---
-  Stream<RoadTripBudgetModel?> getBudgetStream(String tripId) {
-    return _tripDoc(tripId).collection('roadTripBudget').doc('primary').snapshots().map((doc) {
-      if (!doc.exists || doc.data() == null) return null;
-      return RoadTripBudgetModel.fromJson(doc.data()!);
-    });
+  Stream<RoadTripBudgetModel?> getBudgetStream(String tripId) async* {
+    try {
+      await for (final doc in _tripDoc(tripId).collection('roadTripBudget').doc('primary').snapshots()) {
+        if (!doc.exists || doc.data() == null) {
+          yield null;
+        } else {
+          try {
+            yield RoadTripBudgetModel.fromJson(doc.data()!);
+          } catch (e) {
+            debugPrint("RoadTripRepository: Error parsing RoadTripBudgetModel: $e");
+            yield null;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("RoadTripRepository: getBudgetStream error: $e");
+      yield null;
+    }
   }
 
   Future<void> saveBudget(RoadTripBudgetModel budget) async {
@@ -66,13 +98,19 @@ class RoadTripRepository {
   }
 
   // --- 4. Vehicle Readiness Checklist ---
-  Stream<List<VehicleChecklistItem>> getChecklistStream(String tripId) {
-    return _tripDoc(tripId).collection('vehicleChecklist').snapshots().map((snapshot) {
-      if (snapshot.docs.isEmpty) {
-        return VehicleChecklistItem.defaultInspectionList();
+  Stream<List<VehicleChecklistItem>> getChecklistStream(String tripId) async* {
+    try {
+      await for (final snapshot in _tripDoc(tripId).collection('vehicleChecklist').snapshots()) {
+        if (snapshot.docs.isEmpty) {
+          yield VehicleChecklistItem.defaultInspectionList();
+        } else {
+          yield snapshot.docs.map((doc) => VehicleChecklistItem.fromJson(doc.data())).toList();
+        }
       }
-      return snapshot.docs.map((doc) => VehicleChecklistItem.fromJson(doc.data())).toList();
-    });
+    } catch (e) {
+      debugPrint("RoadTripRepository: getChecklistStream error: $e");
+      yield VehicleChecklistItem.defaultInspectionList();
+    }
   }
 
   Future<void> updateChecklistItem(String tripId, VehicleChecklistItem item) async {

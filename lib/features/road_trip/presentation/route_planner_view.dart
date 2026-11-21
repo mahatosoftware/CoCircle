@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/config/google_maps_config.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/app_buttons.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -24,12 +24,25 @@ class RoutePlannerView extends ConsumerStatefulWidget {
 }
 
 class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
-  final MapController _mapController = MapController();
+  gmaps.GoogleMapController? _googleMapController;
+  late final TextEditingController _originController;
+  late final TextEditingController _destController;
   bool _showMap = true;
+  bool _forceEmptyState = false;
+  bool _isInitializing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _originController = TextEditingController(text: 'Bengaluru');
+    _destController = TextEditingController();
+  }
 
   @override
   void dispose() {
-    _mapController.dispose();
+    _originController.dispose();
+    _destController.dispose();
+    _googleMapController?.dispose();
     super.dispose();
   }
 
@@ -38,6 +51,10 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
     final routeAsync = ref.watch(roadTripRouteStreamProvider(widget.tripId));
     final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_forceEmptyState) {
+      return _buildEmptyRouteState(context, tripAsync.asData?.value, isDark);
+    }
 
     return routeAsync.when(
       data: (route) {
@@ -178,8 +195,8 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
               label: 'Open Complete Route in Google Maps',
               icon: Icons.navigation_rounded,
               height: 48,
-              onPressed: () {
-                RoadTripRoutingService.launchMultiStopGoogleMaps(
+              onPressed: () async {
+                final success = await RoadTripRoutingService.launchMultiStopGoogleMaps(
                   originLat: route.originLat,
                   originLng: route.originLng,
                   destinationLat: route.destinationLat,
@@ -187,13 +204,70 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
                   waypoints: route.stops,
                   mode: route.travelMode,
                 );
+                if (!success && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Could not open Google Maps. Please verify Google Maps or a browser is installed.'),
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                }
               },
             ),
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error loading route: $e')),
+      loading: () => Scaffold(
+        backgroundColor: isDark ? AppPallete.backgroundDark : AppPallete.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('Loading route planner...', style: TextStyle(color: AppPallete.gray)),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => setState(() => _forceEmptyState = true),
+                child: const Text('Start New Route'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      error: (e, _) => Scaffold(
+        backgroundColor: isDark ? AppPallete.backgroundDark : AppPallete.background,
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.orange),
+                const SizedBox(height: 12),
+                const Text(
+                  'Route Setup Needed',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  e.toString().contains('permission-denied')
+                      ? 'Cloud permissions error. Please ensure the latest firestore.rules are published in Firebase Console.'
+                      : 'Could not load saved route: $e',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: AppPallete.gray),
+                ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  label: 'Set Up Route Now',
+                  icon: Icons.add_road_rounded,
+                  onPressed: () => setState(() => _forceEmptyState = true),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -320,56 +394,53 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
   }
 
   Widget _buildMapPreview(BuildContext context, RoadTripRouteModel route, bool isDark) {
-    final tileProviderAsync = ref.watch(mapTileProviderProvider);
+    final origin = gmaps.LatLng(route.originLat, route.originLng);
+    final destination = gmaps.LatLng(route.destinationLat, route.destinationLng);
 
-    final points = <LatLng>[
-      LatLng(route.originLat, route.originLng),
-      ...route.stops.map((s) => LatLng(s.latitude, s.longitude)),
-      LatLng(route.destinationLat, route.destinationLng),
-    ];
-
-    final markers = <Marker>[
-      // Origin marker
-      Marker(
-        point: LatLng(route.originLat, route.originLng),
-        width: 32,
-        height: 32,
-        child: Container(
-          decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-        ),
+    final googleMarkers = <gmaps.Marker>{
+      // Origin marker (Green)
+      gmaps.Marker(
+        markerId: const gmaps.MarkerId('origin'),
+        position: origin,
+        icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueGreen),
+        infoWindow: gmaps.InfoWindow(title: 'Origin: ${route.originName}'),
       ),
-      // Intermediate stops
+      // Intermediate stops (Azure / Yellow)
       for (final s in route.stops)
-        Marker(
-          point: LatLng(s.latitude, s.longitude),
-          width: 30,
-          height: 30,
-          child: Container(
-            decoration: BoxDecoration(
-              color: s.isVisited ? Colors.grey : AppPallete.indigo,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-            ),
-            child: Center(
-              child: Text(
-                '${s.sequence}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-              ),
-            ),
+        gmaps.Marker(
+          markerId: gmaps.MarkerId('stop_${s.id}'),
+          position: gmaps.LatLng(s.latitude, s.longitude),
+          icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
+            s.isVisited ? gmaps.BitmapDescriptor.hueYellow : gmaps.BitmapDescriptor.hueAzure,
+          ),
+          infoWindow: gmaps.InfoWindow(
+            title: '${s.sequence}. ${s.name}',
+            snippet: s.address,
           ),
         ),
-      // Destination marker
-      Marker(
-        point: LatLng(route.destinationLat, route.destinationLng),
-        width: 32,
-        height: 32,
-        child: Container(
-          decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
-          child: const Icon(Icons.flag_rounded, color: Colors.white, size: 18),
-        ),
+      // Destination marker (Red)
+      gmaps.Marker(
+        markerId: const gmaps.MarkerId('destination'),
+        position: destination,
+        icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(gmaps.BitmapDescriptor.hueRed),
+        infoWindow: gmaps.InfoWindow(title: 'Destination: ${route.destinationName}'),
       ),
+    };
+
+    final polylinePoints = <gmaps.LatLng>[
+      origin,
+      ...route.stops.map((s) => gmaps.LatLng(s.latitude, s.longitude)),
+      destination,
     ];
+
+    final polylines = <gmaps.Polyline>{
+      gmaps.Polyline(
+        polylineId: const gmaps.PolylineId('road_trip_route_line'),
+        points: polylinePoints,
+        color: AppPallete.indigo,
+        width: 5,
+      ),
+    };
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -381,38 +452,20 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: tileProviderAsync.when(
-        data: (tileProvider) {
-          return FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: LatLng(route.originLat, route.originLng),
-              initialZoom: 8.5,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'in.mahato.cocircle',
-                tileProvider: tileProvider,
-              ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: points,
-                    color: AppPallete.indigo,
-                    strokeWidth: 4.0,
-                  ),
-                ],
-              ),
-              MarkerLayer(markers: markers),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Container(
-          color: isDark ? Colors.black26 : Colors.grey.shade100,
-          child: const Center(child: Text('Map preview unavailable offline')),
+      child: gmaps.GoogleMap(
+        initialCameraPosition: gmaps.CameraPosition(
+          target: origin,
+          zoom: 8.5,
         ),
+        markers: googleMarkers,
+        polylines: polylines,
+        style: GoogleMapsConfig.getMapStyle(isDark),
+        onMapCreated: (controller) {
+          _googleMapController = controller;
+        },
+        zoomControlsEnabled: false,
+        myLocationButtonEnabled: false,
+        mapToolbarEnabled: false,
       ),
     );
   }
@@ -616,75 +669,101 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
   }
 
   Widget _buildEmptyRouteState(BuildContext context, dynamic trip, bool isDark) {
-    final originController = TextEditingController(text: 'Bengaluru');
-    final destController = TextEditingController(text: trip?.location ?? 'Mysuru');
+    if (_destController.text.isEmpty && trip?.location != null && trip!.location!.toString().trim().isNotEmpty) {
+      _destController.text = trip!.location!.toString().trim();
+    } else if (_destController.text.isEmpty) {
+      _destController.text = 'Mysuru';
+    }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppPallete.indigo.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+    return Scaffold(
+      backgroundColor: isDark ? AppPallete.backgroundDark : AppPallete.background,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppPallete.indigo.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add_road_rounded, color: AppPallete.indigo, size: 48),
               ),
-              child: const Icon(Icons.add_road_rounded, color: AppPallete.indigo, size: 48),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Plan Multi-Stop Road Trip',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Define your starting location and destination to begin adding waypoints, fuel stops, and calculating distances.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppPallete.gray),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: originController,
-              decoration: const InputDecoration(
-                labelText: 'Starting Location (Origin)',
-                prefixIcon: Icon(Icons.trip_origin_rounded, color: Color(0xFF10B981)),
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              const Text(
+                'Plan Multi-Stop Road Trip',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: destController,
-              decoration: const InputDecoration(
-                labelText: 'Final Destination',
-                prefixIcon: Icon(Icons.location_on_rounded, color: Color(0xFFDC2626)),
-                border: OutlineInputBorder(),
+              const SizedBox(height: 6),
+              const Text(
+                'Define your starting location and destination to begin adding waypoints, fuel stops, and calculating distances.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppPallete.gray),
               ),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'Initialize Route & Compute Distance',
-              icon: Icons.check_rounded,
-              width: double.infinity,
-              onPressed: () {
-                final orig = originController.text.trim();
-                final dest = destController.text.trim();
-                if (orig.isEmpty || dest.isEmpty) return;
+              const SizedBox(height: 24),
+              TextField(
+                controller: _originController,
+                decoration: const InputDecoration(
+                  labelText: 'Starting Location (Origin)',
+                  prefixIcon: Icon(Icons.trip_origin_rounded, color: Color(0xFF10B981)),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _destController,
+                decoration: const InputDecoration(
+                  labelText: 'Final Destination',
+                  prefixIcon: Icon(Icons.location_on_rounded, color: Color(0xFFDC2626)),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _isInitializing
+                  ? const CircularProgressIndicator()
+                  : PrimaryButton(
+                      label: 'Initialize Route & Compute Distance',
+                      icon: Icons.check_rounded,
+                      width: double.infinity,
+                      onPressed: () async {
+                        final orig = _originController.text.trim();
+                        final dest = _destController.text.trim();
+                        if (orig.isEmpty || dest.isEmpty) return;
 
-                // Coordinates for Bengaluru (12.9716, 77.5946) & Mysuru/Coorg fallback
-                ref.read(roadTripControllerProvider).initializeRoute(
-                      tripId: widget.tripId,
-                      originName: orig,
-                      originLat: 12.9716,
-                      originLng: 77.5946,
-                      destinationName: dest,
-                      destinationLat: 12.2958,
-                      destinationLng: 76.6394,
-                    );
-              },
-            ),
-          ],
+                        setState(() => _isInitializing = true);
+                        try {
+                          await ref.read(roadTripControllerProvider).initializeRoute(
+                                tripId: widget.tripId,
+                                originName: orig,
+                                originLat: 12.9716,
+                                originLng: 77.5946,
+                                destinationName: dest,
+                                destinationLat: 12.2958,
+                                destinationLng: 76.6394,
+                              );
+                          if (mounted) {
+                            setState(() => _forceEmptyState = false);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error saving route: $e'),
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isInitializing = false);
+                          }
+                        }
+                      },
+                    ),
+            ],
+          ),
         ),
       ),
     );

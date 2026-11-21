@@ -123,7 +123,7 @@ Return ONLY valid JSON.
 
   static ScannedBill getSampleUpiScreenshot() {
     return ScannedBill(
-      merchantName: "Google Pay - Villa Stay Goa",
+      merchantName: "Google Pay - Villa Stay",
       date: DateTime.now(),
       currency: "INR",
       isUpiScreenshot: true,
