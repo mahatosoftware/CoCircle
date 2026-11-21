@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/config/google_maps_config.dart';
+import '../../../../core/config/map_tile_config.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/app_buttons.dart';
 import '../../auth/data/auth_repository_impl.dart';
@@ -28,11 +29,11 @@ class DayWiseItineraryView extends ConsumerStatefulWidget {
 class _DayWiseItineraryViewState extends ConsumerState<DayWiseItineraryView> {
   int _selectedDay = 1;
   int _viewMode = 0; // 0: Timeline, 1: Map View, 2: Day Summary
-  gmaps.GoogleMapController? _googleMapController;
+  final MapController _mapController = MapController();
 
   @override
   void dispose() {
-    _googleMapController?.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -389,16 +390,24 @@ class _DayWiseItineraryViewState extends ConsumerState<DayWiseItineraryView> {
   }
 
   Widget _buildDayMapView(BuildContext context, List<ItineraryItemModel> items, RoadTripRouteModel? route, bool isDark) {
-    final gmarkers = <gmaps.Marker>{};
+    final tileProviderAsync = ref.watch(mapTileProviderProvider);
+
+    final markers = <Marker>[];
     for (final it in items) {
       if (it.latitude != null && it.longitude != null) {
-        gmarkers.add(
-          gmaps.Marker(
-            markerId: gmaps.MarkerId('it_${it.id}'),
-            position: gmaps.LatLng(it.latitude!, it.longitude!),
-            infoWindow: gmaps.InfoWindow(
-              title: it.title,
-              snippet: it.location ?? '${it.startTime.hour.toString().padLeft(2, '0')}:${it.startTime.minute.toString().padLeft(2, '0')}',
+        markers.add(
+          Marker(
+            point: LatLng(it.latitude!, it.longitude!),
+            width: 34,
+            height: 34,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _getCategoryColor(it.category),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+              ),
+              child: Icon(_getCategoryIcon(it.category), color: Colors.white, size: 16),
             ),
           ),
         );
@@ -406,23 +415,30 @@ class _DayWiseItineraryViewState extends ConsumerState<DayWiseItineraryView> {
     }
 
     // Default center
-    final center = gmarkers.isNotEmpty
-        ? gmarkers.first.position
-        : gmaps.LatLng(route?.originLat ?? 12.9716, route?.originLng ?? 77.5946);
+    final center = markers.isNotEmpty
+        ? markers.first.point
+        : LatLng(route?.originLat ?? 12.9716, route?.originLng ?? 77.5946);
 
-    return gmaps.GoogleMap(
-      initialCameraPosition: gmaps.CameraPosition(
-        target: center,
-        zoom: 11.0,
+    return tileProviderAsync.when(
+      data: (tileProvider) => FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: center,
+          initialZoom: 11.0,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: MapTileConfig.getUrlTemplate(isDark: isDark),
+            subdomains: MapTileConfig.subdomains,
+            userAgentPackageName: MapTileConfig.userAgentPackageName,
+            tileProvider: tileProvider,
+            tileBuilder: MapTileConfig.getTileBuilder(isDark: isDark),
+          ),
+          MarkerLayer(markers: markers),
+        ],
       ),
-      markers: gmarkers,
-      style: GoogleMapsConfig.getMapStyle(isDark),
-      onMapCreated: (controller) {
-        _googleMapController = controller;
-      },
-      zoomControlsEnabled: true,
-      myLocationButtonEnabled: false,
-      mapToolbarEnabled: false,
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Map tile error: $e')),
     );
   }
 

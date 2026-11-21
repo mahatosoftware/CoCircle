@@ -413,6 +413,7 @@ class _LiveMapTabState extends ConsumerState<LiveMapTab> {
                   subdomains: MapTileConfig.subdomains,
                   userAgentPackageName: MapTileConfig.userAgentPackageName,
                   tileProvider: tileProvider,
+                  tileBuilder: MapTileConfig.getTileBuilder(isDark: isDark),
                 ),
 
                 // 2. Route Polylines

@@ -42,6 +42,7 @@ class RoadTripRoutingService {
     double? returnDestinationLng,
     List<RouteStopModel> intermediateStops = const [],
     TravelMode mode = TravelMode.car,
+    bool forceRefresh = false,
   }) async {
     // 1. Assemble coordinates in traversal order
     final coordinates = <LatLng>[];
@@ -63,7 +64,7 @@ class RoadTripRoutingService {
 
     // 2. Check memory cache
     final cacheKey = _buildCacheKey(coordinates, mode);
-    if (_cache.containsKey(cacheKey)) {
+    if (!forceRefresh && _cache.containsKey(cacheKey)) {
       return _cache[cacheKey]!;
     }
 

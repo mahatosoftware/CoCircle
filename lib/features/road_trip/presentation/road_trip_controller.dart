@@ -6,6 +6,7 @@ import '../domain/road_trip_route_model.dart';
 import '../domain/vehicle_fuel_model.dart';
 import '../domain/road_trip_budget_model.dart';
 import '../domain/road_trip_utilities_model.dart';
+import '../infrastructure/photon_geocoding_service.dart';
 import '../infrastructure/road_trip_routing_service.dart';
 
 final roadTripRoutingServiceProvider = Provider<RoadTripRoutingService>((ref) {
@@ -96,6 +97,126 @@ class RoadTripController {
     );
 
     await _repo.saveRoute(route);
+  }
+
+  /// Updates route origin or destination endpoints and recalculates with OSRM
+  Future<void> updateEndpoints({
+    required String tripId,
+    required String originName,
+    required double originLat,
+    required double originLng,
+    required String destinationName,
+    required double destinationLat,
+    required double destinationLng,
+  }) async {
+    final currentRoute = await _ref.read(roadTripRouteStreamProvider(tripId).future);
+    if (currentRoute == null) return;
+
+    final calc = await _routingService.calculateRoute(
+      originLat: originLat,
+      originLng: originLng,
+      destinationLat: destinationLat,
+      destinationLng: destinationLng,
+      intermediateStops: currentRoute.stops,
+      mode: currentRoute.travelMode,
+      forceRefresh: true,
+    );
+
+    final updated = currentRoute.copyWith(
+      originName: originName,
+      originLat: originLat,
+      originLng: originLng,
+      destinationName: destinationName,
+      destinationLat: destinationLat,
+      destinationLng: destinationLng,
+      totalDistanceKm: calc.totalDistanceKm,
+      estimatedDurationMinutes: calc.estimatedDurationMinutes,
+      updatedAt: DateTime.now(),
+    );
+
+    await _repo.saveRoute(updated);
+  }
+
+  /// Recalculates route distance & duration using Photon + OSRM
+  Future<RouteCalculationResult?> recalculateRoute(String tripId, {bool reGeocode = false}) async {
+    final currentRoute = await _ref.read(roadTripRouteStreamProvider(tripId).future);
+    if (currentRoute == null) return null;
+
+    double oLat = currentRoute.originLat;
+    double oLng = currentRoute.originLng;
+    double dLat = currentRoute.destinationLat;
+    double dLng = currentRoute.destinationLng;
+    List<RouteStopModel> stops = List.from(currentRoute.stops);
+
+    if (reGeocode) {
+      final photon = _ref.read(photonGeocodingServiceProvider);
+      final oPlaces = await photon.search(currentRoute.originName, limit: 1);
+      if (oPlaces.isNotEmpty) {
+        oLat = oPlaces.first.latitude;
+        oLng = oPlaces.first.longitude;
+      }
+      final dPlaces = await photon.search(
+        currentRoute.destinationName,
+        limit: 1,
+        biasLat: oLat,
+        biasLng: oLng,
+      );
+      if (dPlaces.isNotEmpty) {
+        dLat = dPlaces.first.latitude;
+        dLng = dPlaces.first.longitude;
+      }
+
+      final updatedStops = <RouteStopModel>[];
+      for (final s in stops) {
+        final hasAddr = s.address != null && s.address!.isNotEmpty;
+        final query = hasAddr ? '${s.name}, ${s.address}' : s.name;
+        final sPlaces = await photon.search(query, limit: 1, biasLat: oLat, biasLng: oLng);
+        if (sPlaces.isNotEmpty) {
+          updatedStops.add(s.copyWith(latitude: sPlaces.first.latitude, longitude: sPlaces.first.longitude));
+        } else {
+          updatedStops.add(s);
+        }
+      }
+      stops = updatedStops;
+    }
+
+    final calc = await _routingService.calculateRoute(
+      originLat: oLat,
+      originLng: oLng,
+      destinationLat: dLat,
+      destinationLng: dLng,
+      returnDestinationLat: currentRoute.returnDestinationLat,
+      returnDestinationLng: currentRoute.returnDestinationLng,
+      intermediateStops: stops,
+      mode: currentRoute.travelMode,
+      forceRefresh: true,
+    );
+
+    final updated = currentRoute.copyWith(
+      originLat: oLat,
+      originLng: oLng,
+      destinationLat: dLat,
+      destinationLng: dLng,
+      stops: stops,
+      totalDistanceKm: calc.totalDistanceKm,
+      estimatedDurationMinutes: calc.estimatedDurationMinutes,
+      updatedAt: DateTime.now(),
+    );
+
+    await _repo.saveRoute(updated);
+    return calc;
+  }
+
+  /// Manually overrides or adjusts the total route distance
+  Future<void> updateManualDistance(String tripId, double distanceKm) async {
+    final currentRoute = await _ref.read(roadTripRouteStreamProvider(tripId).future);
+    if (currentRoute == null) return;
+
+    final updated = currentRoute.copyWith(
+      totalDistanceKm: distanceKm,
+      updatedAt: DateTime.now(),
+    );
+    await _repo.saveRoute(updated);
   }
 
   /// Adds a new intermediate stop and recalculates route totals

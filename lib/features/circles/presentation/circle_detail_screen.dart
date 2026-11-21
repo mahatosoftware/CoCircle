@@ -79,13 +79,26 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen>
                   ),
                   actions: [
                     Container(
-                      margin: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 20),
+                        tooltip: 'Shopping Lists',
+                        onPressed: () => context.push('/circle/${widget.circleId}/shopping-lists'),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 8, bottom: 8, right: 8, left: 4),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.35),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20),
+                        tooltip: 'Settings',
                         onPressed: () => context.push('/circle/${widget.circleId}/settings'),
                       ),
                     ),
@@ -211,39 +224,49 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen>
                         ),
                         const SizedBox(height: 16),
 
-                        // Quick Actions Row (Invite, Announcement, Settings)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildQuickButton(
-                              icon: Icons.person_add_rounded,
-                              label: 'Invite',
-                              isDark: isDark,
-                              onTap: () {
-                                Clipboard.setData(ClipboardData(text: circle.code));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Invite code "${circle.code}" copied!'),
-                                    backgroundColor: AppPallete.primary,
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 14),
-                            _buildQuickButton(
-                              icon: Icons.campaign_rounded,
-                              label: 'Announcement',
-                              isDark: isDark,
-                              onTap: () => _showAnnouncementDialog(context, circle),
-                            ),
-                            const SizedBox(width: 14),
-                            _buildQuickButton(
-                              icon: Icons.settings_rounded,
-                              label: 'Settings',
-                              isDark: isDark,
-                              onTap: () => context.push('/circle/${widget.circleId}/settings'),
-                            ),
-                          ],
+                        // Quick Actions Row (Invite, Shopping, Announcement, Settings)
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildQuickButton(
+                                icon: Icons.person_add_rounded,
+                                label: 'Invite',
+                                isDark: isDark,
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: circle.code));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Invite code "${circle.code}" copied!'),
+                                      backgroundColor: AppPallete.primary,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 10),
+                              _buildQuickButton(
+                                icon: Icons.shopping_cart_outlined,
+                                label: 'Shopping',
+                                isDark: isDark,
+                                onTap: () => context.push('/circle/${widget.circleId}/shopping-lists'),
+                              ),
+                              const SizedBox(width: 10),
+                              _buildQuickButton(
+                                icon: Icons.campaign_rounded,
+                                label: 'Announcement',
+                                isDark: isDark,
+                                onTap: () => _showAnnouncementDialog(context, circle),
+                              ),
+                              const SizedBox(width: 10),
+                              _buildQuickButton(
+                                icon: Icons.settings_rounded,
+                                label: 'Settings',
+                                isDark: isDark,
+                                onTap: () => context.push('/circle/${widget.circleId}/settings'),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -112,6 +112,18 @@ void main() {
       expect(computed.legDistancesKm.length, 2);
     });
 
+    test('RoadTripRoutingService forceRefresh calculation works properly', () async {
+      final service = RoadTripRoutingService();
+      final res = await service.calculateRoute(
+        originLat: 12.9716,
+        originLng: 77.5946,
+        destinationLat: 12.2958,
+        destinationLng: 76.6394,
+        forceRefresh: true,
+      );
+      expect(res.totalDistanceKm, greaterThan(100.0));
+    });
+
     test('RoadTripRoutingService buildGoogleMapsNavigationUri generates proper URI with waypoints', () {
       final now = DateTime.now();
       final waypoints = <RouteStopModel>[
