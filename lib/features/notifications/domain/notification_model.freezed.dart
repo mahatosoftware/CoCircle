@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NotificationModel {
 
- String get id; String get title; String get body; NotificationType get type; String get targetPath; DateTime get timestamp; bool get isRead; String get recipientUid; String get senderUid; String? get senderName; String? get tripId; String? get expenseId;
+ String get id; String get title; String get body;@NotificationTypeConverter() NotificationType get type; String get targetPath;@TimestampConverter() DateTime get timestamp; bool get isRead; String get recipientUid; String get senderUid; String? get senderName; String? get tripId; String? get expenseId;
 /// Create a copy of NotificationModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $NotificationModelCopyWith<$Res>  {
   factory $NotificationModelCopyWith(NotificationModel value, $Res Function(NotificationModel) _then) = _$NotificationModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String body, NotificationType type, String targetPath, DateTime timestamp, bool isRead, String recipientUid, String senderUid, String? senderName, String? tripId, String? expenseId
+ String id, String title, String body,@NotificationTypeConverter() NotificationType type, String targetPath,@TimestampConverter() DateTime timestamp, bool isRead, String recipientUid, String senderUid, String? senderName, String? tripId, String? expenseId
 });
 
 
@@ -164,7 +164,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String body,  NotificationType type,  String targetPath,  DateTime timestamp,  bool isRead,  String recipientUid,  String senderUid,  String? senderName,  String? tripId,  String? expenseId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String body, @NotificationTypeConverter()  NotificationType type,  String targetPath, @TimestampConverter()  DateTime timestamp,  bool isRead,  String recipientUid,  String senderUid,  String? senderName,  String? tripId,  String? expenseId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _NotificationModel() when $default != null:
 return $default(_that.id,_that.title,_that.body,_that.type,_that.targetPath,_that.timestamp,_that.isRead,_that.recipientUid,_that.senderUid,_that.senderName,_that.tripId,_that.expenseId);case _:
@@ -185,7 +185,7 @@ return $default(_that.id,_that.title,_that.body,_that.type,_that.targetPath,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String body,  NotificationType type,  String targetPath,  DateTime timestamp,  bool isRead,  String recipientUid,  String senderUid,  String? senderName,  String? tripId,  String? expenseId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String body, @NotificationTypeConverter()  NotificationType type,  String targetPath, @TimestampConverter()  DateTime timestamp,  bool isRead,  String recipientUid,  String senderUid,  String? senderName,  String? tripId,  String? expenseId)  $default,) {final _that = this;
 switch (_that) {
 case _NotificationModel():
 return $default(_that.id,_that.title,_that.body,_that.type,_that.targetPath,_that.timestamp,_that.isRead,_that.recipientUid,_that.senderUid,_that.senderName,_that.tripId,_that.expenseId);case _:
@@ -205,7 +205,7 @@ return $default(_that.id,_that.title,_that.body,_that.type,_that.targetPath,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String body,  NotificationType type,  String targetPath,  DateTime timestamp,  bool isRead,  String recipientUid,  String senderUid,  String? senderName,  String? tripId,  String? expenseId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String body, @NotificationTypeConverter()  NotificationType type,  String targetPath, @TimestampConverter()  DateTime timestamp,  bool isRead,  String recipientUid,  String senderUid,  String? senderName,  String? tripId,  String? expenseId)?  $default,) {final _that = this;
 switch (_that) {
 case _NotificationModel() when $default != null:
 return $default(_that.id,_that.title,_that.body,_that.type,_that.targetPath,_that.timestamp,_that.isRead,_that.recipientUid,_that.senderUid,_that.senderName,_that.tripId,_that.expenseId);case _:
@@ -220,15 +220,15 @@ return $default(_that.id,_that.title,_that.body,_that.type,_that.targetPath,_tha
 @JsonSerializable()
 
 class _NotificationModel implements NotificationModel {
-  const _NotificationModel({required this.id, required this.title, required this.body, required this.type, required this.targetPath, required this.timestamp, this.isRead = false, required this.recipientUid, required this.senderUid, this.senderName, this.tripId, this.expenseId});
+  const _NotificationModel({required this.id, required this.title, required this.body, @NotificationTypeConverter() required this.type, required this.targetPath, @TimestampConverter() required this.timestamp, this.isRead = false, required this.recipientUid, required this.senderUid, this.senderName, this.tripId, this.expenseId});
   factory _NotificationModel.fromJson(Map<String, dynamic> json) => _$NotificationModelFromJson(json);
 
 @override final  String id;
 @override final  String title;
 @override final  String body;
-@override final  NotificationType type;
+@override@NotificationTypeConverter() final  NotificationType type;
 @override final  String targetPath;
-@override final  DateTime timestamp;
+@override@TimestampConverter() final  DateTime timestamp;
 @override@JsonKey() final  bool isRead;
 @override final  String recipientUid;
 @override final  String senderUid;
@@ -269,7 +269,7 @@ abstract mixin class _$NotificationModelCopyWith<$Res> implements $NotificationM
   factory _$NotificationModelCopyWith(_NotificationModel value, $Res Function(_NotificationModel) _then) = __$NotificationModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String body, NotificationType type, String targetPath, DateTime timestamp, bool isRead, String recipientUid, String senderUid, String? senderName, String? tripId, String? expenseId
+ String id, String title, String body,@NotificationTypeConverter() NotificationType type, String targetPath,@TimestampConverter() DateTime timestamp, bool isRead, String recipientUid, String senderUid, String? senderName, String? tripId, String? expenseId
 });
 
 

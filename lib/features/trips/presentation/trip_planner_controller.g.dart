@@ -34,7 +34,7 @@ final class TripPlannerControllerProvider
 }
 
 String _$tripPlannerControllerHash() =>
-    r'b562e0c6f52d900cdb5e19c5692e9f6e2e86679a';
+    r'd96593000b2837b86197c84ff4c6a01d27f6fd7f';
 
 abstract class _$TripPlannerController extends $AsyncNotifier<void> {
   FutureOr<void> build();

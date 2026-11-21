@@ -16,6 +16,9 @@ import 'firebase_options_dev.dart' as dev_options;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 
+import 'package:cocircle/core/services/push_notification_service.dart';
+import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -127,11 +130,38 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final router = ref.read(routerProvider);
+      final user = ref.read(authStateChangesProvider).value;
+      PushNotificationService().initialize(
+        router: router,
+        currentUserId: user?.uid,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(authStateChangesProvider, (previous, next) {
+      final user = next.value;
+      if (user != null) {
+        PushNotificationService().syncDeviceToken(user.uid);
+      } else if (previous?.value != null) {
+        PushNotificationService().removeDeviceToken(previous!.value!.uid);
+      }
+    });
+
     final router = ref.watch(routerProvider);
     
     return MaterialApp.router(

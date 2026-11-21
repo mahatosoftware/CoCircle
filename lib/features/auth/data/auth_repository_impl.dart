@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../core/config/environment.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/services/push_notification_service.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -90,6 +91,13 @@ class AuthRepositoryImpl implements AuthRepository {
           await _auth.signOut();
           return left(Failure('Please verify your email address to log in. If you don\'t see the email, check your spam folder.'));
         }
+
+        // Automatically register device FCM token upon login
+        try {
+          await PushNotificationService().syncDeviceToken(firebaseUser.uid);
+        } catch (e) {
+          debugPrint("Failed to sync device token on Email Sign-In: $e");
+        }
       }
 
       // We assume user already exists in Firestore from SignUp
@@ -121,7 +129,10 @@ class AuthRepositoryImpl implements AuthRepository {
         createdAt: DateTime.now(),
       );
       
-      await _firestore.collection('users').doc(newUser.uid).set(newUser.toJson());
+      await _firestore.collection('users').doc(newUser.uid).set(
+        newUser.toJson(),
+        SetOptions(merge: true),
+      );
       
       // Enforce verification before allowing login
       await _auth.signOut();
@@ -191,10 +202,20 @@ class AuthRepositoryImpl implements AuthRepository {
           photoUrl: firebaseUser.photoURL,
           createdAt: DateTime.now(),
         );
-        await _firestore.collection('users').doc(firebaseUser.uid).set(userModel.toJson());
+        await _firestore.collection('users').doc(firebaseUser.uid).set(
+          userModel.toJson(),
+          SetOptions(merge: true),
+        );
       } else {
         debugPrint("Google Sign-In: User document exists in Firestore");
         userModel = UserModel.fromJson(userDoc.data()!);
+      }
+
+      // Automatically register device FCM token upon login
+      try {
+        await PushNotificationService().syncDeviceToken(firebaseUser.uid);
+      } catch (e) {
+        debugPrint("Failed to sync device token on Google Sign-In: $e");
       }
       
       return right(userModel);
@@ -217,6 +238,14 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> signOut() async {
     try {
+       final currentUid = _auth.currentUser?.uid;
+       if (currentUid != null) {
+         try {
+           await PushNotificationService().removeDeviceToken(currentUid);
+         } catch (e) {
+           debugPrint("Failed to remove device token on signOut: $e");
+         }
+       }
        await _googleSignIn.signOut();
        await _auth.signOut();
        return right(null);

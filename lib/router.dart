@@ -33,6 +33,7 @@ import 'features/bill_scanner/presentation/bill_scanner_screen.dart';
 import 'features/viral_joining/presentation/guest_group_preview_screen.dart';
 import 'features/main_nav/main_navigation_shell.dart';
 import 'features/reports/presentation/expense_report_config_screen.dart';
+import 'features/notifications/presentation/notifications_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -124,6 +125,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/activity-center',
         builder: (context, state) => const UnifiedActivityCenterScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/create-circle',

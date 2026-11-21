@@ -22,6 +22,7 @@ import '../../financial/expenses/presentation/expense_controller.dart';
 import '../../road_trip/presentation/road_trip_workspace_tab.dart';
 import '../../road_trip/presentation/road_trip_budget_view.dart';
 import 'trip_report_screen.dart';
+import '../../notifications/presentation/notification_controller.dart';
 
 class TripDetailScreen extends ConsumerStatefulWidget {
   final String tripId;
@@ -863,9 +864,30 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
           context.push('/trip/${trip.id}/report');
         } else if (val == 'export_report') {
           context.push('/trip/${trip.id}/export-report');
+        } else if (val == 'toggle_mute') {
+          final isMuted = ref.read(userNotificationPreferencesProvider).value?.isTripMuted(trip.id) ?? false;
+          ref.read(notificationControllerProvider.notifier).toggleMuteTrip(trip.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isMuted ? 'Trip alerts unmuted' : 'Trip alerts muted'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
         }
       },
-      itemBuilder: (ctx) => [
+      itemBuilder: (ctx) {
+        final isMuted = ref.watch(userNotificationPreferencesProvider).value?.isTripMuted(trip.id) ?? false;
+        return [
+        PopupMenuItem(
+          value: 'toggle_mute',
+          child: Row(
+            children: [
+              Icon(isMuted ? Icons.notifications_active_rounded : Icons.notifications_off_rounded, color: AppPallete.indigo, size: 18),
+              const SizedBox(width: 8),
+              Text(isMuted ? 'Unmute Trip Alerts' : 'Mute Trip Alerts'),
+            ],
+          ),
+        ),
         const PopupMenuItem(
           value: 'export_report',
           child: Row(
@@ -908,9 +930,10 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
           value: 'report',
           child: Text('Consolidated Report'),
         ),
-      ],
-    );
-  }
+      ];
+    },
+  );
+}
 
   void _confirmTripDialog(BuildContext context, dynamic trip) {
     showDialog(

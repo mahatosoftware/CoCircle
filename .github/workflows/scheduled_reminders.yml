@@ -1,0 +1,72 @@
+name: CoCircle Scheduled Milestone Reminders Worker
+
+on:
+  schedule:
+    # Runs every 15 minutes UTC
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Firebase Environment (dev or prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      dry_run:
+        description: 'Dry Run Mode (Simulate without sending real FCM pushes)'
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: scheduled-reminders-${{ inputs.environment || 'prod' }}
+  cancel-in-progress: false
+
+jobs:
+  process-milestone-reminders:
+    name: Evaluate Anti-Irritation Milestone Reminders
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment || 'prod' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: scripts/notification_worker/package-lock.json
+
+      - name: Install Worker Dependencies
+        run: |
+          cd scripts/notification_worker
+          npm ci --omit=dev
+
+      # Optional: Authenticate using Google Cloud Workload Identity Federation (OIDC) if configured
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        if: "${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}"
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Execute Milestone Reminders Worker
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'prod' }}
+          WORKER_MODE: reminders
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || (inputs.environment == 'dev' && 'cocircle-firebase-dev' || 'cocircle-firebase-prod') }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          cd scripts/notification_worker
+          node worker.js

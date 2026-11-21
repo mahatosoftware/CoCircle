@@ -7,6 +7,8 @@ import '../domain/expense_model.dart';
 import '../domain/audit_log_model.dart';
 import '../domain/expense_repository.dart';
 
+import '../../../notifications/domain/notification_event_model.dart';
+
 part 'expense_repository_impl.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -21,14 +23,47 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
 
   CollectionReference<Map<String, dynamic>> get _expenses => _firestore.collection('expenses');
   CollectionReference<Map<String, dynamic>> get _auditLogs => _firestore.collection('audit_logs');
+  CollectionReference<Map<String, dynamic>> get _notificationEvents => _firestore.collection('notification_events');
+
+  Future<String> _resolveCircleId(String tripId) async {
+    if (tripId.isEmpty) return '';
+    try {
+      final tripDoc = await _firestore.collection('trips').doc(tripId).get();
+      return tripDoc.data()?['circleId'] as String? ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
 
   @override
   Future<Either<Failure, ExpenseModel>> createExpense(ExpenseModel expense) async {
     try {
-      // Note: Ideally, we should use a batch write to also update the TripSummary here,
-      // but per requirements, heavy logic like settlement/summary calculation might be moved to Cloud Functions.
-      // For now, we just save the expense.
-      await _expenses.doc(expense.id).set(expense.toJson());
+      final circleId = await _resolveCircleId(expense.tripId);
+      final eventId = 'evt_exp_created_${expense.id}';
+      final event = NotificationEventModel(
+        eventId: eventId,
+        eventType: 'expense_created',
+        expenseId: expense.id,
+        tripId: expense.tripId,
+        circleId: circleId,
+        createdBy: expense.createdBy,
+        status: 'pending',
+        createdAt: DateTime.now(),
+        metadata: {
+          'title': expense.title,
+          'amount': expense.amount,
+          'category': expense.category,
+          'splitDetails': expense.splitDetails,
+          'payers': expense.payers,
+          'payerId': expense.payerId,
+        },
+      );
+
+      final batch = _firestore.batch();
+      batch.set(_expenses.doc(expense.id), expense.toJson());
+      batch.set(_notificationEvents.doc(eventId), event.toJson());
+      await batch.commit();
+
       return right(expense);
     } catch (e) {
       return left(Failure(e.toString()));
@@ -38,7 +73,45 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<Either<Failure, ExpenseModel>> updateExpense(ExpenseModel expense) async {
     try {
-      await _expenses.doc(expense.id).update(expense.toJson());
+      final circleId = await _resolveCircleId(expense.tripId);
+      final eventId = 'evt_exp_updated_${expense.id}_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Check if split changed compared to stored expense
+      String eventType = 'expense_updated';
+      try {
+        final existingDoc = await _expenses.doc(expense.id).get();
+        if (existingDoc.exists) {
+          final existing = ExpenseModel.fromJson(existingDoc.data()!);
+          if (existing.calculateChanges(expense).containsKey('splitDetails')) {
+            eventType = 'expense_split_changed';
+          }
+        }
+      } catch (_) {}
+
+      final event = NotificationEventModel(
+        eventId: eventId,
+        eventType: eventType,
+        expenseId: expense.id,
+        tripId: expense.tripId,
+        circleId: circleId,
+        createdBy: expense.createdBy,
+        status: 'pending',
+        createdAt: DateTime.now(),
+        metadata: {
+          'title': expense.title,
+          'amount': expense.amount,
+          'category': expense.category,
+          'splitDetails': expense.splitDetails,
+          'payers': expense.payers,
+          'payerId': expense.payerId,
+        },
+      );
+
+      final batch = _firestore.batch();
+      batch.update(_expenses.doc(expense.id), expense.toJson());
+      batch.set(_notificationEvents.doc(eventId), event.toJson());
+      await batch.commit();
+
       return right(expense);
     } catch (e) {
       return left(Failure(e.toString()));
@@ -48,7 +121,32 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   @override
   Future<Either<Failure, void>> deleteExpense(String expenseId) async {
     try {
-      await _expenses.doc(expenseId).delete();
+      final doc = await _expenses.doc(expenseId).get();
+      final expenseData = doc.data() ?? {};
+      final tripId = expenseData['tripId'] as String? ?? '';
+      final circleId = await _resolveCircleId(tripId);
+      final eventId = 'evt_exp_deleted_$expenseId';
+
+      final event = NotificationEventModel(
+        eventId: eventId,
+        eventType: 'expense_deleted',
+        expenseId: expenseId,
+        tripId: tripId,
+        circleId: circleId,
+        createdBy: expenseData['createdBy'] as String? ?? '',
+        status: 'pending',
+        createdAt: DateTime.now(),
+        metadata: {
+          'title': expenseData['title'] ?? 'Expense',
+          'amount': expenseData['amount'] ?? 0.0,
+        },
+      );
+
+      final batch = _firestore.batch();
+      batch.delete(_expenses.doc(expenseId));
+      batch.set(_notificationEvents.doc(eventId), event.toJson());
+      await batch.commit();
+
       return right(null);
     } catch (e) {
       return left(Failure(e.toString()));

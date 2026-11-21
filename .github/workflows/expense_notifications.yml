@@ -1,0 +1,78 @@
+name: CoCircle Real-Time Expense Push Notifications Worker
+
+on:
+  schedule:
+    # Runs every 5 minutes UTC (GitHub Actions scheduled workflows may be delayed by a few minutes)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Firebase Environment (dev or prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      dry_run:
+        description: 'Dry Run Mode (Simulate without sending real FCM pushes)'
+        required: true
+        default: true
+        type: boolean
+      batch_size:
+        description: 'Maximum events to process in this execution run'
+        required: false
+        default: '50'
+        type: string
+
+# Prevent overlapping executions on the same environment
+concurrency:
+  group: expense-notifications-${{ inputs.environment || 'prod' }}
+  cancel-in-progress: false
+
+jobs:
+  process-expense-notifications:
+    name: Process Pending Expense Notification Events
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment || 'prod' }}
+
+    permissions:
+      contents: read
+      id-token: write # Required for Google Cloud Workload Identity Federation (OIDC)
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: scripts/notification_worker/package-lock.json
+
+      - name: Install Worker Dependencies
+        run: |
+          cd scripts/notification_worker
+          npm ci --omit=dev
+
+      # Optional: Authenticate using Google Cloud Workload Identity Federation (OIDC) if configured
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        if: "${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}"
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Execute Expense Notification Worker
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'prod' }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          BATCH_SIZE: ${{ inputs.batch_size || '50' }}
+          PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || (inputs.environment == 'dev' && 'cocircle-firebase-dev' || 'cocircle-firebase-prod') }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          cd scripts/notification_worker
+          node worker.js

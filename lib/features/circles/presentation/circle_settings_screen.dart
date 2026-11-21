@@ -7,6 +7,7 @@ import '../../../../core/theme/app_pallete.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
 import '../../viral_joining/data/guest_invite_service.dart';
+import '../../notifications/presentation/notification_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import 'circle_controller.dart';
 
@@ -189,6 +190,32 @@ class CircleSettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       
+                      const SizedBox(height: 16),
+
+                      // Notification Preferences Card
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final prefsAsync = ref.watch(userNotificationPreferencesProvider);
+                            final isMuted = prefsAsync.value?.isCircleMuted(circle.id) ?? false;
+                            return SwitchListTile(
+                              title: const Text('Mute Circle Notifications', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              subtitle: const Text('Silence real-time expense and activity push notifications for this circle', style: TextStyle(fontSize: 12)),
+                              secondary: Icon(isMuted ? Icons.notifications_off_outlined : Icons.notifications_active_outlined),
+                              value: isMuted,
+                              onChanged: (_) {
+                                ref.read(notificationControllerProvider.notifier).toggleMuteCircle(circle.id);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      
                       const SizedBox(height: 32),
 
                       // Pending Requests
@@ -232,7 +259,33 @@ class CircleSettingsScreen extends ConsumerWidget {
                             loading: () => const Center(child: CircularProgressIndicator()),
                             error: (e, s) => Text(l10n.errorWithDetails(e.toString())),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 16),
+
+                      // Notification Preferences Card
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final prefsAsync = ref.watch(userNotificationPreferencesProvider);
+                            final isMuted = prefsAsync.value?.isCircleMuted(circle.id) ?? false;
+                            return SwitchListTile(
+                              title: const Text('Mute Circle Notifications', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              subtitle: const Text('Silence real-time expense and activity push notifications for this circle', style: TextStyle(fontSize: 12)),
+                              secondary: Icon(isMuted ? Icons.notifications_off_outlined : Icons.notifications_active_outlined),
+                              value: isMuted,
+                              onChanged: (_) {
+                                ref.read(notificationControllerProvider.notifier).toggleMuteCircle(circle.id);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 32),
                       ],
                       // Members List
                       Align(

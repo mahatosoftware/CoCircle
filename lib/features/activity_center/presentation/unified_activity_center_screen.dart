@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../trips/presentation/trip_controller.dart';
+import '../../notifications/presentation/notification_controller.dart';
 import '../application/activity_center_notifier.dart';
 import '../application/trip_readiness_service.dart';
 import '../domain/action_item_model.dart';
@@ -44,6 +45,17 @@ class _UnifiedActivityCenterScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Activity Center', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: Badge(
+              isLabelVisible: ref.watch(unreadNotificationCountProvider) > 0,
+              label: Text('${ref.watch(unreadNotificationCountProvider)}'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            tooltip: 'Notification History',
+            onPressed: () => context.push('/notifications'),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
