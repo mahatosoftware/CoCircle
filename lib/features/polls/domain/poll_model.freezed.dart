@@ -281,9 +281,7 @@ as int,
 /// @nodoc
 mixin _$PollModel {
 
- String get id; String get tripId; String get creatorId; String get question; List<PollOption> get options; Map<String, List<int>> get votes;// userId -> list of optionIndices
- bool get allowMultipleSelections;@TimestampConverter() DateTime get createdAt; bool get isActive;@TimestampConverter() DateTime? get closedAt; String get pollType;// 'standard' or 'availability'
- bool get isAnonymous;@TimestampConverter() DateTime? get deadline; String? get aiRecommendation; int? get winningOptionIndex; bool get convertedToAction;
+ String get id; String get tripId; String get creatorId; String get question; List<PollOption> get options; Map<String, List<int>> get votes; bool get allowMultipleSelections;@TimestampConverter() DateTime get createdAt; bool get isActive;@TimestampConverter() DateTime? get closedAt; String get pollType; bool get isAnonymous;@TimestampConverter() DateTime? get deadline; String? get aiRecommendation; int? get winningOptionIndex; bool get convertedToAction;
 /// Create a copy of PollModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -513,13 +511,11 @@ class _PollModel implements PollModel {
   return EqualUnmodifiableMapView(_votes);
 }
 
-// userId -> list of optionIndices
 @override@JsonKey() final  bool allowMultipleSelections;
 @override@TimestampConverter() final  DateTime createdAt;
 @override@JsonKey() final  bool isActive;
 @override@TimestampConverter() final  DateTime? closedAt;
 @override@JsonKey() final  String pollType;
-// 'standard' or 'availability'
 @override@JsonKey() final  bool isAnonymous;
 @override@TimestampConverter() final  DateTime? deadline;
 @override final  String? aiRecommendation;

@@ -15,10 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TripModel {
 
- String get id; String get circleId; String get name; TripType get type;@TimestampConverter() DateTime? get startDate;@TimestampConverter() DateTime? get endDate; String? get location; String get createdBy;@TimestampConverter() DateTime get createdAt; bool get isActive; String get status;// 'draft', 'planning', 'confirmed', 'upcoming', 'ongoing', 'completed', 'settling', 'closed', 'cancelled'
-@TimestampConverter() DateTime? get closedAt; double get totalBudget; String? get category;// 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
- List<String> get participantIds;// Read-optimized summary
- double get totalExpenses;
+ String get id; String get circleId; String get name; TripType get type;@TimestampConverter() DateTime? get startDate;@TimestampConverter() DateTime? get endDate; String? get location; String get createdBy;@TimestampConverter() DateTime get createdAt; bool get isActive; String get status;@TimestampConverter() DateTime? get closedAt; double get totalBudget; String? get category; List<String> get participantIds; double get totalExpenses;
 /// Create a copy of TripModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -241,20 +238,16 @@ class _TripModel implements TripModel {
 @override@TimestampConverter() final  DateTime createdAt;
 @override@JsonKey() final  bool isActive;
 @override@JsonKey() final  String status;
-// 'draft', 'planning', 'confirmed', 'upcoming', 'ongoing', 'completed', 'settling', 'closed', 'cancelled'
 @override@TimestampConverter() final  DateTime? closedAt;
 @override@JsonKey() final  double totalBudget;
 @override final  String? category;
-// 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
  final  List<String> _participantIds;
-// 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
 @override@JsonKey() List<String> get participantIds {
   if (_participantIds is EqualUnmodifiableListView) return _participantIds;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_participantIds);
 }
 
-// Read-optimized summary
 @override@JsonKey() final  double totalExpenses;
 
 /// Create a copy of TripModel

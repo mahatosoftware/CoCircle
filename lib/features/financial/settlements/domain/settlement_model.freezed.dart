@@ -15,10 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SettlementModel {
 
- String get id; String get tripId; int get version;@TimestampConverter() DateTime get timestamp; Map<String, double> get balances;// uid -> net balance
- List<SettlementTransaction> get transactions;// suggested transfers
- List<String> get expenseIdsIncluded;// Immutability
- String get createdBy;
+ String get id; String get tripId; int get version;@TimestampConverter() DateTime get timestamp; Map<String, double> get balances; List<SettlementTransaction> get transactions; List<String> get expenseIdsIncluded; String get createdBy;
 /// Create a copy of SettlementModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -233,25 +230,20 @@ class _SettlementModel implements SettlementModel {
   return EqualUnmodifiableMapView(_balances);
 }
 
-// uid -> net balance
  final  List<SettlementTransaction> _transactions;
-// uid -> net balance
 @override List<SettlementTransaction> get transactions {
   if (_transactions is EqualUnmodifiableListView) return _transactions;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_transactions);
 }
 
-// suggested transfers
  final  List<String> _expenseIdsIncluded;
-// suggested transfers
 @override List<String> get expenseIdsIncluded {
   if (_expenseIdsIncluded is EqualUnmodifiableListView) return _expenseIdsIncluded;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_expenseIdsIncluded);
 }
 
-// Immutability
 @override final  String createdBy;
 
 /// Create a copy of SettlementModel
@@ -606,9 +598,7 @@ as DateTime?,
 /// @nodoc
 mixin _$SettlementAdjustmentModel {
 
- String get id; String get tripId; String get creditorUid;// Creditor waiving debt
- String get debtorUid;// Debtor whose debt was waived
- double get amount; String get reason;@TimestampConverter() DateTime get createdAt; bool get approvedByCreditor;
+ String get id; String get tripId; String get creditorUid; String get debtorUid; double get amount; String get reason;@TimestampConverter() DateTime get createdAt; bool get approvedByCreditor;
 /// Create a copy of SettlementAdjustmentModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -815,9 +805,7 @@ class _SettlementAdjustmentModel implements SettlementAdjustmentModel {
 @override final  String id;
 @override final  String tripId;
 @override final  String creditorUid;
-// Creditor waiving debt
 @override final  String debtorUid;
-// Debtor whose debt was waived
 @override final  double amount;
 @override final  String reason;
 @override@TimestampConverter() final  DateTime createdAt;

@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CircleModel {
 
- String get id; String get name; String get description; String get code;// 7-char alphanumeric
- String get currency; String? get imageUrl; List<String> get memberIds; List<String> get pendingMemberIds; List<String> get oneTimeCodes; List<String> get adminIds; String get createdBy; DateTime get createdAt; bool get isPendingDelete;
+ String get id; String get name; String get description; String get code; String get currency; String? get imageUrl; List<String> get memberIds; List<String> get pendingMemberIds; List<String> get oneTimeCodes; List<String> get adminIds; String get createdBy; DateTime get createdAt; bool get isPendingDelete;
 /// Create a copy of CircleModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -229,7 +228,6 @@ class _CircleModel implements CircleModel {
 @override final  String name;
 @override final  String description;
 @override final  String code;
-// 7-char alphanumeric
 @override final  String currency;
 @override final  String? imageUrl;
  final  List<String> _memberIds;

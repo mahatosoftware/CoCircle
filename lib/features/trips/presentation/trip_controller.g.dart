@@ -33,13 +33,13 @@ final class TripControllerProvider
   TripController create() => TripController();
 }
 
-String _$tripControllerHash() => r'68f04e000f448800d9937de843bf658077a47c5c';
+String _$tripControllerHash() => r'46777401237805cf24a775d9e5fed2f0d96d3244';
 
 abstract class _$TripController extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<void>, void>;
     final element =
         ref.element
@@ -49,7 +49,7 @@ abstract class _$TripController extends $AsyncNotifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

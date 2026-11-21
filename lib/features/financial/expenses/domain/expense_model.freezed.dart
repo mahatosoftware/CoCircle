@@ -15,11 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ExpenseModel {
 
- String get id; String get tripId; String get title; double get amount;@TimestampConverter() DateTime get date; String get category; String get payerId;// Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
- Map<String, double> get payers;// uid -> amount
- Map<String, double> get splitDetails;// uid -> amount/ratio/percentage dependent on splitType (stored as calculated amount usually for simplicity, or raw?)
-// Storing the calculated amount per user is safer for immutable history.
- SplitType get splitType; String? get notes; bool get isSupplemental; String get createdBy;@TimestampConverter() DateTime get createdAt;
+ String get id; String get tripId; String get title; double get amount;@TimestampConverter() DateTime get date; String get category; String get payerId; Map<String, double> get payers; Map<String, double> get splitDetails; SplitType get splitType; String? get notes; bool get isSupplemental; String get createdBy;@TimestampConverter() DateTime get createdAt;
 /// Create a copy of ExpenseModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -236,26 +232,20 @@ class _ExpenseModel extends ExpenseModel {
 @override@TimestampConverter() final  DateTime date;
 @override final  String category;
 @override final  String payerId;
-// Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
  final  Map<String, double> _payers;
-// Or Map<String, double> for multiple payers? Requirement 4.4.2: Multiple payers
 @override Map<String, double> get payers {
   if (_payers is EqualUnmodifiableMapView) return _payers;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_payers);
 }
 
-// uid -> amount
  final  Map<String, double> _splitDetails;
-// uid -> amount
 @override Map<String, double> get splitDetails {
   if (_splitDetails is EqualUnmodifiableMapView) return _splitDetails;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_splitDetails);
 }
 
-// uid -> amount/ratio/percentage dependent on splitType (stored as calculated amount usually for simplicity, or raw?)
-// Storing the calculated amount per user is safer for immutable history.
 @override final  SplitType splitType;
 @override final  String? notes;
 @override@JsonKey() final  bool isSupplemental;

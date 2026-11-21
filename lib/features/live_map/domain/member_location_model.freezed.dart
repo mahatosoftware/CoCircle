@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MemberLocationModel {
 
- String get userId; String get name; String? get photoUrl; double get latitude; double get longitude; double get heading; double get speed; double get accuracy; int? get battery; bool get online; DateTime get lastUpdated; String? get vehicleId; String? get destinationId; String get sharingStatus;// 'sharing', 'paused', 'offline'
- bool get isEmergency; String? get vehicleName;
+ String get userId; String get name; String? get photoUrl; double get latitude; double get longitude; double get heading; double get speed; double get accuracy; int? get battery; bool get online; DateTime get lastUpdated; String? get vehicleId; String? get destinationId; String get sharingStatus; bool get isEmergency; String? get vehicleName;
 /// Create a copy of MemberLocationModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -242,7 +241,6 @@ class _MemberLocationModel implements MemberLocationModel {
 @override final  String? vehicleId;
 @override final  String? destinationId;
 @override@JsonKey() final  String sharingStatus;
-// 'sharing', 'paused', 'offline'
 @override@JsonKey() final  bool isEmergency;
 @override final  String? vehicleName;
 

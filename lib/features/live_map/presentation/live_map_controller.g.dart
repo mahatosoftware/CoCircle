@@ -92,7 +92,7 @@ abstract class _$LiveMapController extends $Notifier<LiveMapState> {
   LiveMapState build(String tripId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<LiveMapState, LiveMapState>;
     final element =
         ref.element
@@ -102,6 +102,6 @@ abstract class _$LiveMapController extends $Notifier<LiveMapState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }
