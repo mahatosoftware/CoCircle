@@ -41,15 +41,22 @@ class FirebaseAiConfigRepository {
         .set(config.toJson(), SetOptions(merge: true));
   }
 
-  /// Ensure the dev Firestore has a valid `config/ai_config` document created if missing.
-  Future<void> ensureDevAiConfigSeeded() async {
-    final docRef = _firestore.collection('config').doc('ai_config');
-    final doc = await docRef.get();
-    if (!doc.exists) {
-      final defaultConfig = AiConfigModel.empty();
-      await docRef.set(defaultConfig.toJson(), SetOptions(merge: true));
+  /// Ensure Firestore has a valid `config/ai_config` document created if missing.
+  Future<void> ensureAiConfigSeeded() async {
+    try {
+      final docRef = _firestore.collection('config').doc('ai_config');
+      final doc = await docRef.get();
+      if (!doc.exists) {
+        final defaultConfig = AiConfigModel.empty();
+        await docRef.set(defaultConfig.toJson(), SetOptions(merge: true));
+      }
+    } catch (e) {
+      // Non-fatal if offline or permissions pending
     }
   }
+
+  /// Backward-compatible alias
+  Future<void> ensureDevAiConfigSeeded() => ensureAiConfigSeeded();
 }
 
 final firebaseAiConfigRepositoryProvider = Provider<FirebaseAiConfigRepository>(

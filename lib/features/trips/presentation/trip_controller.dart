@@ -313,8 +313,11 @@ Stream<List<TripModel>> allUserTrips(Ref ref) {
           .where('circleId', whereIn: circleIds.take(10).toList())
           .orderBy('createdAt', descending: true)
           .snapshots()
-          .map((snapshot) =>
-              snapshot.docs.map((d) => TripModel.fromJson(d.data())).toList());
+          .map((snapshot) => snapshot.docs.map((d) {
+                final data = Map<String, dynamic>.from(d.data());
+                data['id'] = d.id;
+                return TripModel.fromJson(data);
+              }).toList());
     },
     loading: () => const Stream.empty(),
     error: (err, stack) => Stream.error(err, stack),

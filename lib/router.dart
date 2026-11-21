@@ -34,21 +34,40 @@ import 'features/viral_joining/presentation/guest_group_preview_screen.dart';
 import 'features/main_nav/main_navigation_shell.dart';
 import 'features/reports/presentation/expense_report_config_screen.dart';
 import 'features/notifications/presentation/notifications_screen.dart';
+import 'features/auth/domain/provisioning_state.dart';
+import 'features/auth/presentation/provisioning_controller.dart';
+import 'features/auth/presentation/provisioning_retry_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
+  final provisioningResult = ref.watch(provisioningStatusStreamProvider).value ??
+      ref.watch(provisioningStateNotifierProvider);
 
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      if (authState.isLoading || authState.hasError) return null;
+      if (authState.isLoading) return null;
 
       final isAuthenticated = authState.value != null;
       final isLoginRoute = state.uri.path == '/login';
       final isJoinRoute = state.uri.path.startsWith('/join');
+      final isRetryRoute = state.uri.path == '/provisioning-retry';
 
       if (!isAuthenticated && !isLoginRoute && !isJoinRoute) {
         return '/login';
+      }
+
+      // If authenticated but provisioning failed, redirect to the recoverable retry screen
+      if (isAuthenticated && provisioningResult?.status == ProvisioningStatus.failed) {
+        if (!isRetryRoute) {
+          return '/provisioning-retry';
+        }
+        return null;
+      }
+
+      // If provisioning resolved, leave the retry route
+      if (isRetryRoute && provisioningResult?.status == ProvisioningStatus.completed) {
+        return '/';
       }
 
       if (isAuthenticated && isLoginRoute) {
@@ -61,6 +80,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/provisioning-retry',
+        builder: (context, state) => const ProvisioningRetryScreen(),
       ),
 
       // Main Navigation Shell with 5 Persistent Bottom Destinations

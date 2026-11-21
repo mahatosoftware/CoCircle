@@ -3,11 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
-import '../../../../core/config/environment.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/services/push_notification_service.dart';
 import '../domain/auth_repository.dart';
+import '../domain/provisioning_state.dart';
 import '../domain/user_model.dart';
+import '../services/user_provisioning_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'auth_repository_impl.g.dart';
@@ -18,6 +19,7 @@ AuthRepository authRepository(Ref ref) {
     auth: FirebaseAuth.instance,
     googleSignIn: GoogleSignIn.instance,
     firestore: FirebaseFirestore.instance,
+    provisioningService: UserProvisioningService(firestore: FirebaseFirestore.instance),
   );
 }
 
@@ -30,47 +32,70 @@ class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
   final FirebaseFirestore _firestore;
+  final UserProvisioningService _provisioningService;
 
   AuthRepositoryImpl({
     required FirebaseAuth auth,
     required GoogleSignIn googleSignIn,
     required FirebaseFirestore firestore,
+    UserProvisioningService? provisioningService,
   })  : _auth = auth,
         _googleSignIn = googleSignIn,
-        _firestore = firestore;
+        _firestore = firestore,
+        _provisioningService = provisioningService ?? UserProvisioningService(firestore: firestore);
 
   @override
   Stream<UserModel?> get authStateChanges {
     return _auth.authStateChanges().asyncMap((firebaseUser) async {
-        if (firebaseUser == null) return null;
-        
-        // Fetch user data from firestore to ensure we have the latest custom fields
-        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-        if (doc.exists) {
-            return UserModel.fromJson(doc.data()!);
+      if (firebaseUser == null) {
+        UserProvisioningService.resetState();
+        return null;
+      }
+
+      // Stage B & C: Idempotently ensure the user profile is provisioned and repaired
+      try {
+        final result = await _provisioningService.ensureUserProvisioned(firebaseUser);
+        if (result.status == ProvisioningStatus.completed && result.user != null) {
+          return result.user;
         }
-        
-        // If not in firestore yet (rare race condition or first login pending), return basic model
-        return UserModel(
-            uid: firebaseUser.uid,
-            email: firebaseUser.email ?? '',
-            displayName: firebaseUser.displayName ?? '',
-            photoUrl: firebaseUser.photoURL,
-            createdAt: DateTime.now(), // Placeholder
-        );
+      } catch (e) {
+        debugPrint('authStateChanges: Provisioning check error: $e');
+      }
+
+      // Fallback check in case Firestore read is possible
+      try {
+        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+        if (doc.exists && doc.data() != null) {
+          return UserModel.fromJson(doc.data()!);
+        }
+      } catch (_) {}
+
+      // Resilient fallback user model to maintain session without throwing
+      final fallbackName = (firebaseUser.email != null && firebaseUser.email!.isNotEmpty)
+          ? firebaseUser.email!.split('@').first
+          : 'User';
+      return UserModel(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: (firebaseUser.displayName != null && firebaseUser.displayName!.trim().isNotEmpty)
+            ? firebaseUser.displayName!.trim()
+            : fallbackName,
+        photoUrl: firebaseUser.photoURL,
+        createdAt: DateTime.now(),
+      );
     });
   }
 
   @override
   Future<UserModel?> getCurrentUser() async {
-     final firebaseUser = _auth.currentUser;
-     if (firebaseUser == null) return null;
-     
-     final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-     if (doc.exists) {
-       return UserModel.fromJson(doc.data()!);
-     }
-     return null;
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) return null;
+
+    final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+    if (doc.exists && doc.data() != null) {
+      return UserModel.fromJson(doc.data()!);
+    }
+    return null;
   }
 
   @override
@@ -85,25 +110,23 @@ class AuthRepositoryImpl implements AuthRepository {
       if (firebaseUser != null) {
         // Reload user to get latest verification status
         await firebaseUser.reload();
-        
+
         if (!_auth.currentUser!.emailVerified) {
           debugPrint("Sign In: Email not verified for ${firebaseUser.email}");
           await _auth.signOut();
           return left(Failure('Please verify your email address to log in. If you don\'t see the email, check your spam folder.'));
         }
 
-        // Automatically register device FCM token upon login
-        try {
-          await PushNotificationService().syncDeviceToken(firebaseUser.uid);
-        } catch (e) {
-          debugPrint("Failed to sync device token on Email Sign-In: $e");
+        // Stage B & C: Centralized idempotent provisioning & device registration
+        final provisioningResult = await _provisioningService.ensureUserProvisioned(firebaseUser);
+        if (provisioningResult.status == ProvisioningStatus.completed && provisioningResult.user != null) {
+          return right(provisioningResult.user!);
+        } else {
+          return left(Failure(provisioningResult.error ?? 'Account provisioning failed. Please retry.'));
         }
       }
 
-      // We assume user already exists in Firestore from SignUp
-      final user = await getCurrentUser(); 
-      if (user == null) return left(Failure('User data not found'));
-      return right(user);
+      return left(Failure('User data not found'));
     } on FirebaseAuthException catch (e) {
       debugPrint("Error signing in with Email: $e");
       return left(Failure(e.message ?? 'Sign in failed'));
@@ -119,21 +142,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       final firebaseUser = credential.user!;
-      
+
       await firebaseUser.sendEmailVerification();
-      
-      final newUser = UserModel(
-        uid: firebaseUser.uid,
-        email: email,
-        displayName: name,
-        createdAt: DateTime.now(),
-      );
-      
-      await _firestore.collection('users').doc(newUser.uid).set(
-        newUser.toJson(),
-        SetOptions(merge: true),
-      );
-      
+      await firebaseUser.updateDisplayName(name);
+
+      // Stage B: Initial user profile creation
+      final newUser = await _provisioningService.createUserProfile(firebaseUser);
+
       // Enforce verification before allowing login
       await _auth.signOut();
 
@@ -149,21 +164,20 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserModel>> signInWithGoogle() async {
     try {
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-      
+
       debugPrint("Google Sign-In: Account obtained: ${googleUser.email}");
-      
+
       // Authentication tokens (ID Token)
       final String? idToken = googleUser.authentication.idToken;
-      
-      // Authorization tokens (Access Token) - Required for full Firebase integration
-      // We request basic profile authorization to get an access token
+
+      // Authorization tokens (Access Token)
       final authz = await googleUser.authorizationClient.authorizeScopes([
         'openid',
         'email',
         'profile',
       ]);
       final String accessToken = authz.accessToken;
-      
+
       debugPrint("Google Sign-In: idToken: ${idToken != null ? 'Present' : 'Missing'}");
       debugPrint("Google Sign-In: accessToken: Present");
 
@@ -174,40 +188,17 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       final firebaseUser = userCredential.user!;
-      
+
       debugPrint("Google Sign-In: Firebase Auth successful for UID: ${firebaseUser.uid}");
 
-      // Check if user exists, if not create
-      final userDoc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-      
-      UserModel userModel;
-      
-      if (!userDoc.exists) {
-        debugPrint("Google Sign-In: Creating new user document in Firestore");
-        userModel = UserModel(
-          uid: firebaseUser.uid,
-          email: firebaseUser.email ?? '',
-          displayName: firebaseUser.displayName ?? 'User',
-          photoUrl: firebaseUser.photoURL,
-          createdAt: DateTime.now(),
-        );
-        await _firestore.collection('users').doc(firebaseUser.uid).set(
-          userModel.toJson(),
-          SetOptions(merge: true),
-        );
-      } else {
-        debugPrint("Google Sign-In: User document exists in Firestore");
-        userModel = UserModel.fromJson(userDoc.data()!);
-      }
+      // Stage B & Stage C: Centralized idempotent provisioning & device registration
+      final provisioningResult = await _provisioningService.ensureUserProvisioned(firebaseUser);
 
-      // Automatically register device FCM token upon login
-      try {
-        await PushNotificationService().syncDeviceToken(firebaseUser.uid);
-      } catch (e) {
-        debugPrint("Failed to sync device token on Google Sign-In: $e");
+      if (provisioningResult.status == ProvisioningStatus.completed && provisioningResult.user != null) {
+        return right(provisioningResult.user!);
+      } else {
+        return left(Failure(provisioningResult.error ?? 'Account provisioning failed. Please retry.'));
       }
-      
-      return right(userModel);
     } catch (e, stack) {
       debugPrint("Google Sign-In Error: $e");
       debugPrint("Stack trace: $stack");
@@ -247,18 +238,20 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> signOut() async {
     try {
-       final currentUid = _auth.currentUser?.uid;
-       if (currentUid != null) {
-         try {
-           await PushNotificationService().removeDeviceToken(currentUid);
-         } catch (e) {
-           debugPrint("Failed to remove device token on signOut: $e");
-         }
-       }
-       await _googleSignIn.signOut();
-       await _auth.signOut();
-       return right(null);
+      final currentUid = _auth.currentUser?.uid;
+      if (currentUid != null) {
+        try {
+          await PushNotificationService().removeDeviceToken(currentUid);
+        } catch (e) {
+          debugPrint("Failed to remove device token on signOut: $e");
+        }
+      }
+      UserProvisioningService.resetState();
+      await _googleSignIn.signOut();
+      await _auth.signOut();
+      return right(null);
     } catch (e) {
+      debugPrint("Error signing out: $e");
       return left(Failure(e.toString()));
     }
   }

@@ -49,8 +49,10 @@ class TripRepositoryImpl implements TripRepository {
   Future<Either<Failure, TripModel>> getTripById(String tripId) async {
     try {
       final doc = await _trips.doc(tripId).get();
-      if (!doc.exists) return left(Failure('Trip not found'));
-      return right(TripModel.fromJson(doc.data()!));
+      if (!doc.exists || doc.data() == null) return left(Failure('Trip not found'));
+      final data = Map<String, dynamic>.from(doc.data()!);
+      data['id'] = doc.id;
+      return right(TripModel.fromJson(data));
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -73,7 +75,11 @@ class TripRepositoryImpl implements TripRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((d) => TripModel.fromJson(d.data())).toList();
+          return snapshot.docs.map((d) {
+            final data = Map<String, dynamic>.from(d.data());
+            data['id'] = d.id;
+            return TripModel.fromJson(data);
+          }).toList();
         });
   }
 }

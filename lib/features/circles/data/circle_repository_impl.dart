@@ -77,8 +77,10 @@ class CircleRepositoryImpl implements CircleRepository {
   Future<Either<Failure, CircleModel>> getCircleById(String circleId) async {
     try {
       final doc = await _circles.doc(circleId).get();
-      if (!doc.exists) return left(Failure('Circle not found'));
-      return right(CircleModel.fromJson(doc.data()!));
+      if (!doc.exists || doc.data() == null) return left(Failure('Circle not found'));
+      final data = Map<String, dynamic>.from(doc.data()!);
+      data['id'] = doc.id;
+      return right(CircleModel.fromJson(data));
     } catch (e) {
        return left(Failure(e.toString()));
     }
@@ -96,7 +98,10 @@ class CircleRepositoryImpl implements CircleRepository {
       }
 
       if (query.docs.isEmpty) return left(Failure('Circle not found'));
-      return right(CircleModel.fromJson(query.docs.first.data()));
+      final firstDoc = query.docs.first;
+      final data = Map<String, dynamic>.from(firstDoc.data());
+      data['id'] = firstDoc.id;
+      return right(CircleModel.fromJson(data));
     } catch (e) {
        return left(Failure(e.toString()));
     }
@@ -107,7 +112,11 @@ class CircleRepositoryImpl implements CircleRepository {
     try {
       // Index required for this query: memberIds array-contains
       final query = await _circles.where('memberIds', arrayContains: userId).get();
-      final circles = query.docs.map((d) => CircleModel.fromJson(d.data())).toList();
+      final circles = query.docs.map((d) {
+        final data = Map<String, dynamic>.from(d.data());
+        data['id'] = d.id;
+        return CircleModel.fromJson(data);
+      }).toList();
       return right(circles);
     } catch (e) {
       return left(Failure(e.toString()));
@@ -117,7 +126,11 @@ class CircleRepositoryImpl implements CircleRepository {
   @override
   Stream<List<CircleModel>> getUserCirclesStream(String userId) {
     return _circles.where('memberIds', arrayContains: userId).snapshots().map((snapshot) {
-      return snapshot.docs.map((d) => CircleModel.fromJson(d.data())).toList();
+      return snapshot.docs.map((d) {
+        final data = Map<String, dynamic>.from(d.data());
+        data['id'] = d.id;
+        return CircleModel.fromJson(data);
+      }).toList();
     });
   }
 

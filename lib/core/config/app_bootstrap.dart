@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../ai/data/firebase_ai_config_repository.dart';
 import 'environment.dart';
+import '../../features/auth/services/user_provisioning_service.dart';
 import '../../firebase_options_dev.dart' as dev_options;
 import '../../firebase_options_prod.dart' as prod_options;
 import '../../main.dart' show MyApp;
@@ -56,7 +58,17 @@ class AppBootstrap {
     // 5. Initialize Firebase
     await _initializeFirebase(flavor);
 
-    // 6. Launch Application
+    // 6. Verify and set up current user profile in Firestore if missing
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await UserProvisioningService().ensureUserProvisioned(currentUser);
+      }
+    } catch (e) {
+      debugPrint("AppBootstrap: User provisioning setup verification: $e");
+    }
+
+    // 7. Launch Application
     runApp(const ProviderScope(child: MyApp()));
   }
 
@@ -117,24 +129,32 @@ class AppBootstrap {
 
     _initialized = true;
 
-    // Load dynamic RTDB database URL from Firestore config/settings
+    // Verify and set up essential global config tables in Firestore if missing
     try {
-      final doc = await FirebaseFirestore.instance.collection('config').doc('settings').get();
-      final url = doc.data()?['databaseURL'] as String?;
-      if (url != null && url.isNotEmpty) {
-        AppEnvironment.databaseUrl = url;
+      final settingsRef = FirebaseFirestore.instance.collection('config').doc('settings');
+      final doc = await settingsRef.get();
+      if (!doc.exists) {
+        debugPrint("Config settings missing in Firestore. Initializing default settings.");
+        await settingsRef.set({
+          'databaseURL': AppEnvironment.databaseUrl,
+          'version': '1.0.0',
+          'initializedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      } else {
+        final url = doc.data()?['databaseURL'] as String?;
+        if (url != null && url.isNotEmpty) {
+          AppEnvironment.databaseUrl = url;
+        }
       }
     } catch (e) {
-      debugPrint("Could not load dynamic RTDB URL: $e");
+      debugPrint("Config settings verify/setup: $e");
     }
 
-    // Seed AI Config in DEV if missing
-    if (flavor == Flavor.dev) {
-      try {
-        await FirebaseAiConfigRepository().ensureDevAiConfigSeeded();
-      } catch (e) {
-        debugPrint("Could not seed AI config in DEV Firestore: $e");
-      }
+    // Verify and seed AI Config if missing
+    try {
+      await FirebaseAiConfigRepository().ensureAiConfigSeeded();
+    } catch (e) {
+      debugPrint("Could not verify/seed AI config in Firestore: $e");
     }
 
     // App Check Initialization

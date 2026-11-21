@@ -150,17 +150,27 @@ class PushNotificationService {
   }
 
   /// Saves or appends device token to users/{userId} array in Firestore.
+  /// Strictly ensures the user profile document exists before updating,
+  /// completely preventing orphaned partial documents.
   Future<void> _saveTokenToFirestore(String userId, String token) async {
     try {
+      final docRef = _firestore.collection('users').doc(userId);
+      final docSnap = await docRef.get();
+
+      if (!docSnap.exists || docSnap.data()?['uid'] == null) {
+        debugPrint('FCM: User document $userId not fully provisioned yet. Skipping device token write to prevent orphaned partial documents.');
+        return;
+      }
+
       final platform = kIsWeb ? 'web' : defaultTargetPlatform.name;
-      await _firestore.collection('users').doc(userId).set({
+      await docRef.update({
         'fcmTokens': FieldValue.arrayUnion([token]),
         'lastTokenUpdated': FieldValue.serverTimestamp(),
         'platform': platform,
-      }, SetOptions(merge: true));
+      });
       debugPrint('FCM: Successfully registered device token for user $userId');
     } catch (e) {
-      debugPrint('FCM: Failed writing token to Firestore: $e');
+      debugPrint('FCM: Non-fatal error writing token to Firestore: $e');
     }
   }
 

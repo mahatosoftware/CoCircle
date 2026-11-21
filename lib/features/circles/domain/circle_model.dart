@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'circle_model.freezed.dart';
@@ -21,5 +22,33 @@ abstract class CircleModel with _$CircleModel {
     @Default(false) bool isPendingDelete,
   }) = _CircleModel;
 
-  factory CircleModel.fromJson(Map<String, dynamic> json) => _$CircleModelFromJson(json);
+  factory CircleModel.fromJson(Map<String, dynamic> json) {
+    final rawCreatedAt = json['createdAt'];
+    DateTime parsedCreatedAt;
+    if (rawCreatedAt is String) {
+      parsedCreatedAt = DateTime.tryParse(rawCreatedAt) ?? DateTime.now();
+    } else if (rawCreatedAt is Timestamp) {
+      parsedCreatedAt = rawCreatedAt.toDate();
+    } else if (rawCreatedAt is int) {
+      parsedCreatedAt = DateTime.fromMillisecondsSinceEpoch(rawCreatedAt);
+    } else {
+      parsedCreatedAt = DateTime.now();
+    }
+
+    return CircleModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      currency: json['currency'] as String? ?? 'INR',
+      imageUrl: json['imageUrl'] as String?,
+      memberIds: (json['memberIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      pendingMemberIds: (json['pendingMemberIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      oneTimeCodes: (json['oneTimeCodes'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      adminIds: (json['adminIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      createdBy: json['createdBy'] as String? ?? '',
+      createdAt: parsedCreatedAt,
+      isPendingDelete: json['isPendingDelete'] as bool? ?? false,
+    );
+  }
 }
