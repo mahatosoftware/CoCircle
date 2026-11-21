@@ -160,10 +160,6 @@ class TrackingNotifier extends _$TrackingNotifier {
         accuracy: LocationAccuracy.high,
         distanceFilter: 5,
         intervalDuration: const Duration(seconds: 5),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText: "CoCircle is sharing your live location with your group",
-          notificationTitle: "Live Location Active",
-        ),
       );
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       locationSettings = AppleSettings(
