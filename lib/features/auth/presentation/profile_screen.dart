@@ -73,7 +73,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (user == null) return Center(child: Text(AppLocalizations.of(context)!.userNotFound));
           
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
             child: Form(
               key: _formKey,
               child: Column(

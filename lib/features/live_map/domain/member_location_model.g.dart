@@ -21,6 +21,9 @@ _MemberLocationModel _$MemberLocationModelFromJson(Map<String, dynamic> json) =>
       lastUpdated: DateTime.parse(json['lastUpdated'] as String),
       vehicleId: json['vehicleId'] as String?,
       destinationId: json['destinationId'] as String?,
+      sharingStatus: json['sharingStatus'] as String? ?? 'sharing',
+      isEmergency: json['isEmergency'] as bool? ?? false,
+      vehicleName: json['vehicleName'] as String?,
     );
 
 Map<String, dynamic> _$MemberLocationModelToJson(
@@ -39,4 +42,7 @@ Map<String, dynamic> _$MemberLocationModelToJson(
   'lastUpdated': instance.lastUpdated.toIso8601String(),
   'vehicleId': instance.vehicleId,
   'destinationId': instance.destinationId,
+  'sharingStatus': instance.sharingStatus,
+  'isEmergency': instance.isEmergency,
+  'vehicleName': instance.vehicleName,
 };

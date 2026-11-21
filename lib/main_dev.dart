@@ -33,11 +33,25 @@ void main() async {
         'https://cocircle-firebase-development-default-rtdb.asia-southeast1.firebasedatabase.app',
   );
 
+  // Initialize Google Sign In (Required for 7.0.0+) immediately and independently
+  try {
+    await GoogleSignIn.instance.initialize(
+      serverClientId: AppEnvironment.googleServerClientId,
+    );
+    debugPrint("Google Sign In initialized for DEV with serverClientId: ${AppEnvironment.googleServerClientId}");
+  } catch (e) {
+    debugPrint("Google Sign In init failed: $e");
+  }
+
   // Initialize Firebase
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      debugPrint("Firebase default app already initialized");
+    }
 
     // Fetch dynamic database URL from config table
     try {
@@ -63,19 +77,18 @@ void main() async {
     }
 
     // Initialize App Check (Hybrid: Debug for local, Play Integrity for prod)
-    await FirebaseAppCheck.instance.activate(
-      providerAndroid: kDebugMode
-          ? const AndroidDebugProvider()
-          : const AndroidPlayIntegrityProvider(),
-      providerApple: kDebugMode
-          ? const AppleDebugProvider()
-          : const AppleDeviceCheckProvider(),
-    );
-
-    // Initialize Google Sign In (Required for 7.0.0+)
-    await GoogleSignIn.instance.initialize(
-      serverClientId: AppEnvironment.googleServerClientId,
-    );
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: kDebugMode
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+        providerApple: kDebugMode
+            ? const AppleDebugProvider()
+            : const AppleDeviceCheckProvider(),
+      );
+    } catch (e) {
+      debugPrint("AppCheck activate error: $e");
+    }
 
     debugPrint("Firebase Initialized for DEV with App Check");
   } catch (e, stack) {

@@ -1,0 +1,144 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isCircleMember(circleId) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)) ||
+        request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.memberIds
+      );
+    }
+
+    function isCircleAdmin(circleId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/circles/$(circleId)).data.createdBy == request.auth.uid ||
+        get(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function getTrip(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId)).data;
+    }
+
+    function isTripAuthorized(tripId) {
+      return isAuthenticated() && isCircleMember(getTrip(tripId).circleId);
+    }
+
+    function isTripOrganizer(tripId) {
+      return isAuthenticated() && (
+        getTrip(tripId).createdBy == request.auth.uid ||
+        isCircleAdmin(getTrip(tripId).circleId)
+      );
+    }
+
+    // 1. User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isUser(userId);
+      allow delete: if false; // Users cannot be deleted directly
+    }
+
+    // 2. Circles
+    match /circles/{circleId} {
+      allow read: if isCircleMember(circleId);
+      allow create: if isAuthenticated();
+      allow update, delete: if isCircleAdmin(circleId);
+
+      match /members/{memberId} {
+        allow read: if isCircleMember(circleId);
+        allow create, update, delete: if isCircleAdmin(circleId) || isUser(memberId);
+      }
+    }
+
+    // 3. Trips
+    match /trips/{tripId} {
+      allow read: if isTripAuthorized(tripId);
+      allow create: if isAuthenticated();
+      allow update: if isTripAuthorized(tripId);
+      allow delete: if isTripOrganizer(tripId);
+
+      // Subcollection: Participants (Unified Registered & Guest Participants)
+      // Enforces that guest profiles can ONLY be managed by authenticated circle members / organizers.
+      // Guests have NO auth UID and therefore have zero direct API or login access.
+      match /participants/{participantId} {
+        allow read: if isTripAuthorized(tripId);
+        
+        // Creating a participant (guest or registered member)
+        allow create: if isTripAuthorized(tripId) && (
+          // If registered participant, either self or organizer adding
+          (request.resource.data.participantType == 'registered' && (request.resource.data.userId == request.auth.uid || isTripOrganizer(tripId))) ||
+          // If guest participant, must be created by an authenticated member with addedBy set to auth.uid
+          (request.resource.data.participantType == 'guest' && request.resource.data.addedBy == request.auth.uid)
+        );
+
+        // Updating a participant (profile edit or guest-to-registered conversion)
+        allow update: if isTripAuthorized(tripId) && (
+          isTripOrganizer(tripId) ||
+          // User updating their own registered profile
+          (resource.data.participantType == 'registered' && resource.data.userId == request.auth.uid) ||
+          // Guest conversion: organizer linking Firebase UID to guest record
+          (resource.data.participantType == 'guest' && request.resource.data.participantType == 'registered' && request.resource.data.convertedBy == request.auth.uid)
+        );
+
+        // Soft delete / remove only by trip organizers
+        allow delete: if isTripOrganizer(tripId);
+      }
+
+      // Subcollection: Expenses
+      match /expenses/{expenseId} {
+        allow read: if isTripAuthorized(tripId);
+        allow create: if isTripAuthorized(tripId) && request.resource.data.createdBy == request.auth.uid;
+        allow update: if isTripAuthorized(tripId);
+        allow delete: if isTripOrganizer(tripId) || resource.data.createdBy == request.auth.uid;
+      }
+
+      // Subcollection: Direct & Guest Payments
+      match /payments/{paymentId} {
+        allow read: if isTripAuthorized(tripId);
+        allow create: if isTripAuthorized(tripId) && request.resource.data.recordedBy == request.auth.uid;
+        allow update, delete: if isTripOrganizer(tripId) || resource.data.recordedBy == request.auth.uid;
+      }
+
+      // Subcollection: Settlements
+      match /settlements/{settlementId} {
+        allow read: if isTripAuthorized(tripId);
+        allow create, update: if isTripAuthorized(tripId);
+        allow delete: if isTripOrganizer(tripId);
+      }
+
+      // Subcollection: Itinerary
+      match /itinerary/{itemId} {
+        allow read: if isTripAuthorized(tripId);
+        allow write: if isTripAuthorized(tripId);
+      }
+
+      // Subcollection: Tasks
+      match /tasks/{taskId} {
+        allow read: if isTripAuthorized(tripId);
+        allow write: if isTripAuthorized(tripId);
+      }
+
+      // Subcollection: Polls
+      match /polls/{pollId} {
+        allow read: if isTripAuthorized(tripId);
+        allow write: if isTripAuthorized(tripId);
+      }
+
+      // Subcollection: Memories
+      match /memories/{memoryId} {
+        allow read: if isTripAuthorized(tripId);
+        allow write: if isTripAuthorized(tripId);
+      }
+    }
+  }
+}

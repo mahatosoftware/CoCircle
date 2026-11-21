@@ -1,8 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../../core/errors/failure.dart';
 import '../domain/task_model.dart';
 import '../domain/task_repository.dart';
+
+final taskRepositoryProvider = Provider<TaskRepository>((ref) {
+  return TaskRepositoryImpl(FirebaseFirestore.instance);
+});
 
 class TaskRepositoryImpl implements TaskRepository {
   final FirebaseFirestore _firestore;

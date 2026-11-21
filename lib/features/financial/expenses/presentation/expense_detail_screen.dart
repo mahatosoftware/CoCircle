@@ -7,7 +7,6 @@ import 'package:cocircle/features/circles/presentation/circle_controller.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
 import '../domain/expense_model.dart';
 import 'expense_controller.dart';
-import 'package:cocircle/core/widgets/copyright_footer.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 
 class ExpenseDetailScreen extends ConsumerWidget {

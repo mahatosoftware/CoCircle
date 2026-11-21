@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/utils/snackbar.dart';
@@ -9,8 +10,26 @@ import '../../circles/presentation/circle_controller.dart';
 import '../../trips/presentation/trip_controller.dart';
 import '../data/poll_repository_impl.dart';
 import '../domain/poll_model.dart';
+import '../domain/decision_engine_service.dart';
+import '../../../core/ai/ai_provider.dart';
+import '../../trips/data/trip_planner_repository_impl.dart';
+import '../../tasks/data/task_repository_impl.dart';
 
 part 'poll_controller.g.dart';
+
+final decisionEngineServiceProvider = Provider<DecisionEngineService>((ref) {
+  final aiService = ref.watch(aiServiceProvider);
+  final pollRepo = ref.watch(pollRepositoryProvider);
+  final tripPlannerRepo = ref.watch(tripPlannerRepositoryProvider);
+  final taskRepo = ref.watch(taskRepositoryProvider);
+
+  return DecisionEngineService(
+    aiService: aiService,
+    pollRepository: pollRepo,
+    tripPlannerRepository: tripPlannerRepo,
+    taskRepository: taskRepo,
+  );
+});
 
 @riverpod
 class PollController extends _$PollController {
@@ -24,6 +43,9 @@ class PollController extends _$PollController {
     required String question,
     required List<String> optionTexts,
     required bool allowMultipleSelections,
+    String pollType = 'standard',
+    bool isAnonymous = false,
+    DateTime? deadline,
     required BuildContext context,
   }) async {
     state = const AsyncLoading();
@@ -47,6 +69,9 @@ class PollController extends _$PollController {
       options: optionTexts.map((text) => PollOption(text: text)).toList(),
       allowMultipleSelections: allowMultipleSelections,
       createdAt: now,
+      pollType: pollType,
+      isAnonymous: isAnonymous,
+      deadline: deadline,
     );
 
     final result = await pollRepository.createPoll(poll);

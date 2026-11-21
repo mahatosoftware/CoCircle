@@ -5,7 +5,6 @@ import '../../domain/itinerary_item_model.dart';
 import '../../domain/trip_model.dart';
 import '../trip_controller.dart';
 import '../trip_planner_controller.dart';
-import '../../../../core/ai/ai_provider.dart';
 
 class ItinerarySection extends ConsumerStatefulWidget {
   final String tripId;
@@ -551,7 +550,7 @@ class _ItinerarySectionState extends ConsumerState<ItinerarySection> {
               final sortedDates = grouped.keys.toList()..sort();
 
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 itemCount: sortedDates.length,
                 itemBuilder: (context, index) {
                   final dateStr = sortedDates[index];

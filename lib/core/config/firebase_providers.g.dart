@@ -53,4 +53,4 @@ final class FirebaseDatabaseProvider
   }
 }
 
-String _$firebaseDatabaseHash() => r'16ecbf0d3703ce401229fee0565d3ab89349d3e8';
+String _$firebaseDatabaseHash() => r'0e65f9862e2f8614793544e3f6fa6c917e909e16';

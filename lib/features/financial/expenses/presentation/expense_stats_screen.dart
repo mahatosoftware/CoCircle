@@ -8,7 +8,6 @@ import '../data/expense_stats_provider.dart';
 import '../domain/expense_model.dart';
 import '../../../trips/presentation/trip_controller.dart';
 import '../../../circles/presentation/circle_controller.dart';
-import '../../../../core/widgets/copyright_footer.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 
 class ExpenseStatsView extends ConsumerWidget {
@@ -35,7 +34,7 @@ class ExpenseStatsView extends ConsumerWidget {
             final format = NumberFormat.currency(symbol: '$currency ');
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

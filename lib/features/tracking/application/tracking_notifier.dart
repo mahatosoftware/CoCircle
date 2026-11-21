@@ -17,6 +17,8 @@ class TrackingState {
   final Position? lastPosition;
   final DateTime? lastWriteTime;
   final String? error;
+  final String sharingStatus; // 'sharing', 'paused', 'offline'
+  final DateTime? sharingExpiry;
 
   TrackingState({
     this.isTracking = false,
@@ -24,6 +26,8 @@ class TrackingState {
     this.lastPosition,
     this.lastWriteTime,
     this.error,
+    this.sharingStatus = 'offline',
+    this.sharingExpiry,
   });
 
   TrackingState copyWith({
@@ -32,6 +36,9 @@ class TrackingState {
     Position? lastPosition,
     DateTime? lastWriteTime,
     String? error,
+    String? sharingStatus,
+    DateTime? sharingExpiry,
+    bool clearExpiry = false,
   }) {
     return TrackingState(
       isTracking: isTracking ?? this.isTracking,
@@ -39,6 +46,8 @@ class TrackingState {
       lastPosition: lastPosition ?? this.lastPosition,
       lastWriteTime: lastWriteTime ?? this.lastWriteTime,
       error: error ?? this.error,
+      sharingStatus: sharingStatus ?? this.sharingStatus,
+      sharingExpiry: clearExpiry ? null : (sharingExpiry ?? this.sharingExpiry),
     );
   }
 }
@@ -47,6 +56,7 @@ class TrackingState {
 class TrackingNotifier extends _$TrackingNotifier {
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<DatabaseEvent>? _connectionSubscription;
+  Timer? _expiryTimer;
   late LiveTrackingRepository _trackingRepository;
 
   @override
@@ -55,14 +65,29 @@ class TrackingNotifier extends _$TrackingNotifier {
     ref.onDispose(() {
       _positionSubscription?.cancel();
       _connectionSubscription?.cancel();
+      _expiryTimer?.cancel();
     });
     return TrackingState();
   }
 
-  Future<void> startTracking(String tripId) async {
-    if (state.isTracking && state.tripId == tripId) return;
+  Future<void> startTracking(String tripId, {Duration? duration}) async {
+    if (state.isTracking && state.tripId == tripId && state.sharingStatus == 'sharing') {
+      return;
+    }
+
+    DateTime? expiry;
+    if (duration != null) {
+      expiry = DateTime.now().add(duration);
+      _scheduleExpiry(duration);
+    }
     
-    state = state.copyWith(isTracking: false, tripId: tripId, error: null);
+    state = state.copyWith(
+      isTracking: false,
+      tripId: tripId,
+      error: null,
+      sharingStatus: 'sharing',
+      sharingExpiry: expiry,
+    );
 
     // 1. Check services and permissions
     final enabled = await _trackingRepository.isLocationServiceEnabled();
@@ -95,6 +120,7 @@ class TrackingNotifier extends _$TrackingNotifier {
     final userId = user.uid;
     final presenceRef = ref.read(firebaseDatabaseProvider).ref('trip_presence/$tripId/$userId');
     final locationOnlineRef = ref.read(firebaseDatabaseProvider).ref('trip_locations/$tripId/members/$userId/online');
+    final sharingStatusRef = ref.read(firebaseDatabaseProvider).ref('trip_locations/$tripId/members/$userId/sharingStatus');
 
     // On disconnect, mark offline and lastSeen
     await presenceRef.onDisconnect().set({
@@ -102,12 +128,14 @@ class TrackingNotifier extends _$TrackingNotifier {
       'lastSeen': ServerValue.timestamp,
     });
     await locationOnlineRef.onDisconnect().set(false);
+    await sharingStatusRef.onDisconnect().set('offline');
 
     // Set online = true initially
     await presenceRef.set({
       'online': true,
       'lastSeen': ServerValue.timestamp,
     });
+    await sharingStatusRef.set('sharing');
 
     // Listen to connection state to auto-toggle online status
     _connectionSubscription?.cancel();
@@ -120,6 +148,7 @@ class TrackingNotifier extends _$TrackingNotifier {
         });
         if (state.isTracking) {
           await locationOnlineRef.set(true);
+          await sharingStatusRef.set(state.sharingStatus);
         }
       }
     });
@@ -132,7 +161,7 @@ class TrackingNotifier extends _$TrackingNotifier {
         distanceFilter: 5,
         intervalDuration: const Duration(seconds: 5),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText: "CoCircle is sharing your live location in the background",
+          notificationText: "CoCircle is sharing your live location with your group",
           notificationTitle: "Live Location Active",
         ),
       );
@@ -162,8 +191,7 @@ class TrackingNotifier extends _$TrackingNotifier {
       },
     );
 
-    // Set tracking status true immediately to not block the UI or stream initiation
-    state = state.copyWith(isTracking: true);
+    state = state.copyWith(isTracking: true, sharingStatus: 'sharing');
 
     // Fetch and publish first position asynchronously in the background
     _trackingRepository.getCurrentPosition().then((initialPos) {
@@ -179,6 +207,29 @@ class TrackingNotifier extends _$TrackingNotifier {
     });
   }
 
+  Future<void> pauseTracking() async {
+    if (!state.isTracking) return;
+
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+
+    final tripId = state.tripId;
+    final user = ref.read(authStateChangesProvider).value;
+    if (tripId != null && user != null) {
+      final userId = user.uid;
+      await ref.read(firebaseDatabaseProvider)
+          .ref('trip_locations/$tripId/members/$userId/sharingStatus')
+          .set('paused');
+    }
+
+    state = state.copyWith(sharingStatus: 'paused');
+  }
+
+  Future<void> resumeTracking() async {
+    if (!state.isTracking || state.tripId == null) return;
+    await startTracking(state.tripId!, duration: state.sharingExpiry?.difference(DateTime.now()));
+  }
+
   Future<void> stopTracking() async {
     if (!state.isTracking) return;
 
@@ -189,15 +240,19 @@ class TrackingNotifier extends _$TrackingNotifier {
     _positionSubscription = null;
     _connectionSubscription?.cancel();
     _connectionSubscription = null;
+    _expiryTimer?.cancel();
+    _expiryTimer = null;
 
     if (tripId != null && user != null) {
       final userId = user.uid;
       final presenceRef = ref.read(firebaseDatabaseProvider).ref('trip_presence/$tripId/$userId');
       final locationOnlineRef = ref.read(firebaseDatabaseProvider).ref('trip_locations/$tripId/members/$userId/online');
+      final sharingStatusRef = ref.read(firebaseDatabaseProvider).ref('trip_locations/$tripId/members/$userId/sharingStatus');
 
       // Cancel disconnect handlers
       await presenceRef.onDisconnect().cancel();
       await locationOnlineRef.onDisconnect().cancel();
+      await sharingStatusRef.onDisconnect().cancel();
 
       // Set status offline
       await presenceRef.set({
@@ -205,12 +260,23 @@ class TrackingNotifier extends _$TrackingNotifier {
         'lastSeen': ServerValue.timestamp,
       });
       await locationOnlineRef.set(false);
+      await sharingStatusRef.set('offline');
     }
 
     state = TrackingState();
   }
 
+  void _scheduleExpiry(Duration duration) {
+    _expiryTimer?.cancel();
+    _expiryTimer = Timer(duration, () {
+      debugPrint("Location sharing period expired automatically.");
+      stopTracking();
+    });
+  }
+
   void _handlePositionUpdate(Position position) {
+    if (state.sharingStatus == 'paused') return;
+
     final lastPos = state.lastPosition;
     final lastTime = state.lastWriteTime;
     final now = DateTime.now();
@@ -222,7 +288,6 @@ class TrackingNotifier extends _$TrackingNotifier {
     }
 
     // Battery & Network Optimization rules:
-    // Calculate distance moved in meters
     final distanceMoved = Geolocator.distanceBetween(
       lastPos.latitude,
       lastPos.longitude,
@@ -232,13 +297,16 @@ class TrackingNotifier extends _$TrackingNotifier {
 
     final secondsElapsed = now.difference(lastTime).inSeconds;
 
-    // Rule 1: Immediately update if moved more than 25 meters
-    final movedSignificantly = distanceMoved >= 25.0;
+    // Rule 1: Immediately update if moved more than 20 meters
+    final movedSignificantly = distanceMoved >= 20.0;
 
-    // Rule 2: Every 12-15 seconds if the user is moving (speed > 0.4 m/s)
-    final movingAndIntervalReached = secondsElapsed >= 12 && position.speed > 0.4;
+    // Rule 2: Every 10 seconds if user is moving (speed > 0.4 m/s)
+    final movingAndIntervalReached = secondsElapsed >= 10 && position.speed > 0.4;
 
-    if (movedSignificantly || movingAndIntervalReached) {
+    // Rule 3: Heartbeat update every 60 seconds even if stationary
+    final heartbeatReached = secondsElapsed >= 60;
+
+    if (movedSignificantly || movingAndIntervalReached || heartbeatReached) {
       _publishLocation(position);
       state = state.copyWith(lastPosition: position, lastWriteTime: now);
     }
@@ -255,15 +323,19 @@ class TrackingNotifier extends _$TrackingNotifier {
 
       final battery = await _trackingRepository.getBatteryLevel();
 
-      // Fetch current vehicle and destination id from the database, to avoid overwriting them
       final snapshot = await memberRef.get();
       String? currentVehicleId;
+      String? currentVehicleName;
       String? currentDestinationId;
+      bool isEmergency = false;
+
       if (snapshot.exists) {
         final data = snapshot.value as Map?;
         if (data != null) {
           currentVehicleId = data['vehicleId'] as String?;
+          currentVehicleName = data['vehicleName'] as String?;
           currentDestinationId = data['destinationId'] as String?;
+          isEmergency = data['isEmergency'] as bool? ?? false;
         }
       }
 
@@ -277,18 +349,21 @@ class TrackingNotifier extends _$TrackingNotifier {
         'accuracy': position.accuracy,
         'battery': battery,
         'online': true,
+        'sharingStatus': state.sharingStatus,
+        'isEmergency': isEmergency,
         'lastUpdated': ServerValue.timestamp,
         if (currentVehicleId != null) 'vehicleId': currentVehicleId,
+        if (currentVehicleName != null) 'vehicleName': currentVehicleName,
         if (currentDestinationId != null) 'destinationId': currentDestinationId,
       });
-      debugPrint("Successfully published location to RTDB: ${position.latitude}, ${position.longitude}");
+      debugPrint("Published location to RTDB: ${position.latitude}, ${position.longitude}");
     } catch (e, stack) {
       debugPrint("Error publishing location to RTDB: $e");
       debugPrint("Stack trace: $stack");
     }
   }
 
-  Future<void> updateVehicleAssignment(String vehicleId) async {
+  Future<void> updateVehicleAssignment(String vehicleId, {String? vehicleName}) async {
     final tripId = state.tripId;
     final user = ref.read(authStateChangesProvider).value;
     if (tripId == null || user == null) return;
@@ -296,6 +371,7 @@ class TrackingNotifier extends _$TrackingNotifier {
     final userId = user.uid;
     await ref.read(firebaseDatabaseProvider).ref('trip_locations/$tripId/members/$userId').update({
       'vehicleId': vehicleId,
+      if (vehicleName != null) 'vehicleName': vehicleName,
     });
   }
 

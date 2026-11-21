@@ -33,7 +33,7 @@ final class TripControllerProvider
   TripController create() => TripController();
 }
 
-String _$tripControllerHash() => r'41758d70ebfb2945bc4ed178451eef829ab70e56';
+String _$tripControllerHash() => r'68f04e000f448800d9937de843bf658077a47c5c';
 
 abstract class _$TripController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -127,6 +127,45 @@ final class CircleTripsFamily extends $Family
   @override
   String toString() => r'circleTripsProvider';
 }
+
+@ProviderFor(allUserTrips)
+final allUserTripsProvider = AllUserTripsProvider._();
+
+final class AllUserTripsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TripModel>>,
+          List<TripModel>,
+          Stream<List<TripModel>>
+        >
+    with $FutureModifier<List<TripModel>>, $StreamProvider<List<TripModel>> {
+  AllUserTripsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allUserTripsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allUserTripsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TripModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TripModel>> create(Ref ref) {
+    return allUserTrips(ref);
+  }
+}
+
+String _$allUserTripsHash() => r'03be0ebbb283d775558c1563560d8bc6b5e08b0a';
 
 @ProviderFor(tripDetails)
 final tripDetailsProvider = TripDetailsFamily._();

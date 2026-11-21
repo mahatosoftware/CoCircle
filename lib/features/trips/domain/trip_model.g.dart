@@ -17,6 +17,15 @@ _TripModel _$TripModelFromJson(Map<String, dynamic> json) => _TripModel(
   createdBy: json['createdBy'] as String,
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   isActive: json['isActive'] as bool? ?? true,
+  status: json['status'] as String? ?? 'planning',
+  closedAt: const TimestampConverter().fromJson(json['closedAt']),
+  totalBudget: (json['totalBudget'] as num?)?.toDouble() ?? 0.0,
+  category: json['category'] as String?,
+  participantIds:
+      (json['participantIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
   totalExpenses: (json['totalExpenses'] as num?)?.toDouble() ?? 0.0,
 );
 
@@ -38,6 +47,14 @@ Map<String, dynamic> _$TripModelToJson(_TripModel instance) =>
       'createdBy': instance.createdBy,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'isActive': instance.isActive,
+      'status': instance.status,
+      'closedAt': _$JsonConverterToJson<dynamic, DateTime>(
+        instance.closedAt,
+        const TimestampConverter().toJson,
+      ),
+      'totalBudget': instance.totalBudget,
+      'category': instance.category,
+      'participantIds': instance.participantIds,
       'totalExpenses': instance.totalExpenses,
     };
 

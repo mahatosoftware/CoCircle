@@ -602,4 +602,292 @@ as DateTime?,
 
 }
 
+
+/// @nodoc
+mixin _$SettlementAdjustmentModel {
+
+ String get id; String get tripId; String get creditorUid;// Creditor waiving debt
+ String get debtorUid;// Debtor whose debt was waived
+ double get amount; String get reason;@TimestampConverter() DateTime get createdAt; bool get approvedByCreditor;
+/// Create a copy of SettlementAdjustmentModel
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SettlementAdjustmentModelCopyWith<SettlementAdjustmentModel> get copyWith => _$SettlementAdjustmentModelCopyWithImpl<SettlementAdjustmentModel>(this as SettlementAdjustmentModel, _$identity);
+
+  /// Serializes this SettlementAdjustmentModel to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SettlementAdjustmentModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.creditorUid, creditorUid) || other.creditorUid == creditorUid)&&(identical(other.debtorUid, debtorUid) || other.debtorUid == debtorUid)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.approvedByCreditor, approvedByCreditor) || other.approvedByCreditor == approvedByCreditor));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,tripId,creditorUid,debtorUid,amount,reason,createdAt,approvedByCreditor);
+
+@override
+String toString() {
+  return 'SettlementAdjustmentModel(id: $id, tripId: $tripId, creditorUid: $creditorUid, debtorUid: $debtorUid, amount: $amount, reason: $reason, createdAt: $createdAt, approvedByCreditor: $approvedByCreditor)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SettlementAdjustmentModelCopyWith<$Res>  {
+  factory $SettlementAdjustmentModelCopyWith(SettlementAdjustmentModel value, $Res Function(SettlementAdjustmentModel) _then) = _$SettlementAdjustmentModelCopyWithImpl;
+@useResult
+$Res call({
+ String id, String tripId, String creditorUid, String debtorUid, double amount, String reason,@TimestampConverter() DateTime createdAt, bool approvedByCreditor
+});
+
+
+
+
+}
+/// @nodoc
+class _$SettlementAdjustmentModelCopyWithImpl<$Res>
+    implements $SettlementAdjustmentModelCopyWith<$Res> {
+  _$SettlementAdjustmentModelCopyWithImpl(this._self, this._then);
+
+  final SettlementAdjustmentModel _self;
+  final $Res Function(SettlementAdjustmentModel) _then;
+
+/// Create a copy of SettlementAdjustmentModel
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tripId = null,Object? creditorUid = null,Object? debtorUid = null,Object? amount = null,Object? reason = null,Object? createdAt = null,Object? approvedByCreditor = null,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,tripId: null == tripId ? _self.tripId : tripId // ignore: cast_nullable_to_non_nullable
+as String,creditorUid: null == creditorUid ? _self.creditorUid : creditorUid // ignore: cast_nullable_to_non_nullable
+as String,debtorUid: null == debtorUid ? _self.debtorUid : debtorUid // ignore: cast_nullable_to_non_nullable
+as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
+as double,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,approvedByCreditor: null == approvedByCreditor ? _self.approvedByCreditor : approvedByCreditor // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [SettlementAdjustmentModel].
+extension SettlementAdjustmentModelPatterns on SettlementAdjustmentModel {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SettlementAdjustmentModel value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _SettlementAdjustmentModel() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SettlementAdjustmentModel value)  $default,){
+final _that = this;
+switch (_that) {
+case _SettlementAdjustmentModel():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SettlementAdjustmentModel value)?  $default,){
+final _that = this;
+switch (_that) {
+case _SettlementAdjustmentModel() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tripId,  String creditorUid,  String debtorUid,  double amount,  String reason, @TimestampConverter()  DateTime createdAt,  bool approvedByCreditor)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _SettlementAdjustmentModel() when $default != null:
+return $default(_that.id,_that.tripId,_that.creditorUid,_that.debtorUid,_that.amount,_that.reason,_that.createdAt,_that.approvedByCreditor);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tripId,  String creditorUid,  String debtorUid,  double amount,  String reason, @TimestampConverter()  DateTime createdAt,  bool approvedByCreditor)  $default,) {final _that = this;
+switch (_that) {
+case _SettlementAdjustmentModel():
+return $default(_that.id,_that.tripId,_that.creditorUid,_that.debtorUid,_that.amount,_that.reason,_that.createdAt,_that.approvedByCreditor);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tripId,  String creditorUid,  String debtorUid,  double amount,  String reason, @TimestampConverter()  DateTime createdAt,  bool approvedByCreditor)?  $default,) {final _that = this;
+switch (_that) {
+case _SettlementAdjustmentModel() when $default != null:
+return $default(_that.id,_that.tripId,_that.creditorUid,_that.debtorUid,_that.amount,_that.reason,_that.createdAt,_that.approvedByCreditor);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _SettlementAdjustmentModel implements SettlementAdjustmentModel {
+  const _SettlementAdjustmentModel({required this.id, required this.tripId, required this.creditorUid, required this.debtorUid, required this.amount, required this.reason, @TimestampConverter() required this.createdAt, this.approvedByCreditor = true});
+  factory _SettlementAdjustmentModel.fromJson(Map<String, dynamic> json) => _$SettlementAdjustmentModelFromJson(json);
+
+@override final  String id;
+@override final  String tripId;
+@override final  String creditorUid;
+// Creditor waiving debt
+@override final  String debtorUid;
+// Debtor whose debt was waived
+@override final  double amount;
+@override final  String reason;
+@override@TimestampConverter() final  DateTime createdAt;
+@override@JsonKey() final  bool approvedByCreditor;
+
+/// Create a copy of SettlementAdjustmentModel
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SettlementAdjustmentModelCopyWith<_SettlementAdjustmentModel> get copyWith => __$SettlementAdjustmentModelCopyWithImpl<_SettlementAdjustmentModel>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$SettlementAdjustmentModelToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SettlementAdjustmentModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.creditorUid, creditorUid) || other.creditorUid == creditorUid)&&(identical(other.debtorUid, debtorUid) || other.debtorUid == debtorUid)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.approvedByCreditor, approvedByCreditor) || other.approvedByCreditor == approvedByCreditor));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,tripId,creditorUid,debtorUid,amount,reason,createdAt,approvedByCreditor);
+
+@override
+String toString() {
+  return 'SettlementAdjustmentModel(id: $id, tripId: $tripId, creditorUid: $creditorUid, debtorUid: $debtorUid, amount: $amount, reason: $reason, createdAt: $createdAt, approvedByCreditor: $approvedByCreditor)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SettlementAdjustmentModelCopyWith<$Res> implements $SettlementAdjustmentModelCopyWith<$Res> {
+  factory _$SettlementAdjustmentModelCopyWith(_SettlementAdjustmentModel value, $Res Function(_SettlementAdjustmentModel) _then) = __$SettlementAdjustmentModelCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String tripId, String creditorUid, String debtorUid, double amount, String reason,@TimestampConverter() DateTime createdAt, bool approvedByCreditor
+});
+
+
+
+
+}
+/// @nodoc
+class __$SettlementAdjustmentModelCopyWithImpl<$Res>
+    implements _$SettlementAdjustmentModelCopyWith<$Res> {
+  __$SettlementAdjustmentModelCopyWithImpl(this._self, this._then);
+
+  final _SettlementAdjustmentModel _self;
+  final $Res Function(_SettlementAdjustmentModel) _then;
+
+/// Create a copy of SettlementAdjustmentModel
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tripId = null,Object? creditorUid = null,Object? debtorUid = null,Object? amount = null,Object? reason = null,Object? createdAt = null,Object? approvedByCreditor = null,}) {
+  return _then(_SettlementAdjustmentModel(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,tripId: null == tripId ? _self.tripId : tripId // ignore: cast_nullable_to_non_nullable
+as String,creditorUid: null == creditorUid ? _self.creditorUid : creditorUid // ignore: cast_nullable_to_non_nullable
+as String,debtorUid: null == debtorUid ? _self.debtorUid : debtorUid // ignore: cast_nullable_to_non_nullable
+as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
+as double,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,approvedByCreditor: null == approvedByCreditor ? _self.approvedByCreditor : approvedByCreditor // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
 // dart format on

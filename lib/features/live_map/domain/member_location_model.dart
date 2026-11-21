@@ -19,6 +19,9 @@ abstract class MemberLocationModel with _$MemberLocationModel {
     required DateTime lastUpdated,
     String? vehicleId,
     String? destinationId,
+    @Default('sharing') String sharingStatus, // 'sharing', 'paused', 'offline'
+    @Default(false) bool isEmergency,
+    String? vehicleName,
   }) = _MemberLocationModel;
 
   factory MemberLocationModel.fromJson(Map<String, dynamic> json) =>

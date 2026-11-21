@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../expenses/presentation/expense_list.dart';
 import '../expenses/presentation/expense_stats_screen.dart';
 import '../expenses/presentation/expense_audit_screen.dart';
 import '../settlements/presentation/settlement_list.dart';
-import '../../trips/domain/trip_model.dart';
 import '../../trips/presentation/trip_controller.dart';
 import '../../circles/presentation/circle_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
@@ -43,6 +43,7 @@ class TripFinanceSectionScreen extends ConsumerWidget {
               case FinanceSectionType.settlements:
                 title = l10n.settlements;
                 body = SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 100),
                   child: Column(
                     children: [
                       Padding(
@@ -71,7 +72,27 @@ class TripFinanceSectionScreen extends ConsumerWidget {
               appBar: AppBar(
                 title: Text(title),
               ),
-              body: body,
+              body: SafeArea(
+                top: false,
+                bottom: true,
+                child: body,
+              ),
+              bottomNavigationBar: type == FinanceSectionType.expenses
+                  ? SafeArea(
+                      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF5B42F3),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: () => context.push('/trip/$tripId/create-expense'),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('+ Add Expense', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      ),
+                    )
+                  : null,
             );
           },
           loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),

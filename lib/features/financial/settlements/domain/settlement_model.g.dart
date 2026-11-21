@@ -67,3 +67,29 @@ Json? _$JsonConverterToJson<Json, Value>(
   Value? value,
   Json? Function(Value value) toJson,
 ) => value == null ? null : toJson(value);
+
+_SettlementAdjustmentModel _$SettlementAdjustmentModelFromJson(
+  Map<String, dynamic> json,
+) => _SettlementAdjustmentModel(
+  id: json['id'] as String,
+  tripId: json['tripId'] as String,
+  creditorUid: json['creditorUid'] as String,
+  debtorUid: json['debtorUid'] as String,
+  amount: (json['amount'] as num).toDouble(),
+  reason: json['reason'] as String,
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  approvedByCreditor: json['approvedByCreditor'] as bool? ?? true,
+);
+
+Map<String, dynamic> _$SettlementAdjustmentModelToJson(
+  _SettlementAdjustmentModel instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'tripId': instance.tripId,
+  'creditorUid': instance.creditorUid,
+  'debtorUid': instance.debtorUid,
+  'amount': instance.amount,
+  'reason': instance.reason,
+  'createdAt': const TimestampConverter().toJson(instance.createdAt),
+  'approvedByCreditor': instance.approvedByCreditor,
+};

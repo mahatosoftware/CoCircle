@@ -18,6 +18,7 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
   final FirebaseDatabase _db;
 
   RealtimeLocationRepositoryImpl(this._db);
+
   @override
   Stream<List<MemberLocationModel>> streamMemberLocations(String tripId) {
     return _db
@@ -51,7 +52,6 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
 
             list.add(MemberLocationModel.fromJson(map));
           } catch (e, stack) {
-            // Log parse errors for debugging
             debugPrint("Error parsing member location: $e");
             debugPrint("Stack trace: $stack");
           }
@@ -110,12 +110,17 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
     required String name,
     required double latitude,
     required double longitude,
+    String? address,
+    int? order,
   }) async {
     await _db.ref('trip_destinations/$tripId/$destinationId').set({
       'id': destinationId,
       'name': name,
       'latitude': latitude,
       'longitude': longitude,
+      if (address != null) 'address': address,
+      if (order != null) 'order': order,
+      'updatedAt': ServerValue.timestamp,
     });
   }
 
@@ -157,6 +162,7 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
       'encodedPolyline': encodedPolyline,
       'distance': distance,
       'duration': duration,
+      'updatedAt': ServerValue.timestamp,
     });
   }
 
@@ -202,5 +208,206 @@ class RealtimeLocationRepositoryImpl implements RealtimeLocationRepository {
       'body': body,
       'timestamp': ServerValue.timestamp,
     });
+  }
+
+  // --- Meeting Points & Arrival Tracking ---
+
+  @override
+  Stream<Map<String, Map<String, dynamic>>> streamMeetingPoints(String tripId) {
+    return _db.ref('trip_meeting_points/$tripId').onValue.map((event) {
+      final snapshot = event.snapshot;
+      if (!snapshot.exists || snapshot.value == null) return {};
+
+      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<String, Map<String, dynamic>> map = {};
+
+      data.forEach((key, val) {
+        if (val is Map) {
+          map[key as String] = Map<String, dynamic>.from(val);
+        }
+      });
+      return map;
+    });
+  }
+
+  @override
+  Future<void> setMeetingPoint({
+    required String tripId,
+    required String meetingPointId,
+    required String name,
+    required double latitude,
+    required double longitude,
+    required String createdBy,
+    String? note,
+  }) async {
+    await _db.ref('trip_meeting_points/$tripId/$meetingPointId').set({
+      'id': meetingPointId,
+      'name': name,
+      'latitude': latitude,
+      'longitude': longitude,
+      'createdBy': createdBy,
+      if (note != null) 'note': note,
+      'createdAt': ServerValue.timestamp,
+    });
+  }
+
+  @override
+  Future<void> removeMeetingPoint(String tripId, String meetingPointId) async {
+    await _db.ref('trip_meeting_points/$tripId/$meetingPointId').remove();
+  }
+
+  @override
+  Future<void> checkInAtMeetingPoint({
+    required String tripId,
+    required String meetingPointId,
+    required String userId,
+    required String userName,
+  }) async {
+    await _db
+        .ref('trip_meeting_points/$tripId/$meetingPointId/arrivedMembers/$userId')
+        .set({
+      'userId': userId,
+      'userName': userName,
+      'timestamp': ServerValue.timestamp,
+    });
+
+    // Fetch meeting point name for contextual alert
+    final pointSnapshot = await _db.ref('trip_meeting_points/$tripId/$meetingPointId/name').get();
+    final pointName = pointSnapshot.value as String? ?? 'Meeting Point';
+
+    await postNotification(
+      tripId: tripId,
+      title: 'Arrival Check-in',
+      body: '$userName has arrived at $pointName! 🎉',
+    );
+  }
+
+  // --- Multiple Vehicle Coordination ---
+
+  @override
+  Stream<Map<String, Map<String, dynamic>>> streamVehicles(String tripId) {
+    return _db.ref('trip_vehicles/$tripId').onValue.map((event) {
+      final snapshot = event.snapshot;
+      if (!snapshot.exists || snapshot.value == null) return {};
+
+      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<String, Map<String, dynamic>> map = {};
+
+      data.forEach((key, val) {
+        if (val is Map) {
+          map[key as String] = Map<String, dynamic>.from(val);
+        }
+      });
+      return map;
+    });
+  }
+
+  @override
+  Future<void> setVehicle({
+    required String tripId,
+    required String vehicleId,
+    required String name,
+    required String type,
+    String? driverId,
+    String? driverName,
+    String? colorHex,
+  }) async {
+    await _db.ref('trip_vehicles/$tripId/$vehicleId').update({
+      'id': vehicleId,
+      'name': name,
+      'type': type,
+      if (driverId != null) 'driverId': driverId,
+      if (driverName != null) 'driverName': driverName,
+      if (colorHex != null) 'colorHex': colorHex,
+      'updatedAt': ServerValue.timestamp,
+    });
+  }
+
+  @override
+  Future<void> assignMemberToVehicle({
+    required String tripId,
+    required String vehicleId,
+    required String userId,
+    required String userName,
+    String? vehicleName,
+  }) async {
+    await _db.ref('trip_locations/$tripId/members/$userId').update({
+      'vehicleId': vehicleId,
+      if (vehicleName != null) 'vehicleName': vehicleName,
+    });
+
+    if (vehicleName != null) {
+      await postNotification(
+        tripId: tripId,
+        title: 'Vehicle Convoy Update',
+        body: '$userName joined convoy in $vehicleName',
+      );
+    }
+  }
+
+  // --- Emergency Assistance (SOS) ---
+
+  @override
+  Stream<Map<String, Map<String, dynamic>>> streamSOSAlerts(String tripId) {
+    return _db.ref('trip_emergency/$tripId').onValue.map((event) {
+      final snapshot = event.snapshot;
+      if (!snapshot.exists || snapshot.value == null) return {};
+
+      final Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+      final Map<String, Map<String, dynamic>> map = {};
+
+      data.forEach((key, val) {
+        if (val is Map) {
+          map[key as String] = Map<String, dynamic>.from(val);
+        }
+      });
+      return map;
+    });
+  }
+
+  @override
+  Future<void> triggerSOS({
+    required String tripId,
+    required String userId,
+    required String userName,
+    required double latitude,
+    required double longitude,
+    int? battery,
+  }) async {
+    await _db.ref('trip_emergency/$tripId/$userId').set({
+      'userId': userId,
+      'userName': userName,
+      'latitude': latitude,
+      'longitude': longitude,
+      'battery': battery,
+      'timestamp': ServerValue.timestamp,
+    });
+
+    await _db.ref('trip_locations/$tripId/members/$userId').update({
+      'isEmergency': true,
+    });
+
+    await postNotification(
+      tripId: tripId,
+      title: '🚨 EMERGENCY SOS ALERT',
+      body: '$userName needs immediate assistance! Battery: ${battery ?? "?"}%. Coordinates: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}',
+    );
+  }
+
+  @override
+  Future<void> clearSOS({
+    required String tripId,
+    required String userId,
+  }) async {
+    await _db.ref('trip_emergency/$tripId/$userId').remove();
+    await _db.ref('trip_locations/$tripId/members/$userId').update({
+      'isEmergency': false,
+    });
+
+    await postNotification(
+      tripId: tripId,
+      title: 'SOS Status Cleared',
+      body: 'Emergency status cleared for member.',
+    );
   }
 }

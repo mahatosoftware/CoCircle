@@ -79,6 +79,76 @@ class GeminiAiService implements IAiService {
     return parts[0]['text'] as String? ?? '';
   }
 
+  /// Multimodal inference (e.g. for receipt/bill OCR or image analysis)
+  Future<String> generateWithVision({
+    required String prompt,
+    required List<int> imageBytes,
+    String mimeType = 'image/jpeg',
+    bool isJsonMode = false,
+    int maxTokens = 2048,
+  }) async {
+    if (apiKey.isEmpty) {
+      throw Exception('Gemini API Key is not configured in Firebase.');
+    }
+
+    final cleanModelName = modelName.replaceFirst(RegExp(r'^models/'), '').trim();
+    final url = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/$cleanModelName:generateContent?key=$apiKey',
+    );
+
+    final base64Image = base64Encode(imageBytes);
+    final contents = [
+      {
+        'role': 'user',
+        'parts': [
+          {'text': prompt},
+          {
+            'inlineData': {
+              'mimeType': mimeType,
+              'data': base64Image,
+            }
+          }
+        ],
+      }
+    ];
+
+    final generationConfig = <String, dynamic>{
+      'temperature': 0.2,
+      'maxOutputTokens': maxTokens,
+    };
+    if (isJsonMode) {
+      generationConfig['responseMimeType'] = 'application/json';
+    }
+
+    final response = await _client.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'contents': contents,
+        'generationConfig': generationConfig,
+      }),
+    ).timeout(const Duration(seconds: 35));
+
+    if (response.statusCode != 200) {
+      debugPrint('[GeminiAiService Vision Error] HTTP ${response.statusCode}: ${response.body}');
+      throw Exception('Gemini Vision API Error (${response.statusCode}): ${response.body}');
+    }
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final candidates = json['candidates'] as List?;
+    if (candidates == null || candidates.isEmpty) {
+      throw Exception('Gemini returned an empty vision response.');
+    }
+
+    final parts = candidates[0]['content']?['parts'] as List?;
+    if (parts == null || parts.isEmpty) {
+      final finishReason = candidates[0]['finishReason'];
+      throw Exception('No text content in Gemini vision response ($finishReason).');
+    }
+
+    return parts[0]['text'] as String? ?? '';
+  }
+
   @override
   Future<Map<String, dynamic>> generateStructuredJson({
     required List<AiMessage> messages,

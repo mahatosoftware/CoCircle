@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import '../../../../core/config/environment.dart';
 import '../../../../core/errors/failure.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_model.dart';
@@ -136,6 +137,17 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, UserModel>> signInWithGoogle() async {
     try {
+      try {
+        final serverClientId = AppEnvironment.googleServerClientId;
+        if (serverClientId.isNotEmpty) {
+          await _googleSignIn.initialize(
+            serverClientId: serverClientId,
+          );
+        }
+      } catch (initErr) {
+        debugPrint("Google Sign-In initialize check notice: $initErr");
+      }
+
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
       
       debugPrint("Google Sign-In: Account obtained: ${googleUser.email}");
@@ -189,7 +201,16 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e, stack) {
       debugPrint("Google Sign-In Error: $e");
       debugPrint("Stack trace: $stack");
-      return left(Failure(e.toString()));
+      if (e is GoogleSignInException && e.code == GoogleSignInExceptionCode.canceled) {
+        return left(Failure('Sign in canceled'));
+      }
+      final errStr = e.toString();
+      if (errStr.contains('28444') || errStr.contains('Developer console is not set up correctly')) {
+        return left(Failure(
+          'Google Sign-In setup error (28444): Please register the debug SHA-256 fingerprint in Firebase Console, enable the Google provider, or add your email to OAuth Test Users.',
+        ));
+      }
+      return left(Failure(errStr));
     }
   }
 

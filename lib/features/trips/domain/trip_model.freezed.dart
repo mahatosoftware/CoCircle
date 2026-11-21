@@ -15,7 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TripModel {
 
- String get id; String get circleId; String get name; TripType get type;@TimestampConverter() DateTime? get startDate;@TimestampConverter() DateTime? get endDate; String? get location; String get createdBy;@TimestampConverter() DateTime get createdAt; bool get isActive;// Read-optimized summary
+ String get id; String get circleId; String get name; TripType get type;@TimestampConverter() DateTime? get startDate;@TimestampConverter() DateTime? get endDate; String? get location; String get createdBy;@TimestampConverter() DateTime get createdAt; bool get isActive; String get status;// 'draft', 'planning', 'confirmed', 'upcoming', 'ongoing', 'completed', 'settling', 'closed', 'cancelled'
+@TimestampConverter() DateTime? get closedAt; double get totalBudget; String? get category;// 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
+ List<String> get participantIds;// Read-optimized summary
  double get totalExpenses;
 /// Create a copy of TripModel
 /// with the given fields replaced by the non-null parameter values.
@@ -29,16 +31,16 @@ $TripModelCopyWith<TripModel> get copyWith => _$TripModelCopyWithImpl<TripModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripModel&&(identical(other.id, id) || other.id == id)&&(identical(other.circleId, circleId) || other.circleId == circleId)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.location, location) || other.location == location)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.totalExpenses, totalExpenses) || other.totalExpenses == totalExpenses));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripModel&&(identical(other.id, id) || other.id == id)&&(identical(other.circleId, circleId) || other.circleId == circleId)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.location, location) || other.location == location)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.status, status) || other.status == status)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt)&&(identical(other.totalBudget, totalBudget) || other.totalBudget == totalBudget)&&(identical(other.category, category) || other.category == category)&&const DeepCollectionEquality().equals(other.participantIds, participantIds)&&(identical(other.totalExpenses, totalExpenses) || other.totalExpenses == totalExpenses));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,circleId,name,type,startDate,endDate,location,createdBy,createdAt,isActive,totalExpenses);
+int get hashCode => Object.hash(runtimeType,id,circleId,name,type,startDate,endDate,location,createdBy,createdAt,isActive,status,closedAt,totalBudget,category,const DeepCollectionEquality().hash(participantIds),totalExpenses);
 
 @override
 String toString() {
-  return 'TripModel(id: $id, circleId: $circleId, name: $name, type: $type, startDate: $startDate, endDate: $endDate, location: $location, createdBy: $createdBy, createdAt: $createdAt, isActive: $isActive, totalExpenses: $totalExpenses)';
+  return 'TripModel(id: $id, circleId: $circleId, name: $name, type: $type, startDate: $startDate, endDate: $endDate, location: $location, createdBy: $createdBy, createdAt: $createdAt, isActive: $isActive, status: $status, closedAt: $closedAt, totalBudget: $totalBudget, category: $category, participantIds: $participantIds, totalExpenses: $totalExpenses)';
 }
 
 
@@ -49,7 +51,7 @@ abstract mixin class $TripModelCopyWith<$Res>  {
   factory $TripModelCopyWith(TripModel value, $Res Function(TripModel) _then) = _$TripModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String circleId, String name, TripType type,@TimestampConverter() DateTime? startDate,@TimestampConverter() DateTime? endDate, String? location, String createdBy,@TimestampConverter() DateTime createdAt, bool isActive, double totalExpenses
+ String id, String circleId, String name, TripType type,@TimestampConverter() DateTime? startDate,@TimestampConverter() DateTime? endDate, String? location, String createdBy,@TimestampConverter() DateTime createdAt, bool isActive, String status,@TimestampConverter() DateTime? closedAt, double totalBudget, String? category, List<String> participantIds, double totalExpenses
 });
 
 
@@ -66,7 +68,7 @@ class _$TripModelCopyWithImpl<$Res>
 
 /// Create a copy of TripModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? circleId = null,Object? name = null,Object? type = null,Object? startDate = freezed,Object? endDate = freezed,Object? location = freezed,Object? createdBy = null,Object? createdAt = null,Object? isActive = null,Object? totalExpenses = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? circleId = null,Object? name = null,Object? type = null,Object? startDate = freezed,Object? endDate = freezed,Object? location = freezed,Object? createdBy = null,Object? createdAt = null,Object? isActive = null,Object? status = null,Object? closedAt = freezed,Object? totalBudget = null,Object? category = freezed,Object? participantIds = null,Object? totalExpenses = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,circleId: null == circleId ? _self.circleId : circleId // ignore: cast_nullable_to_non_nullable
@@ -78,7 +80,12 @@ as DateTime?,location: freezed == location ? _self.location : location // ignore
 as String?,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
-as bool,totalExpenses: null == totalExpenses ? _self.totalExpenses : totalExpenses // ignore: cast_nullable_to_non_nullable
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,closedAt: freezed == closedAt ? _self.closedAt : closedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,totalBudget: null == totalBudget ? _self.totalBudget : totalBudget // ignore: cast_nullable_to_non_nullable
+as double,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String?,participantIds: null == participantIds ? _self.participantIds : participantIds // ignore: cast_nullable_to_non_nullable
+as List<String>,totalExpenses: null == totalExpenses ? _self.totalExpenses : totalExpenses // ignore: cast_nullable_to_non_nullable
 as double,
   ));
 }
@@ -164,10 +171,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String circleId,  String name,  TripType type, @TimestampConverter()  DateTime? startDate, @TimestampConverter()  DateTime? endDate,  String? location,  String createdBy, @TimestampConverter()  DateTime createdAt,  bool isActive,  double totalExpenses)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String circleId,  String name,  TripType type, @TimestampConverter()  DateTime? startDate, @TimestampConverter()  DateTime? endDate,  String? location,  String createdBy, @TimestampConverter()  DateTime createdAt,  bool isActive,  String status, @TimestampConverter()  DateTime? closedAt,  double totalBudget,  String? category,  List<String> participantIds,  double totalExpenses)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TripModel() when $default != null:
-return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_that.endDate,_that.location,_that.createdBy,_that.createdAt,_that.isActive,_that.totalExpenses);case _:
+return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_that.endDate,_that.location,_that.createdBy,_that.createdAt,_that.isActive,_that.status,_that.closedAt,_that.totalBudget,_that.category,_that.participantIds,_that.totalExpenses);case _:
   return orElse();
 
 }
@@ -185,10 +192,10 @@ return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String circleId,  String name,  TripType type, @TimestampConverter()  DateTime? startDate, @TimestampConverter()  DateTime? endDate,  String? location,  String createdBy, @TimestampConverter()  DateTime createdAt,  bool isActive,  double totalExpenses)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String circleId,  String name,  TripType type, @TimestampConverter()  DateTime? startDate, @TimestampConverter()  DateTime? endDate,  String? location,  String createdBy, @TimestampConverter()  DateTime createdAt,  bool isActive,  String status, @TimestampConverter()  DateTime? closedAt,  double totalBudget,  String? category,  List<String> participantIds,  double totalExpenses)  $default,) {final _that = this;
 switch (_that) {
 case _TripModel():
-return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_that.endDate,_that.location,_that.createdBy,_that.createdAt,_that.isActive,_that.totalExpenses);case _:
+return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_that.endDate,_that.location,_that.createdBy,_that.createdAt,_that.isActive,_that.status,_that.closedAt,_that.totalBudget,_that.category,_that.participantIds,_that.totalExpenses);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,10 +212,10 @@ return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String circleId,  String name,  TripType type, @TimestampConverter()  DateTime? startDate, @TimestampConverter()  DateTime? endDate,  String? location,  String createdBy, @TimestampConverter()  DateTime createdAt,  bool isActive,  double totalExpenses)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String circleId,  String name,  TripType type, @TimestampConverter()  DateTime? startDate, @TimestampConverter()  DateTime? endDate,  String? location,  String createdBy, @TimestampConverter()  DateTime createdAt,  bool isActive,  String status, @TimestampConverter()  DateTime? closedAt,  double totalBudget,  String? category,  List<String> participantIds,  double totalExpenses)?  $default,) {final _that = this;
 switch (_that) {
 case _TripModel() when $default != null:
-return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_that.endDate,_that.location,_that.createdBy,_that.createdAt,_that.isActive,_that.totalExpenses);case _:
+return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_that.endDate,_that.location,_that.createdBy,_that.createdAt,_that.isActive,_that.status,_that.closedAt,_that.totalBudget,_that.category,_that.participantIds,_that.totalExpenses);case _:
   return null;
 
 }
@@ -220,7 +227,7 @@ return $default(_that.id,_that.circleId,_that.name,_that.type,_that.startDate,_t
 @JsonSerializable()
 
 class _TripModel implements TripModel {
-  const _TripModel({required this.id, required this.circleId, required this.name, required this.type, @TimestampConverter() this.startDate, @TimestampConverter() this.endDate, this.location, required this.createdBy, @TimestampConverter() required this.createdAt, this.isActive = true, this.totalExpenses = 0.0});
+  const _TripModel({required this.id, required this.circleId, required this.name, required this.type, @TimestampConverter() this.startDate, @TimestampConverter() this.endDate, this.location, required this.createdBy, @TimestampConverter() required this.createdAt, this.isActive = true, this.status = 'planning', @TimestampConverter() this.closedAt, this.totalBudget = 0.0, this.category, final  List<String> participantIds = const [], this.totalExpenses = 0.0}): _participantIds = participantIds;
   factory _TripModel.fromJson(Map<String, dynamic> json) => _$TripModelFromJson(json);
 
 @override final  String id;
@@ -233,6 +240,20 @@ class _TripModel implements TripModel {
 @override final  String createdBy;
 @override@TimestampConverter() final  DateTime createdAt;
 @override@JsonKey() final  bool isActive;
+@override@JsonKey() final  String status;
+// 'draft', 'planning', 'confirmed', 'upcoming', 'ongoing', 'completed', 'settling', 'closed', 'cancelled'
+@override@TimestampConverter() final  DateTime? closedAt;
+@override@JsonKey() final  double totalBudget;
+@override final  String? category;
+// 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
+ final  List<String> _participantIds;
+// 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
+@override@JsonKey() List<String> get participantIds {
+  if (_participantIds is EqualUnmodifiableListView) return _participantIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_participantIds);
+}
+
 // Read-optimized summary
 @override@JsonKey() final  double totalExpenses;
 
@@ -249,16 +270,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripModel&&(identical(other.id, id) || other.id == id)&&(identical(other.circleId, circleId) || other.circleId == circleId)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.location, location) || other.location == location)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.totalExpenses, totalExpenses) || other.totalExpenses == totalExpenses));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripModel&&(identical(other.id, id) || other.id == id)&&(identical(other.circleId, circleId) || other.circleId == circleId)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.location, location) || other.location == location)&&(identical(other.createdBy, createdBy) || other.createdBy == createdBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.status, status) || other.status == status)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt)&&(identical(other.totalBudget, totalBudget) || other.totalBudget == totalBudget)&&(identical(other.category, category) || other.category == category)&&const DeepCollectionEquality().equals(other._participantIds, _participantIds)&&(identical(other.totalExpenses, totalExpenses) || other.totalExpenses == totalExpenses));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,circleId,name,type,startDate,endDate,location,createdBy,createdAt,isActive,totalExpenses);
+int get hashCode => Object.hash(runtimeType,id,circleId,name,type,startDate,endDate,location,createdBy,createdAt,isActive,status,closedAt,totalBudget,category,const DeepCollectionEquality().hash(_participantIds),totalExpenses);
 
 @override
 String toString() {
-  return 'TripModel(id: $id, circleId: $circleId, name: $name, type: $type, startDate: $startDate, endDate: $endDate, location: $location, createdBy: $createdBy, createdAt: $createdAt, isActive: $isActive, totalExpenses: $totalExpenses)';
+  return 'TripModel(id: $id, circleId: $circleId, name: $name, type: $type, startDate: $startDate, endDate: $endDate, location: $location, createdBy: $createdBy, createdAt: $createdAt, isActive: $isActive, status: $status, closedAt: $closedAt, totalBudget: $totalBudget, category: $category, participantIds: $participantIds, totalExpenses: $totalExpenses)';
 }
 
 
@@ -269,7 +290,7 @@ abstract mixin class _$TripModelCopyWith<$Res> implements $TripModelCopyWith<$Re
   factory _$TripModelCopyWith(_TripModel value, $Res Function(_TripModel) _then) = __$TripModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String circleId, String name, TripType type,@TimestampConverter() DateTime? startDate,@TimestampConverter() DateTime? endDate, String? location, String createdBy,@TimestampConverter() DateTime createdAt, bool isActive, double totalExpenses
+ String id, String circleId, String name, TripType type,@TimestampConverter() DateTime? startDate,@TimestampConverter() DateTime? endDate, String? location, String createdBy,@TimestampConverter() DateTime createdAt, bool isActive, String status,@TimestampConverter() DateTime? closedAt, double totalBudget, String? category, List<String> participantIds, double totalExpenses
 });
 
 
@@ -286,7 +307,7 @@ class __$TripModelCopyWithImpl<$Res>
 
 /// Create a copy of TripModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? circleId = null,Object? name = null,Object? type = null,Object? startDate = freezed,Object? endDate = freezed,Object? location = freezed,Object? createdBy = null,Object? createdAt = null,Object? isActive = null,Object? totalExpenses = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? circleId = null,Object? name = null,Object? type = null,Object? startDate = freezed,Object? endDate = freezed,Object? location = freezed,Object? createdBy = null,Object? createdAt = null,Object? isActive = null,Object? status = null,Object? closedAt = freezed,Object? totalBudget = null,Object? category = freezed,Object? participantIds = null,Object? totalExpenses = null,}) {
   return _then(_TripModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,circleId: null == circleId ? _self.circleId : circleId // ignore: cast_nullable_to_non_nullable
@@ -298,7 +319,12 @@ as DateTime?,location: freezed == location ? _self.location : location // ignore
 as String?,createdBy: null == createdBy ? _self.createdBy : createdBy // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
-as bool,totalExpenses: null == totalExpenses ? _self.totalExpenses : totalExpenses // ignore: cast_nullable_to_non_nullable
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String,closedAt: freezed == closedAt ? _self.closedAt : closedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,totalBudget: null == totalBudget ? _self.totalBudget : totalBudget // ignore: cast_nullable_to_non_nullable
+as double,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String?,participantIds: null == participantIds ? _self._participantIds : participantIds // ignore: cast_nullable_to_non_nullable
+as List<String>,totalExpenses: null == totalExpenses ? _self.totalExpenses : totalExpenses // ignore: cast_nullable_to_non_nullable
 as double,
   ));
 }

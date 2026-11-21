@@ -19,6 +19,11 @@ abstract class TripModel with _$TripModel {
     required String createdBy,
     @TimestampConverter() required DateTime createdAt,
     @Default(true) bool isActive,
+    @Default('planning') String status, // 'draft', 'planning', 'confirmed', 'upcoming', 'ongoing', 'completed', 'settling', 'closed', 'cancelled'
+    @TimestampConverter() DateTime? closedAt,
+    @Default(0.0) double totalBudget,
+    String? category, // 'road_trip', 'vacation', 'adventure', 'trek', 'pilgrimage', etc.
+    @Default([]) List<String> participantIds,
     // Read-optimized summary
     @Default(0.0) double totalExpenses, 
   }) = _TripModel;

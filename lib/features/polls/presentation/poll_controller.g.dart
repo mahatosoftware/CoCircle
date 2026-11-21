@@ -33,7 +33,7 @@ final class PollControllerProvider
   PollController create() => PollController();
 }
 
-String _$pollControllerHash() => r'a31c0df7a85e84d2e5b93cb038b654e2ce6d1e33';
+String _$pollControllerHash() => r'b87f9065a07ee82b07090f5806a85ab8f8ec132b';
 
 abstract class _$PollController extends $AsyncNotifier<void> {
   FutureOr<void> build();

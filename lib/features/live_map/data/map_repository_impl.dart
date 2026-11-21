@@ -106,7 +106,7 @@ class CachedNetworkTileImageProvider extends ImageProvider<CachedNetworkTileImag
       if (await key.file.exists()) {
         final bytes = await key.file.readAsBytes();
         final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-        return decode(buffer);
+        return await decode(buffer);
       }
 
       final response = await http.get(Uri.parse(key.url));
@@ -114,7 +114,7 @@ class CachedNetworkTileImageProvider extends ImageProvider<CachedNetworkTileImag
         final bytes = response.bodyBytes;
         _saveTileToDisk(key.file, bytes);
         final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-        return decode(buffer);
+        return await decode(buffer);
       }
       throw Exception('Failed to load tile: status code ${response.statusCode}');
     } catch (e) {

@@ -58,7 +58,7 @@ final class LiveMapControllerProvider
   }
 }
 
-String _$liveMapControllerHash() => r'b37a787395cc6cf328d1ff7beccf9c4d7133778e';
+String _$liveMapControllerHash() => r'bd9b5d6bab1ec25bd7e2c950624bfc2566c9e709';
 
 final class LiveMapControllerFamily extends $Family
     with

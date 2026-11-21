@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/utils/navigation_helper.dart';
 import '../live_map_controller.dart';
 import '../../domain/member_location_model.dart';
 
@@ -21,7 +22,9 @@ class VehicleConfig {
   static const List<VehicleConfig> list = [
     VehicleConfig(id: 'car_1', name: 'Car 1', icon: Icons.directions_car_filled_rounded, color: Colors.teal),
     VehicleConfig(id: 'car_2', name: 'Car 2', icon: Icons.directions_car_filled_rounded, color: Colors.orange),
-    VehicleConfig(id: 'bike', name: 'Bike', icon: Icons.two_wheeler_rounded, color: Colors.indigo),
+    VehicleConfig(id: 'car_3', name: 'Car 3', icon: Icons.directions_car_filled_rounded, color: Colors.purple),
+    VehicleConfig(id: 'bike', name: 'Motorcycle / Bike', icon: Icons.two_wheeler_rounded, color: Colors.indigo),
+    VehicleConfig(id: 'van', name: 'Van / Minibus', icon: Icons.airport_shuttle_rounded, color: Colors.deepOrange),
   ];
 
   static VehicleConfig getById(String? id) {
@@ -29,7 +32,7 @@ class VehicleConfig {
       (v) => v.id == id,
       orElse: () => const VehicleConfig(
         id: 'default',
-        name: 'Walking/On Foot',
+        name: 'Walking / On Foot',
         icon: Icons.directions_walk_rounded,
         color: Color(0xFF6750A4),
       ),
@@ -70,7 +73,7 @@ class MemberBottomSheet extends ConsumerWidget {
 
   String _formatTimeAgo(DateTime time) {
     final diff = DateTime.now().difference(time);
-    if (diff.inSeconds < 15) return 'Just now';
+    if (diff.inSeconds < 20) return 'Just now';
     if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
@@ -78,7 +81,7 @@ class MemberBottomSheet extends ConsumerWidget {
   }
 
   Future<void> _makeCall(BuildContext context) async {
-    final url = Uri.parse('tel:+919999999999'); // Standard fallback dialer placeholder
+    final url = Uri.parse('tel:');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
@@ -107,9 +110,22 @@ class MemberBottomSheet extends ConsumerWidget {
       );
     }
 
-    // Check if this member is the active navigation target
     final isTarget = mapState.navigationTargetId == member.userId;
     final speedKmh = member.speed * 3.6;
+
+    // Determine sharing status
+    String statusLabel = 'Online';
+    Color statusColor = Colors.green;
+    if (member.isEmergency) {
+      statusLabel = '🚨 EMERGENCY SOS';
+      statusColor = Colors.red;
+    } else if (member.sharingStatus == 'paused') {
+      statusLabel = 'Sharing Paused';
+      statusColor = Colors.amber.shade800;
+    } else if (!member.online || DateTime.now().difference(member.lastUpdated).inMinutes > 5) {
+      statusLabel = 'Offline / Stale';
+      statusColor = Colors.grey;
+    }
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
@@ -132,6 +148,41 @@ class MemberBottomSheet extends ConsumerWidget {
               ),
             ),
           ),
+
+          // Emergency Banner if active
+          if (member.isEmergency) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.shade300, width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${member.name} Triggered SOS!',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                        ),
+                        const Text(
+                          'Requires immediate assistance.',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           Row(
             children: [
               Stack(
@@ -155,7 +206,7 @@ class MemberBottomSheet extends ConsumerWidget {
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: member.online ? Colors.green : Colors.grey,
+                        color: statusColor,
                         shape: BoxShape.circle,
                         border: Border.all(color: Theme.of(context).cardColor, width: 2),
                       ),
@@ -178,15 +229,23 @@ class MemberBottomSheet extends ConsumerWidget {
                         Icon(vehicle.icon, size: 16, color: vehicle.color),
                         const SizedBox(width: 6),
                         Text(
-                          vehicle.name,
+                          member.vehicleName ?? vehicle.name,
                           style: TextStyle(fontSize: 12, color: vehicle.color, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(width: 8),
                         if (member.battery != null) ...[
-                          const Icon(Icons.battery_std_rounded, size: 14, color: Colors.grey),
+                          Icon(
+                            member.battery! <= 20 ? Icons.battery_alert_rounded : Icons.battery_std_rounded,
+                            size: 14,
+                            color: member.battery! <= 20 ? Colors.red : Colors.grey,
+                          ),
                           Text(
                             '${member.battery}%',
-                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: member.battery! <= 20 ? Colors.red : Colors.grey,
+                              fontWeight: member.battery! <= 20 ? FontWeight.bold : FontWeight.normal,
+                            ),
                           ),
                         ],
                       ],
@@ -200,15 +259,15 @@ class MemberBottomSheet extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: member.online ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                      color: statusColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      member.online ? 'Online' : 'Offline',
+                      statusLabel,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: member.online ? Colors.green : Colors.grey,
+                        color: statusColor,
                       ),
                     ),
                   ),
@@ -245,7 +304,7 @@ class MemberBottomSheet extends ConsumerWidget {
                 _buildStatsTile(
                   icon: Icons.gps_fixed_rounded,
                   label: 'Accuracy',
-                  value: '${member.accuracy.toStringAsFixed(0)} m',
+                  value: '±${member.accuracy.toStringAsFixed(0)} m',
                 ),
             ],
           ),
@@ -264,13 +323,33 @@ class MemberBottomSheet extends ConsumerWidget {
                       Navigator.pop(context);
                     },
                     icon: Icon(isTarget ? Icons.navigation_outlined : Icons.navigation_rounded),
-                    label: Text(isTarget ? 'Stop Nav' : 'Navigate'),
+                    label: Text(isTarget ? 'Stop Nav' : 'In-App Nav'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isTarget ? Colors.red : Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // External Turn-by-Turn Navigation (Google Maps / Apple Maps)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    NavigationHelper.launchNavigation(
+                      latitude: member.latitude,
+                      longitude: member.longitude,
+                      label: member.name,
+                    );
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.map_outlined, size: 18),
+                  label: const Text('Maps App'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -282,20 +361,6 @@ class MemberBottomSheet extends ConsumerWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Icon(Icons.call_rounded),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chat link is currently a placeholder.')),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.all(12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Icon(Icons.chat_bubble_outline_rounded),
               ),
               const SizedBox(width: 8),
               OutlinedButton(

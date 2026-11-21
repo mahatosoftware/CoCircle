@@ -34,7 +34,7 @@ final class SettlementControllerProvider
 }
 
 String _$settlementControllerHash() =>
-    r'b5ab192070ec8f82438632045d35eb8bc5109c92';
+    r'db98367d5b67091a1854c84a398281f5b91a7a48';
 
 abstract class _$SettlementController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -111,7 +111,7 @@ final class ActiveSettlementsProvider
   }
 }
 
-String _$activeSettlementsHash() => r'52278fe84cf79c2a1eb4553de042d70bb105d8d8';
+String _$activeSettlementsHash() => r'6438e450932a7c3f685de7d1eb8244b693ddf04c';
 
 final class ActiveSettlementsFamily extends $Family
     with
@@ -133,6 +133,87 @@ final class ActiveSettlementsFamily extends $Family
 
   @override
   String toString() => r'activeSettlementsProvider';
+}
+
+@ProviderFor(tripAdjustments)
+final tripAdjustmentsProvider = TripAdjustmentsFamily._();
+
+final class TripAdjustmentsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<SettlementAdjustmentModel>>,
+          List<SettlementAdjustmentModel>,
+          Stream<List<SettlementAdjustmentModel>>
+        >
+    with
+        $FutureModifier<List<SettlementAdjustmentModel>>,
+        $StreamProvider<List<SettlementAdjustmentModel>> {
+  TripAdjustmentsProvider._({
+    required TripAdjustmentsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'tripAdjustmentsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$tripAdjustmentsHash();
+
+  @override
+  String toString() {
+    return r'tripAdjustmentsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<SettlementAdjustmentModel>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<SettlementAdjustmentModel>> create(Ref ref) {
+    final argument = this.argument as String;
+    return tripAdjustments(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TripAdjustmentsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$tripAdjustmentsHash() => r'98611604d0a0d194ba0644659d15f10badc23958';
+
+final class TripAdjustmentsFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<SettlementAdjustmentModel>>,
+          String
+        > {
+  TripAdjustmentsFamily._()
+    : super(
+        retry: null,
+        name: r'tripAdjustmentsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TripAdjustmentsProvider call(String tripId) =>
+      TripAdjustmentsProvider._(argument: tripId, from: this);
+
+  @override
+  String toString() => r'tripAdjustmentsProvider';
 }
 
 @ProviderFor(tripSettlements)

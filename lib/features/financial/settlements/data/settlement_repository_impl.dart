@@ -19,6 +19,7 @@ class SettlementRepositoryImpl implements SettlementRepository {
   SettlementRepositoryImpl({required FirebaseFirestore firestore}) : _firestore = firestore;
 
   CollectionReference<Map<String, dynamic>> get _settlements => _firestore.collection('settlements');
+  CollectionReference<Map<String, dynamic>> get _adjustments => _firestore.collection('settlement_adjustments');
 
   @override
   Future<Either<Failure, SettlementModel>> createSettlement(SettlementModel settlement) async {
@@ -93,5 +94,40 @@ class SettlementRepositoryImpl implements SettlementRepository {
             rethrow;
           }
         });
+  }
+
+  @override
+  Future<Either<Failure, SettlementAdjustmentModel>> recordAdjustment(SettlementAdjustmentModel adjustment) async {
+    try {
+      await _adjustments.doc(adjustment.id).set(adjustment.toJson());
+      return right(adjustment);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Stream<List<SettlementAdjustmentModel>> getAdjustmentsStream(String tripId) {
+    return _adjustments
+        .where('tripId', isEqualTo: tripId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((d) => SettlementAdjustmentModel.fromJson(d.data())).toList();
+    });
+  }
+
+  @override
+  Future<Either<Failure, List<SettlementAdjustmentModel>>> getAdjustmentsForTrip(String tripId) async {
+    try {
+      final query = await _adjustments
+          .where('tripId', isEqualTo: tripId)
+          .orderBy('createdAt', descending: true)
+          .get();
+      final list = query.docs.map((d) => SettlementAdjustmentModel.fromJson(d.data())).toList();
+      return right(list);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
   }
 }

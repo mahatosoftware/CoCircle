@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:collection/collection.dart';
 import 'package:latlong2/latlong.dart';
@@ -21,6 +19,9 @@ class LiveMapState {
   final Map<String, Map<String, dynamic>> destinations; 
   final Map<String, Map<String, dynamic>> routes; 
   final List<Map<String, dynamic>> notifications;
+  final Map<String, Map<String, dynamic>> meetingPoints;
+  final Map<String, Map<String, dynamic>> vehicles;
+  final Map<String, Map<String, dynamic>> sosAlerts;
   final String? selectedMemberId;
   final String? activeDestinationId;
   final bool followMe;
@@ -29,6 +30,7 @@ class LiveMapState {
   final NavigationRouteModel? navigationRoute;
   final bool isNavigating;
   final bool isLoadingRoute;
+  final String? selectedVehicleId;
 
   LiveMapState({
     this.members = const [],
@@ -36,6 +38,9 @@ class LiveMapState {
     this.destinations = const {},
     this.routes = const {},
     this.notifications = const [],
+    this.meetingPoints = const {},
+    this.vehicles = const {},
+    this.sosAlerts = const {},
     this.selectedMemberId,
     this.activeDestinationId,
     this.followMe = false,
@@ -44,6 +49,7 @@ class LiveMapState {
     this.navigationRoute,
     this.isNavigating = false,
     this.isLoadingRoute = false,
+    this.selectedVehicleId,
   });
 
   LiveMapState copyWith({
@@ -52,6 +58,9 @@ class LiveMapState {
     Map<String, Map<String, dynamic>>? destinations,
     Map<String, Map<String, dynamic>>? routes,
     List<Map<String, dynamic>>? notifications,
+    Map<String, Map<String, dynamic>>? meetingPoints,
+    Map<String, Map<String, dynamic>>? vehicles,
+    Map<String, Map<String, dynamic>>? sosAlerts,
     String? selectedMemberId,
     String? activeDestinationId,
     bool? followMe,
@@ -60,6 +69,8 @@ class LiveMapState {
     NavigationRouteModel? navigationRoute,
     bool? isNavigating,
     bool? isLoadingRoute,
+    String? selectedVehicleId,
+    bool clearActiveDestination = false,
   }) {
     return LiveMapState(
       members: members ?? this.members,
@@ -67,14 +78,18 @@ class LiveMapState {
       destinations: destinations ?? this.destinations,
       routes: routes ?? this.routes,
       notifications: notifications ?? this.notifications,
+      meetingPoints: meetingPoints ?? this.meetingPoints,
+      vehicles: vehicles ?? this.vehicles,
+      sosAlerts: sosAlerts ?? this.sosAlerts,
       selectedMemberId: selectedMemberId ?? this.selectedMemberId,
-      activeDestinationId: activeDestinationId ?? this.activeDestinationId,
+      activeDestinationId: clearActiveDestination ? null : (activeDestinationId ?? this.activeDestinationId),
       followMe: followMe ?? this.followMe,
       mapRotation: mapRotation ?? this.mapRotation,
       navigationTargetId: navigationTargetId ?? this.navigationTargetId,
       navigationRoute: navigationRoute ?? this.navigationRoute,
       isNavigating: isNavigating ?? this.isNavigating,
       isLoadingRoute: isLoadingRoute ?? this.isLoadingRoute,
+      selectedVehicleId: selectedVehicleId ?? this.selectedVehicleId,
     );
   }
 }
@@ -101,7 +116,14 @@ class LiveMapController extends _$LiveMapController {
     final subDestinations = locationRepo.streamDestinations(tripId).listen((dests) {
       state = state.copyWith(destinations: dests);
       if (state.activeDestinationId == null && dests.isNotEmpty) {
-        state = state.copyWith(activeDestinationId: dests.keys.first);
+        // Pick destination with lowest order or first
+        final sortedKeys = dests.keys.toList()
+          ..sort((a, b) {
+            final orderA = dests[a]?['order'] as int? ?? 999;
+            final orderB = dests[b]?['order'] as int? ?? 999;
+            return orderA.compareTo(orderB);
+          });
+        state = state.copyWith(activeDestinationId: sortedKeys.first);
       }
     });
 
@@ -113,12 +135,27 @@ class LiveMapController extends _$LiveMapController {
       state = state.copyWith(notifications: notifs);
     });
 
+    final subMeetingPoints = locationRepo.streamMeetingPoints(tripId).listen((points) {
+      state = state.copyWith(meetingPoints: points);
+    });
+
+    final subVehicles = locationRepo.streamVehicles(tripId).listen((vehs) {
+      state = state.copyWith(vehicles: vehs);
+    });
+
+    final subSOS = locationRepo.streamSOSAlerts(tripId).listen((alerts) {
+      state = state.copyWith(sosAlerts: alerts);
+    });
+
     ref.onDispose(() {
       subLocations.cancel();
       subPresence.cancel();
       subDestinations.cancel();
       subRoutes.cancel();
       subNotifications.cancel();
+      subMeetingPoints.cancel();
+      subVehicles.cancel();
+      subSOS.cancel();
     });
 
     return LiveMapState();
@@ -136,35 +173,183 @@ class LiveMapController extends _$LiveMapController {
     state = state.copyWith(mapRotation: rotation);
   }
 
+  void selectVehicle(String? vehicleId) {
+    state = state.copyWith(selectedVehicleId: vehicleId);
+  }
+
   Future<void> selectActiveDestination(String? destId) async {
     state = state.copyWith(activeDestinationId: destId);
-    _hasArrived = false; // Reset arrival state for new destination
+    _hasArrived = false;
     
-    // Auto re-route if navigating
     if (state.isNavigating && destId != null) {
       await startNavigation(destId);
     }
   }
 
-  Future<void> addNewDestination(String name, double lat, double lng) async {
+  /// Automatically seeds trip destination into RTDB if not present yet
+  Future<void> seedTripDestinationIfNeeded({
+    required String name,
+    required double lat,
+    required double lng,
+    String? address,
+  }) async {
+    if (state.destinations.isEmpty) {
+      await addNewDestination(name, lat, lng, address: address, order: 1);
+    }
+  }
+
+  Future<void> addNewDestination(
+    String name,
+    double lat,
+    double lng, {
+    String? address,
+    int? order,
+  }) async {
     final destId = 'dest_${DateTime.now().millisecondsSinceEpoch}';
-    await ref.read(realtimeLocationRepositoryProvider).setDestination(
+    final repo = ref.read(realtimeLocationRepositoryProvider);
+    
+    await repo.setDestination(
       tripId: tripId,
       destinationId: destId,
       name: name,
       latitude: lat,
       longitude: lng,
+      address: address,
+      order: order ?? (state.destinations.length + 1),
     );
+
+    await repo.postNotification(
+      tripId: tripId,
+      title: 'Shared Destination Added',
+      body: 'New destination added: $name 📍',
+    );
+
     await selectActiveDestination(destId);
   }
 
   Future<void> removeDestination(String destId) async {
-    await ref.read(realtimeLocationRepositoryProvider).removeDestination(tripId, destId);
+    final repo = ref.read(realtimeLocationRepositoryProvider);
+    final destName = state.destinations[destId]?['name'] as String? ?? 'Destination';
+    
+    await repo.removeDestination(tripId, destId);
+    await repo.postNotification(
+      tripId: tripId,
+      title: 'Destination Removed',
+      body: '$destName was removed from the trip plan',
+    );
+
     if (state.activeDestinationId == destId) {
       final remaining = state.destinations.keys.where((k) => k != destId);
       await selectActiveDestination(remaining.isNotEmpty ? remaining.first : null);
     }
   }
+
+  // --- Meeting Points ---
+
+  Future<void> addMeetingPoint(String name, double lat, double lng, {String? note}) async {
+    final user = ref.read(authStateChangesProvider).value;
+    final pointId = 'meet_${DateTime.now().millisecondsSinceEpoch}';
+    final repo = ref.read(realtimeLocationRepositoryProvider);
+
+    await repo.setMeetingPoint(
+      tripId: tripId,
+      meetingPointId: pointId,
+      name: name,
+      latitude: lat,
+      longitude: lng,
+      createdBy: user?.displayName ?? 'Organizer',
+      note: note,
+    );
+
+    await repo.postNotification(
+      tripId: tripId,
+      title: '🚩 New Meeting Point Created',
+      body: '$name has been added as a group rendezvous stop',
+    );
+  }
+
+  Future<void> removeMeetingPoint(String pointId) async {
+    await ref.read(realtimeLocationRepositoryProvider).removeMeetingPoint(tripId, pointId);
+  }
+
+  Future<void> checkInAtMeetingPoint(String pointId) async {
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
+
+    await ref.read(realtimeLocationRepositoryProvider).checkInAtMeetingPoint(
+      tripId: tripId,
+      meetingPointId: pointId,
+      userId: user.uid,
+      userName: user.displayName.isNotEmpty ? user.displayName : 'Member',
+    );
+  }
+
+  // --- Vehicle Convoy Coordination ---
+
+  Future<void> createOrUpdateVehicle({
+    required String vehicleId,
+    required String name,
+    required String type,
+    String? driverId,
+    String? driverName,
+    String? colorHex,
+  }) async {
+    await ref.read(realtimeLocationRepositoryProvider).setVehicle(
+      tripId: tripId,
+      vehicleId: vehicleId,
+      name: name,
+      type: type,
+      driverId: driverId,
+      driverName: driverName,
+      colorHex: colorHex,
+    );
+  }
+
+  Future<void> joinVehicle(String vehicleId, String vehicleName) async {
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
+
+    await ref.read(realtimeLocationRepositoryProvider).assignMemberToVehicle(
+      tripId: tripId,
+      vehicleId: vehicleId,
+      userId: user.uid,
+      userName: user.displayName.isNotEmpty ? user.displayName : 'Member',
+      vehicleName: vehicleName,
+    );
+  }
+
+  // --- Emergency SOS ---
+
+  Future<void> triggerEmergencySOS() async {
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
+
+    final myLocation = state.members.firstWhereOrNull((m) => m.userId == user.uid);
+    final lat = myLocation?.latitude ?? 0.0;
+    final lng = myLocation?.longitude ?? 0.0;
+    final battery = myLocation?.battery;
+
+    await ref.read(realtimeLocationRepositoryProvider).triggerSOS(
+      tripId: tripId,
+      userId: user.uid,
+      userName: user.displayName.isNotEmpty ? user.displayName : 'Member',
+      latitude: lat,
+      longitude: lng,
+      battery: battery,
+    );
+  }
+
+  Future<void> resolveEmergencySOS() async {
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
+
+    await ref.read(realtimeLocationRepositoryProvider).clearSOS(
+      tripId: tripId,
+      userId: user.uid,
+    );
+  }
+
+  // --- Navigation & Routing ---
 
   Future<void> startNavigation(String targetId) async {
     state = state.copyWith(
@@ -190,7 +375,6 @@ class LiveMapController extends _$LiveMapController {
     final user = ref.read(authStateChangesProvider).value;
     if (user != null) {
       final userId = user.uid;
-      // Clear route in database
       await ref.read(firebaseDatabaseProvider).ref('trip_routes/$tripId/$userId').remove();
     }
     state = state.copyWith(
@@ -199,8 +383,6 @@ class LiveMapController extends _$LiveMapController {
       isNavigating: false,
       isLoadingRoute: false,
     );
-    _lastQueryLatLng = null;
-    _lastQueryTime = null;
   }
 
   void _checkArrivalAndRoute(List<MemberLocationModel> list) {
@@ -211,101 +393,110 @@ class LiveMapController extends _$LiveMapController {
     final myLocation = list.firstWhereOrNull((m) => m.userId == userId);
     if (myLocation == null) return;
 
-    // 1. Check Arrival
+    // 1. Geofence arrival check
     final activeDestId = state.activeDestinationId;
-    if (activeDestId != null) {
-      final dest = state.destinations[activeDestId];
-      if (dest != null) {
-        final destLat = (dest['latitude'] as num).toDouble();
-        final destLng = (dest['longitude'] as num).toDouble();
-        final distance = Geolocator.distanceBetween(
-          myLocation.latitude,
-          myLocation.longitude,
-          destLat,
-          destLng,
-        );
+    if (activeDestId != null && state.destinations.containsKey(activeDestId)) {
+      final dest = state.destinations[activeDestId]!;
+      final destLat = dest['latitude'] as double;
+      final destLng = dest['longitude'] as double;
+      final destName = dest['name'] as String? ?? 'Destination';
 
-        if (distance <= 50.0) {
-          if (!_hasArrived) {
-            _hasArrived = true;
-            final destName = dest['name'] as String? ?? 'Destination';
-            ref.read(realtimeLocationRepositoryProvider).postNotification(
-              tripId: tripId,
-              title: "Destination Reached!",
-              body: "${myLocation.name} has arrived at $destName!",
-            );
-          }
-        } else if (distance > 100.0) {
-          _hasArrived = false;
-        }
+      final distToDest = Geolocator.distanceBetween(
+        myLocation.latitude,
+        myLocation.longitude,
+        destLat,
+        destLng,
+      );
+
+      if (distToDest <= 75.0 && !_hasArrived) {
+        _hasArrived = true;
+        ref.read(realtimeLocationRepositoryProvider).postNotification(
+          tripId: tripId,
+          title: 'Member Arrived! 🏁',
+          body: '${myLocation.name} reached $destName!',
+        );
       }
     }
 
-    // 2. Throttled Route Recalculation
+    // 2. Continuous routing recalculation
     if (state.isNavigating && state.navigationTargetId != null) {
-      final now = DateTime.now();
       final currentLatLng = LatLng(myLocation.latitude, myLocation.longitude);
+      final now = DateTime.now();
 
-      if (_lastQueryLatLng == null || _lastQueryTime == null) {
+      final hasMoved = _lastQueryLatLng == null ||
+          Geolocator.distanceBetween(
+                _lastQueryLatLng!.latitude,
+                _lastQueryLatLng!.longitude,
+                currentLatLng.latitude,
+                currentLatLng.longitude,
+              ) >= 50.0;
+
+      final isThrottleElapsed = _lastQueryTime == null ||
+          now.difference(_lastQueryTime!).inSeconds >= 20;
+
+      if (hasMoved && isThrottleElapsed) {
         _calculateAndPublishRoute(myLocation, state.navigationTargetId!);
-      } else {
-        final metersMoved = const Distance().as(LengthUnit.Meter, _lastQueryLatLng!, currentLatLng);
-        final elapsedSeconds = now.difference(_lastQueryTime!).inSeconds;
-
-        // Throttling: update route only if user moved > 80m or 45 seconds elapsed
-        if (metersMoved > 80.0 || elapsedSeconds >= 45) {
-          _calculateAndPublishRoute(myLocation, state.navigationTargetId!);
-        }
       }
     }
   }
 
   Future<void> _calculateAndPublishRoute(MemberLocationModel myLocation, String targetId) async {
-    LatLng? targetLatLng;
+    double? targetLat;
+    double? targetLng;
 
-    // Check if target is a destination
+    // Check destinations
     if (state.destinations.containsKey(targetId)) {
       final dest = state.destinations[targetId]!;
-      targetLatLng = LatLng((dest['latitude'] as num).toDouble(), (dest['longitude'] as num).toDouble());
-    } else {
-      // Check if target is a member
+      targetLat = (dest['latitude'] as num).toDouble();
+      targetLng = (dest['longitude'] as num).toDouble();
+    } 
+    // Check meeting points
+    else if (state.meetingPoints.containsKey(targetId)) {
+      final point = state.meetingPoints[targetId]!;
+      targetLat = (point['latitude'] as num).toDouble();
+      targetLng = (point['longitude'] as num).toDouble();
+    }
+    // Check other members
+    else {
       final targetMember = state.members.firstWhereOrNull((m) => m.userId == targetId);
       if (targetMember != null) {
-        targetLatLng = LatLng(targetMember.latitude, targetMember.longitude);
+        targetLat = targetMember.latitude;
+        targetLng = targetMember.longitude;
       }
     }
 
-    if (targetLatLng == null) {
+    if (targetLat == null || targetLng == null) {
       state = state.copyWith(isLoadingRoute: false);
       return;
     }
 
-    _lastQueryLatLng = LatLng(myLocation.latitude, myLocation.longitude);
+    final currentLatLng = LatLng(myLocation.latitude, myLocation.longitude);
+    _lastQueryLatLng = currentLatLng;
     _lastQueryTime = DateTime.now();
 
     try {
-      final route = await ref.read(navigationRepositoryProvider).getRoute(
+      final routeModel = await ref.read(navigationRepositoryProvider).getRoute(
         startLat: myLocation.latitude,
         startLng: myLocation.longitude,
-        endLat: targetLatLng.latitude,
-        endLng: targetLatLng.longitude,
+        endLat: targetLat,
+        endLng: targetLng,
       );
 
       state = state.copyWith(
-        navigationRoute: route,
+        navigationRoute: routeModel,
         isLoadingRoute: false,
       );
 
-      // Publish route to RTDB
+      // Publish to RTDB for other convoy vehicles
       await ref.read(realtimeLocationRepositoryProvider).updateRoute(
         tripId: tripId,
         userId: myLocation.userId,
-        encodedPolyline: route.encodedPolyline ?? "",
-        distance: route.distance,
-        duration: route.duration,
+        encodedPolyline: routeModel.encodedPolyline ?? '',
+        distance: routeModel.distance,
+        duration: routeModel.duration,
       );
     } catch (e) {
-      debugPrint("Failed to calculate navigation route: $e");
+      debugPrint("Error routing: $e");
       state = state.copyWith(isLoadingRoute: false);
     }
   }

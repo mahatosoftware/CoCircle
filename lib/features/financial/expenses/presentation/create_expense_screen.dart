@@ -4,14 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
-import 'package:cocircle/features/auth/domain/user_model.dart';
+import '../../../../core/finance/exact_money_calculator.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'package:cocircle/features/circles/presentation/circle_controller.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
+import '../../../trips/domain/trip_participant_model.dart';
+import '../../../trips/presentation/trip_participant_controller.dart';
+import '../../../trips/presentation/widgets/add_participant_sheet.dart';
 import '../domain/expense_model.dart';
 import 'expense_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
-import '../../../../core/widgets/copyright_footer.dart';
 
 class CreateExpenseScreen extends ConsumerStatefulWidget {
   final String tripId;
@@ -28,11 +30,11 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   final _amountController = TextEditingController();
   ExpenseCategory _selectedCategory = ExpenseCategory.food;
   Map<String, double> _payerAmounts = {};
-  Map<String, TextEditingController> _payerControllers = {};
+  final Map<String, TextEditingController> _payerControllers = {};
   
   SplitType _selectedSplitType = SplitType.equal;
   Map<String, double> _splitValues = {};
-  Map<String, TextEditingController> _splitControllers = {};
+  final Map<String, TextEditingController> _splitControllers = {};
   DateTime _selectedDate = DateTime.now();
   
   @override
@@ -141,6 +143,44 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           context: context,
         );
       } else {
+        // Duplicate Detection Check: Same amount and category or title within 24h
+        final existingExpenses = ref.read(tripExpensesProvider(widget.tripId)).value ?? [];
+        final now = DateTime.now();
+        final hasDuplicate = existingExpenses.any((e) =>
+            (e.amount - amount).abs() < 0.01 &&
+            (e.category.toLowerCase() == _selectedCategory.name.toLowerCase() ||
+                e.title.trim().toLowerCase() == _titleController.text.trim().toLowerCase()) &&
+            now.difference(e.date).inHours.abs() < 24);
+
+        if (hasDuplicate) {
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text('Possible Duplicate'),
+                ],
+              ),
+              content: Text(
+                'An expense of \$currency$amount under ${_selectedCategory.name} was already logged recently for this trip.\n\nDo you still want to record this new expense?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Review'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Record Anyway'),
+                ),
+              ],
+            ),
+          );
+          if (confirm != true) return;
+        }
+
         // Create mode
         ref.read(expenseControllerProvider.notifier).createExpense(
           tripId: widget.tripId,
@@ -242,6 +282,26 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
+                if (widget.expense == null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: const BorderSide(color: Color(0xFF6366F1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.document_scanner_outlined, color: Color(0xFF6366F1)),
+                        label: const Text(
+                          'Scan Bill with AI (Smart Split Camera)',
+                          style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () => context.push('/trip/${widget.tripId}/scan-bill'),
+                      ),
+                    ),
+                  ),
                 TextFormField(
                   controller: _titleController,
                   decoration: InputDecoration(labelText: l10n.expenseTitleLabel),
@@ -325,42 +385,36 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   }
 
   Widget _buildPayerSection(BuildContext context, String currency) {
-    final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
+    final participantsAsync = ref.watch(tripParticipantsProvider(widget.tripId));
     final l10n = AppLocalizations.of(context)!;
-    return tripAsync.when(
-      data: (trip) {
-        final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
-        return membersAsync.when(
-          data: (members) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(l10n.paidBy, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 8),
-              _buildPayerSelector(context, members),
-              const SizedBox(height: 16),
-              ..._buildPayerInputs(context, currency, members),
-            ],
+
+    return participantsAsync.when(
+      data: (participants) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(l10n.paidBy, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text(l10n.loadMembersError(e.toString())),
-        );
-      },
+          const SizedBox(height: 8),
+          _buildPayerSelector(context, participants),
+          const SizedBox(height: 16),
+          ..._buildPayerInputs(context, currency, participants),
+        ],
+      ),
       loading: () => const LinearProgressIndicator(),
-       error: (e, _) => Text(l10n.errorWithDetails(e.toString())),
+      error: (e, _) => Text(l10n.loadMembersError(e.toString())),
     );
   }
 
-  Widget _buildPayerSelector(BuildContext context, List<UserModel> members) {
+  Widget _buildPayerSelector(BuildContext context, List<TripParticipantModel> participants) {
     final selectedCount = _payerAmounts.length;
     final label = selectedCount == 0 
         ? AppLocalizations.of(context)!.selectPayers 
         : AppLocalizations.of(context)!.payersSelectedCount(selectedCount);
     
     return InkWell(
-      onTap: () => _showPayerDialog(members),
+      onTap: () => _showPayerDialog(participants),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
@@ -379,7 +433,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     );
   }
 
-  void _showPayerDialog(List<UserModel> members) {
+  void _showPayerDialog(List<TripParticipantModel> participants) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
@@ -387,25 +441,53 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(l10n.selectPayers),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.selectPayers),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.person_add_rounded, size: 16),
+                    label: const Text('Add Guest', style: TextStyle(fontSize: 12)),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      AddParticipantSheet.show(context, tripId: widget.tripId);
+                    },
+                  ),
+                ],
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: members.map((member) {
-                    final isSelected = _payerAmounts.containsKey(member.uid);
+                  children: participants.map((participant) {
+                    final isSelected = _payerAmounts.containsKey(participant.id);
                     return CheckboxListTile(
-                      title: Text(member.displayName),
+                      title: Row(
+                        children: [
+                          Flexible(child: Text(participant.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          const SizedBox(width: 6),
+                          if (participant.isGuest)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppPallete.teal.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('Guest', style: TextStyle(fontSize: 10, color: AppPallete.teal, fontWeight: FontWeight.bold)),
+                            ),
+                        ],
+                      ),
                       value: isSelected,
                       onChanged: (val) {
                         setState(() {
                           if (val == true) {
-                            _payerAmounts[member.uid] = 0.0;
-                            _payerControllers[member.uid] = TextEditingController();
+                            _payerAmounts[participant.id] = 0.0;
+                            _payerControllers[participant.id] = TextEditingController();
                           } else {
                             if (_payerAmounts.length > 1) { // At least one payer
-                              _payerAmounts.remove(member.uid);
-                              _payerControllers[member.uid]?.dispose();
-                              _payerControllers.remove(member.uid);
+                              _payerAmounts.remove(participant.id);
+                              _payerControllers[participant.id]?.dispose();
+                              _payerControllers.remove(participant.id);
                             }
                           }
                           _updatePayerDefaults();
@@ -433,8 +515,8 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     );
   }
 
-  List<Widget> _buildPayerInputs(BuildContext context, String currency, List<UserModel> members) {
-     final activePayers = members.where((m) => _payerAmounts.containsKey(m.uid)).toList();
+  List<Widget> _buildPayerInputs(BuildContext context, String currency, List<TripParticipantModel> participants) {
+     final activePayers = participants.where((m) => _payerAmounts.containsKey(m.id)).toList();
      return activePayers.map((member) {
        return Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -442,13 +524,21 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
             children: [
               Expanded(
                 flex: 2,
-                child: Text(member.displayName, style: const TextStyle(fontWeight: FontWeight.w500)),
+                child: Row(
+                  children: [
+                    Flexible(child: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w500))),
+                    if (member.isGuest) ...[
+                      const SizedBox(width: 4),
+                      const Text('(Guest)', style: TextStyle(fontSize: 10, color: AppPallete.teal, fontWeight: FontWeight.bold)),
+                    ],
+                  ],
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 flex: 3,
                 child: TextFormField(
-                  controller: _payerControllers[member.uid],
+                  controller: _payerControllers[member.id],
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context)!.amountPaid,
                     prefixText: '$currency ',
@@ -510,70 +600,105 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   }
 
   Widget _buildParticipantSelector(BuildContext context) {
-    final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
-    return tripAsync.when(
-      data: (trip) {
-        final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
-        return membersAsync.when(
-          data: (members) {
-            final selectedCount = _splitValues.length;
-            final label = selectedCount == 0 
-                ? AppLocalizations.of(context)!.selectParticipants 
-                : AppLocalizations.of(context)!.participantsSelectedCount(selectedCount);
-            
-            return InkWell(
-              onTap: () => _showParticipantDialog(members),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.people, color: AppPallete.primary),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
-                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                  ],
-                ),
-              ),
-            );
-          },
-          loading: () => const LinearProgressIndicator(),
-          error: (e, _) => Text(AppLocalizations.of(context)!.loadMembersError(e.toString())),
+    final participantsAsync = ref.watch(tripParticipantsProvider(widget.tripId));
+    return participantsAsync.when(
+      data: (participants) {
+        // Auto-select all participants initially if split values are empty and creating a new expense
+        if (widget.expense == null && _splitValues.isEmpty && participants.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _splitValues.isEmpty) {
+              setState(() {
+                for (final p in participants) {
+                  _splitValues[p.id] = 0.0;
+                  _splitControllers[p.id] = TextEditingController();
+                }
+              });
+            }
+          });
+        }
+
+        final selectedCount = _splitValues.length;
+        final label = selectedCount == 0 
+            ? AppLocalizations.of(context)!.selectParticipants 
+            : AppLocalizations.of(context)!.participantsSelectedCount(selectedCount);
+        
+        return InkWell(
+          onTap: () => _showParticipantDialog(participants),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.people, color: AppPallete.primary),
+                const SizedBox(width: 12),
+                Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
+                const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              ],
+            ),
+          ),
         );
       },
       loading: () => const LinearProgressIndicator(),
-      error: (e, _) => Text(AppLocalizations.of(context)!.errorWithDetails(e.toString())),
+      error: (e, _) => Text(AppLocalizations.of(context)!.loadMembersError(e.toString())),
     );
   }
 
-  void _showParticipantDialog(List<UserModel> members) {
+  void _showParticipantDialog(List<TripParticipantModel> participants) {
      showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(AppLocalizations.of(context)!.selectParticipants),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(AppLocalizations.of(context)!.selectParticipants),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.person_add_rounded, size: 16),
+                    label: const Text('Add Guest', style: TextStyle(fontSize: 12)),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      AddParticipantSheet.show(context, tripId: widget.tripId);
+                    },
+                  ),
+                ],
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: members.map((member) {
-                    final isSelected = _splitValues.containsKey(member.uid);
+                  children: participants.map((participant) {
+                    final isSelected = _splitValues.containsKey(participant.id);
                     return CheckboxListTile(
-                      title: Text(member.displayName),
+                      title: Row(
+                        children: [
+                          Flexible(child: Text(participant.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          const SizedBox(width: 6),
+                          if (participant.isGuest)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppPallete.teal.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('Guest', style: TextStyle(fontSize: 10, color: AppPallete.teal, fontWeight: FontWeight.bold)),
+                            ),
+                        ],
+                      ),
                       value: isSelected,
                       onChanged: (val) {
                         setState(() {
                           if (val == true) {
-                            _splitValues[member.uid] = 0.0;
-                            _splitControllers[member.uid] = TextEditingController();
+                            _splitValues[participant.id] = 0.0;
+                            _splitControllers[participant.id] = TextEditingController();
                           } else {
-                            _splitValues.remove(member.uid);
-                            _splitControllers[member.uid]?.dispose();
-                            _splitControllers.remove(member.uid);
+                            _splitValues.remove(participant.id);
+                            _splitControllers[participant.id]?.dispose();
+                            _splitControllers.remove(participant.id);
                           }
                         });
                         setDialogState(() {}); // Refresh dialog UI
@@ -605,9 +730,12 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
           style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic));
     }
 
+    final participantsAsync = ref.watch(tripParticipantsProvider(widget.tripId));
+    final participants = participantsAsync.asData?.value ?? [];
+
     if (_selectedSplitType == SplitType.equal) {
        final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
-       final share = _splitValues.isEmpty ? 0.0 : totalAmount / _splitValues.length;
+       final equalSplits = ExactMoneyCalculator.calculateEqualSplit(totalAmount, _splitValues.keys.toList());
        
        return Column(
          crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,102 +744,104 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
            const SizedBox(height: 8),
            ..._splitValues.keys.map((uid) {
-             final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
-             final circleId = tripAsync.value?.circleId;
-             if (circleId == null) return const SizedBox.shrink();
-             
-             final membersAsync = ref.watch(circleMembersProvider(circleId));
-             return membersAsync.when(
-               data: (members) {
-                 final member = members.firstWhere((m) => m.uid == uid);
-                 return Padding(
-                   padding: const EdgeInsets.symmetric(vertical: 4),
-                   child: Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+             final participant = participants.firstWhere(
+               (p) => p.id == uid,
+               orElse: () => TripParticipantModel(
+                 id: uid,
+                 tripId: widget.tripId,
+                 name: 'Participant',
+                 participantType: TripParticipantType.registered,
+                 addedBy: '',
+                 createdAt: DateTime.now(),
+               ),
+             );
+             final share = equalSplits[uid] ?? 0.0;
+             return Padding(
+               padding: const EdgeInsets.symmetric(vertical: 4),
+               child: Row(
+                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                 children: [
+                   Row(
                      children: [
-                       Text(member.displayName),
-                       Text('$currency ${share.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                       Text(participant.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                       if (participant.isGuest) ...[
+                         const SizedBox(width: 4),
+                         const Text('(Guest)', style: TextStyle(fontSize: 10, color: AppPallete.teal, fontWeight: FontWeight.bold)),
+                       ],
                      ],
                    ),
-                 );
-               },
-               loading: () => const SizedBox.shrink(),
-               error: (_, __) => const SizedBox.shrink(),
+                   Text('$currency ${share.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                 ],
+               ),
              );
            }),
          ],
        );
     }
 
-    final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
-    return tripAsync.when(
-      data: (trip) {
-        final membersAsync = ref.watch(circleMembersProvider(trip.circleId));
-        return membersAsync.when(
-          data: (members) {
-            final activeParticipants = members.where((m) => _splitValues.containsKey(m.uid)).toList();
-            final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
-            
-            double totalRatio = 0;
-            if (_selectedSplitType == SplitType.ratio) {
-              for (var uid in _splitValues.keys) {
-                totalRatio += double.tryParse(_splitControllers[uid]?.text ?? '0') ?? 0.0;
-              }
-            }
+    final activeParticipants = participants.where((m) => _splitValues.containsKey(m.id)).toList();
+    final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
+    
+    double totalRatio = 0;
+    if (_selectedSplitType == SplitType.ratio) {
+      for (var uid in _splitValues.keys) {
+        totalRatio += double.tryParse(_splitControllers[uid]?.text ?? '0') ?? 0.0;
+      }
+    }
 
-            return Column(
-              children: activeParticipants.map((member) {
-                final inputValue = double.tryParse(_splitControllers[member.uid]?.text ?? '0') ?? 0.0;
-                double computedAmount = 0;
-                
-                if (_selectedSplitType == SplitType.percentage) {
-                  computedAmount = (inputValue / 100) * totalAmount;
-                } else if (_selectedSplitType == SplitType.ratio) {
-                  computedAmount = totalRatio > 0 ? (inputValue / totalRatio) * totalAmount : 0;
-                }
+    return Column(
+      children: activeParticipants.map((member) {
+        final inputValue = double.tryParse(_splitControllers[member.id]?.text ?? '0') ?? 0.0;
+        double computedAmount = 0;
+        
+        if (_selectedSplitType == SplitType.percentage) {
+          computedAmount = (inputValue / 100) * totalAmount;
+        } else if (_selectedSplitType == SplitType.ratio) {
+          computedAmount = totalRatio > 0 ? (inputValue / totalRatio) * totalAmount : 0;
+        }
 
-                return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Text(member.displayName, style: const TextStyle(fontWeight: FontWeight.w500)),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: TextFormField(
-                            controller: _splitControllers[member.uid],
-                            decoration: InputDecoration(
-                              labelText: _getSplitLabel(_selectedSplitType, context),
-                              prefixText: _selectedSplitType == SplitType.exact ? '$currency ' : null,
-                              suffixText: _selectedSplitType == SplitType.percentage ? '%' : null,
-                              helperText: (_selectedSplitType == SplitType.percentage || _selectedSplitType == SplitType.ratio) 
-                                  ? AppLocalizations.of(context)!.amountLabelWithCurrency(currency, computedAmount.toStringAsFixed(2))
-                                  : null,
-                              isDense: true,
-                              border: const OutlineInputBorder(),
-                            ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            onChanged: (_) => setState(() {}),
-                            validator: (val) {
-                              if (val == null || val.isEmpty) return AppLocalizations.of(context)!.requiredError;
-                              return null;
-                            },
-                          ),
-                        ),
+        return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    children: [
+                      Flexible(child: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w500))),
+                      if (member.isGuest) ...[
+                        const SizedBox(width: 4),
+                        const Text('(Guest)', style: TextStyle(fontSize: 10, color: AppPallete.teal, fontWeight: FontWeight.bold)),
                       ],
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: _splitControllers[member.id],
+                    decoration: InputDecoration(
+                      labelText: _getSplitLabel(_selectedSplitType, context),
+                      prefixText: _selectedSplitType == SplitType.exact ? '$currency ' : null,
+                      suffixText: _selectedSplitType == SplitType.percentage ? '%' : null,
+                      helperText: (_selectedSplitType == SplitType.percentage || _selectedSplitType == SplitType.ratio) 
+                          ? AppLocalizations.of(context)!.amountLabelWithCurrency(currency, computedAmount.toStringAsFixed(2))
+                          : null,
+                      isDense: true,
+                      border: const OutlineInputBorder(),
                     ),
-                  );
-              }).toList(),
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (e, _) => Text(AppLocalizations.of(context)!.errorWithDetails(e.toString())),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (e, _) => Text(AppLocalizations.of(context)!.errorWithDetails(e.toString())),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (_) => setState(() {}),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) return AppLocalizations.of(context)!.requiredError;
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+      }).toList(),
     );
   }
 

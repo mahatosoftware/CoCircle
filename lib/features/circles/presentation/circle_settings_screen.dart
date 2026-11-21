@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
+import '../../viral_joining/data/guest_invite_service.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import 'circle_controller.dart';
 
@@ -42,7 +43,6 @@ class CircleSettingsScreen extends ConsumerWidget {
                 
                 final membersAsync = ref.watch(circleMembersProvider(circle.memberIds));
                 final pendingAsync = ref.watch(circleMembersProvider(circle.pendingMemberIds));
-                final inviteLink = 'https://cocircle.mahato.in/join/${circle.code}';
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
@@ -119,7 +119,12 @@ class CircleSettingsScreen extends ConsumerWidget {
                                   ),
                                   onPressed: () {
                                     // ignore: deprecated_member_use
-                                    Share.share(l10n.shareInviteMessage(circle.name, circle.code, inviteLink));
+                                    Share.share(
+                                      GuestInviteService.generateViralInviteMessage(
+                                        circleName: circle.name,
+                                        code: circle.code,
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -388,10 +393,10 @@ class CircleSettingsScreen extends ConsumerWidget {
                                           onPressed: () {
                                             context.pop();
                                             ref.read(circleControllerProvider.notifier).removeMember(
-                                               circleId: circle.id, 
-                                               memberId: currentUser!.uid, 
-                                               context: context,
-                                               isSelf: true
+                                              circleId: circle.id,
+                                              memberId: currentUser.uid,
+                                              context: context,
+                                              isSelf: true,
                                             );
                                           }, 
                                           child: Text(l10n.leave, style: const TextStyle(color: Colors.red))

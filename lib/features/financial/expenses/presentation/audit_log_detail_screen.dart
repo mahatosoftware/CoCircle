@@ -4,7 +4,6 @@ import '../domain/audit_log_model.dart';
 import '../../../../core/theme/app_pallete.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 
-import '../../../circles/domain/circle_member_model.dart';
 
 class AuditLogDetailScreen extends StatelessWidget {
   final AuditLogModel log;
