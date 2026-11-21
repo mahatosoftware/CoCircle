@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:fpdart/fpdart.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:cocircle/core/utils/snackbar.dart';
 import '../data/settlement_repository_impl.dart';
@@ -82,6 +82,40 @@ class SettlementController extends _$SettlementController {
     }
   }
 
+  Future<void> recordWriteOff({
+    required String tripId,
+    required String creditorUid,
+    required String debtorUid,
+    required double amount,
+    required String reason,
+    required BuildContext context,
+  }) async {
+    state = const AsyncLoading();
+    final adjustment = SettlementAdjustmentModel(
+      id: const Uuid().v4(),
+      tripId: tripId,
+      creditorUid: creditorUid,
+      debtorUid: debtorUid,
+      amount: amount,
+      reason: reason,
+      createdAt: DateTime.now(),
+      approvedByCreditor: true,
+    );
+
+    final res = await ref.read(settlementRepositoryProvider).recordAdjustment(adjustment);
+    res.fold(
+      (err) {
+        state = AsyncError(err.message, StackTrace.current);
+        showSnackBar(context, 'Write-off failed: ${err.message}');
+      },
+      (r) {
+        state = const AsyncData(null);
+        showSnackBar(context, 'Debt write-off recorded: ₹${amount.toStringAsFixed(0)} waived');
+        ref.invalidate(tripAdjustmentsProvider(tripId));
+      },
+    );
+  }
+
   /// Legacy - kept for compatibility if needed elsewhere
   Future<void> syncSettlement(String tripId) async {
     // No-op for now as logic is derived on the fly
@@ -91,18 +125,22 @@ class SettlementController extends _$SettlementController {
 @riverpod
 Future<List<SettlementTransaction>> activeSettlements(Ref ref, String tripId) async {
   final expensesAsync = ref.watch(tripExpensesProvider(tripId));
-  
-  return expensesAsync.when(
-    data: (expenses) {
-      debugPrint('DEBUG: Recalculating active settlements for $tripId');
-      return SettlementLogic.calculateSettlements(expenses);
-    },
-    loading: () => [],
-    error: (err, _) {
-       debugPrint('DEBUG ERROR: activeSettlements calculation error: $err');
-       throw err;
-    },
-  );
+  final adjustmentsAsync = ref.watch(tripAdjustmentsProvider(tripId));
+
+  final expenses = expensesAsync.value ?? [];
+  final adjustments = adjustmentsAsync.value ?? [];
+
+  return SettlementLogic.calculateSettlements(expenses, adjustments);
+}
+
+@riverpod
+Stream<List<SettlementAdjustmentModel>> tripAdjustments(
+  Ref ref,
+  String tripId,
+) {
+  return ref
+      .watch(settlementRepositoryProvider)
+      .getAdjustmentsStream(tripId);
 }
 
 @riverpod

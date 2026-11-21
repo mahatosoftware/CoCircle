@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../../auth/domain/user_model.dart';
+import '../../viral_joining/data/guest_invite_service.dart';
+import '../../notifications/presentation/notification_controller.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import 'circle_controller.dart';
 
@@ -42,7 +44,6 @@ class CircleSettingsScreen extends ConsumerWidget {
                 
                 final membersAsync = ref.watch(circleMembersProvider(circle.memberIds));
                 final pendingAsync = ref.watch(circleMembersProvider(circle.pendingMemberIds));
-                final inviteLink = 'https://cocircle.mahato.in/join/${circle.code}';
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
@@ -119,7 +120,12 @@ class CircleSettingsScreen extends ConsumerWidget {
                                   ),
                                   onPressed: () {
                                     // ignore: deprecated_member_use
-                                    Share.share(l10n.shareInviteMessage(circle.name, circle.code, inviteLink));
+                                    Share.share(
+                                      GuestInviteService.generateViralInviteMessage(
+                                        circleName: circle.name,
+                                        code: circle.code,
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -184,6 +190,32 @@ class CircleSettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       
+                      const SizedBox(height: 16),
+
+                      // Notification Preferences Card
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final prefsAsync = ref.watch(userNotificationPreferencesProvider);
+                            final isMuted = prefsAsync.value?.isCircleMuted(circle.id) ?? false;
+                            return SwitchListTile(
+                              title: const Text('Mute Circle Notifications', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              subtitle: const Text('Silence real-time expense and activity push notifications for this circle', style: TextStyle(fontSize: 12)),
+                              secondary: Icon(isMuted ? Icons.notifications_off_outlined : Icons.notifications_active_outlined),
+                              value: isMuted,
+                              onChanged: (_) {
+                                ref.read(notificationControllerProvider.notifier).toggleMuteCircle(circle.id);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      
                       const SizedBox(height: 32),
 
                       // Pending Requests
@@ -227,7 +259,33 @@ class CircleSettingsScreen extends ConsumerWidget {
                             loading: () => const Center(child: CircularProgressIndicator()),
                             error: (e, s) => Text(l10n.errorWithDetails(e.toString())),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 16),
+
+                      // Notification Preferences Card
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final prefsAsync = ref.watch(userNotificationPreferencesProvider);
+                            final isMuted = prefsAsync.value?.isCircleMuted(circle.id) ?? false;
+                            return SwitchListTile(
+                              title: const Text('Mute Circle Notifications', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              subtitle: const Text('Silence real-time expense and activity push notifications for this circle', style: TextStyle(fontSize: 12)),
+                              secondary: Icon(isMuted ? Icons.notifications_off_outlined : Icons.notifications_active_outlined),
+                              value: isMuted,
+                              onChanged: (_) {
+                                ref.read(notificationControllerProvider.notifier).toggleMuteCircle(circle.id);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 32),
                       ],
                       // Members List
                       Align(
@@ -388,10 +446,10 @@ class CircleSettingsScreen extends ConsumerWidget {
                                           onPressed: () {
                                             context.pop();
                                             ref.read(circleControllerProvider.notifier).removeMember(
-                                               circleId: circle.id, 
-                                               memberId: currentUser!.uid, 
-                                               context: context,
-                                               isSelf: true
+                                              circleId: circle.id,
+                                              memberId: currentUser.uid,
+                                              context: context,
+                                              isSelf: true,
                                             );
                                           }, 
                                           child: Text(l10n.leave, style: const TextStyle(color: Colors.red))

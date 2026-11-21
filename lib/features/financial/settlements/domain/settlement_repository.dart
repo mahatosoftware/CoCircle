@@ -7,4 +7,7 @@ abstract class SettlementRepository {
   Future<Either<Failure, void>> updateSettlement(SettlementModel settlement);
   Future<Either<Failure, List<SettlementModel>>> getSettlementsForTrip(String tripId); // Ordered by version
   Stream<List<SettlementModel>> getSettlementsStream(String tripId);
+  Future<Either<Failure, SettlementAdjustmentModel>> recordAdjustment(SettlementAdjustmentModel adjustment);
+  Stream<List<SettlementAdjustmentModel>> getAdjustmentsStream(String tripId);
+  Future<Either<Failure, List<SettlementAdjustmentModel>>> getAdjustmentsForTrip(String tripId);
 }

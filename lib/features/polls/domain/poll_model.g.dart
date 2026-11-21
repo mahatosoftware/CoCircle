@@ -34,6 +34,12 @@ _PollModel _$PollModelFromJson(Map<String, dynamic> json) => _PollModel(
   createdAt: const TimestampConverter().fromJson(json['createdAt']),
   isActive: json['isActive'] as bool? ?? true,
   closedAt: const TimestampConverter().fromJson(json['closedAt']),
+  pollType: json['pollType'] as String? ?? 'standard',
+  isAnonymous: json['isAnonymous'] as bool? ?? false,
+  deadline: const TimestampConverter().fromJson(json['deadline']),
+  aiRecommendation: json['aiRecommendation'] as String?,
+  winningOptionIndex: (json['winningOptionIndex'] as num?)?.toInt(),
+  convertedToAction: json['convertedToAction'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$PollModelToJson(_PollModel instance) =>
@@ -51,6 +57,15 @@ Map<String, dynamic> _$PollModelToJson(_PollModel instance) =>
         instance.closedAt,
         const TimestampConverter().toJson,
       ),
+      'pollType': instance.pollType,
+      'isAnonymous': instance.isAnonymous,
+      'deadline': _$JsonConverterToJson<dynamic, DateTime>(
+        instance.deadline,
+        const TimestampConverter().toJson,
+      ),
+      'aiRecommendation': instance.aiRecommendation,
+      'winningOptionIndex': instance.winningOptionIndex,
+      'convertedToAction': instance.convertedToAction,
     };
 
 Json? _$JsonConverterToJson<Json, Value>(

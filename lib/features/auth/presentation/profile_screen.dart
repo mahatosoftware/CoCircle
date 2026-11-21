@@ -16,7 +16,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
-  final _vpaController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _selectedCountry;
   String? _countryFlag;
@@ -31,7 +30,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = await ref.read(authRepositoryProvider).getCurrentUser();
     if (user != null) {
       _nameController.text = user.displayName;
-      _vpaController.text = user.vpa ?? '';
       setState(() {
         _selectedCountry = user.country;
         if (_selectedCountry != null) {
@@ -45,7 +43,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _vpaController.dispose();
     super.dispose();
   }
 
@@ -54,8 +51,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userAsync = ref.watch(authStateChangesProvider);
     final isUpdating = ref.watch(profileControllerProvider).isLoading;
     final l10n = AppLocalizations.of(context)!;
-
-    final isIndia = _selectedCountry == 'India';
 
     return Scaffold(
       appBar: AppBar(
@@ -73,7 +68,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (user == null) return Center(child: Text(AppLocalizations.of(context)!.userNotFound));
           
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
             child: Form(
               key: _formKey,
               child: Column(
@@ -158,37 +153,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                   ),
-                  if (isIndia) ...[
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _vpaController,
-                      decoration: const InputDecoration(
-                        labelText: 'UPI ID / VPA',
-                        hintText: 'e.g. user@bank',
-                        prefixIcon: Icon(Icons.payment),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (val) {
-                        if (val != null && val.isNotEmpty && !val.contains('@')) {
-                          return 'Please enter a valid UPI ID';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Icon(Icons.info_outline, size: 14, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            "Always verify the receiver's name and vpa inside the UPI app before completing the payment.",
-                            style: TextStyle(fontSize: 11, color: Colors.grey),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
@@ -198,7 +162,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ref.read(profileControllerProvider.notifier).updateProfile(
                             name: _nameController.text.trim(),
                             country: _selectedCountry,
-                            vpa: isIndia ? _vpaController.text.trim() : null,
                             context: context,
                           );
                         }

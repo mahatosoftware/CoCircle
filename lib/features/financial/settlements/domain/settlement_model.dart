@@ -35,3 +35,19 @@ abstract class SettlementTransaction with _$SettlementTransaction {
 
   factory SettlementTransaction.fromJson(Map<String, dynamic> json) => _$SettlementTransactionFromJson(json);
 }
+
+@freezed
+abstract class SettlementAdjustmentModel with _$SettlementAdjustmentModel {
+  const factory SettlementAdjustmentModel({
+    required String id,
+    required String tripId,
+    required String creditorUid, // Creditor waiving debt
+    required String debtorUid,   // Debtor whose debt was waived
+    required double amount,
+    required String reason,
+    @TimestampConverter() required DateTime createdAt,
+    @Default(true) bool approvedByCreditor,
+  }) = _SettlementAdjustmentModel;
+
+  factory SettlementAdjustmentModel.fromJson(Map<String, dynamic> json) => _$SettlementAdjustmentModelFromJson(json);
+}

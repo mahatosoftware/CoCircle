@@ -27,6 +27,12 @@ abstract class PollModel with _$PollModel {
     @TimestampConverter() required DateTime createdAt,
     @Default(true) bool isActive,
     @TimestampConverter() DateTime? closedAt,
+    @Default('standard') String pollType, // 'standard' or 'availability'
+    @Default(false) bool isAnonymous,
+    @TimestampConverter() DateTime? deadline,
+    String? aiRecommendation,
+    int? winningOptionIndex,
+    @Default(false) bool convertedToAction,
   }) = _PollModel;
 
   factory PollModel.fromJson(Map<String, dynamic> json) => _$PollModelFromJson(json);

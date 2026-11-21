@@ -336,12 +336,6 @@ class ExpenseController extends _$ExpenseController {
   }) async {
     // PRE-FETCH FOR NOTIFICATION PARTICIPANTS
     final expenseRes = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
-    Map<String, double> payers = {};
-    Map<String, double> splitDetails = {};
-    expenseRes.fold((_) => null, (e) {
-      payers = e.payers;
-      splitDetails = e.splitDetails;
-    });
 
     final res = await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
     await res.fold(

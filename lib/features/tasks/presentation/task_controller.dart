@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -6,11 +5,7 @@ import '../../../core/utils/snackbar.dart';
 import '../../auth/data/auth_repository_impl.dart';
 import '../data/task_repository_impl.dart';
 import '../domain/task_model.dart';
-import '../domain/task_repository.dart';
 
-final taskRepositoryProvider = Provider<TaskRepository>((ref) {
-  return TaskRepositoryImpl(FirebaseFirestore.instance);
-});
 
 class TaskController extends Notifier<AsyncValue<void>> {
   @override

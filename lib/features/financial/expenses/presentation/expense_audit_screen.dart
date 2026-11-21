@@ -38,7 +38,7 @@ class ExpenseAuditView extends ConsumerWidget {
                     }
 
                     return ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                       itemCount: logs.length,
                       separatorBuilder: (context, index) => const Divider(height: 32),
                       itemBuilder: (context, index) {

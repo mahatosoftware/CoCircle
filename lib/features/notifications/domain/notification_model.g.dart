@@ -11,9 +11,9 @@ _NotificationModel _$NotificationModelFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       title: json['title'] as String,
       body: json['body'] as String,
-      type: $enumDecode(_$NotificationTypeEnumMap, json['type']),
+      type: const NotificationTypeConverter().fromJson(json['type']),
       targetPath: json['targetPath'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: const TimestampConverter().fromJson(json['timestamp']),
       isRead: json['isRead'] as bool? ?? false,
       recipientUid: json['recipientUid'] as String,
       senderUid: json['senderUid'] as String,
@@ -27,9 +27,9 @@ Map<String, dynamic> _$NotificationModelToJson(_NotificationModel instance) =>
       'id': instance.id,
       'title': instance.title,
       'body': instance.body,
-      'type': _$NotificationTypeEnumMap[instance.type]!,
+      'type': const NotificationTypeConverter().toJson(instance.type),
       'targetPath': instance.targetPath,
-      'timestamp': instance.timestamp.toIso8601String(),
+      'timestamp': const TimestampConverter().toJson(instance.timestamp),
       'isRead': instance.isRead,
       'recipientUid': instance.recipientUid,
       'senderUid': instance.senderUid,
@@ -37,13 +37,3 @@ Map<String, dynamic> _$NotificationModelToJson(_NotificationModel instance) =>
       'tripId': instance.tripId,
       'expenseId': instance.expenseId,
     };
-
-const _$NotificationTypeEnumMap = {
-  NotificationType.expenseAdded: 'expenseAdded',
-  NotificationType.expenseUpdated: 'expenseUpdated',
-  NotificationType.expenseDeleted: 'expenseDeleted',
-  NotificationType.circleJoinRequest: 'circleJoinRequest',
-  NotificationType.pollCreated: 'pollCreated',
-  NotificationType.pollOptionAdded: 'pollOptionAdded',
-  NotificationType.pollUpdated: 'pollUpdated',
-};

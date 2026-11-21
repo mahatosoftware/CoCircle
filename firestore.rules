@@ -1,0 +1,210 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isCircleMember(circleId) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/circles/$(circleId)) &&
+        (
+          request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.memberIds ||
+          get(/databases/$(database)/documents/circles/$(circleId)).data.createdBy == request.auth.uid
+        )
+      );
+    }
+
+    function isCircleAdmin(circleId) {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/circles/$(circleId)) &&
+        (
+          get(/databases/$(database)/documents/circles/$(circleId)).data.createdBy == request.auth.uid ||
+          (
+            'adminIds' in get(/databases/$(database)/documents/circles/$(circleId)).data &&
+            request.auth.uid in get(/databases/$(database)/documents/circles/$(circleId)).data.adminIds
+          )
+        )
+      );
+    }
+
+    function getTrip(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId)).data;
+    }
+
+    function resourceTripCreator(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy;
+    }
+
+    // 1. User Profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // 2. Circles (permits memberIds array-contains queries)
+    match /circles/{circleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && isCircleAdmin(circleId);
+
+      match /members/{memberId} {
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAuthenticated() && (isCircleAdmin(circleId) || isOwner(memberId));
+      }
+    }
+
+    // 3. Trips (permits circleId queries)
+    match /trips/{tripId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isCircleAdmin(resource.data.circleId)
+      );
+
+      // Subcollection: Participants (Registered & Guest profiles)
+      match /participants/{participantId} {
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAuthenticated();
+      }
+
+      // Subcollection: Payments
+      match /payments/{paymentId} {
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAuthenticated();
+      }
+
+      // Subcollection: Budget Commitments
+      match /budgetCommitments/{commitmentId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      // Subcollection: Memories & Scrapbook
+      match /memories/{memoryId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /scrapbook/{pageId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      // Legacy subcollection aliases
+      match /expenses/{id} { allow read, write: if isAuthenticated(); }
+      match /settlements/{id} { allow read, write: if isAuthenticated(); }
+      match /itinerary/{id} { allow read, write: if isAuthenticated(); }
+      match /tasks/{id} { allow read, write: if isAuthenticated(); }
+      match /polls/{id} { allow read, write: if isAuthenticated(); }
+    }
+
+    // 4. Root Tasks Collection
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 5. Root Polls Collection
+    match /polls/{pollId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 6. Root Itineraries Collection
+    match /itineraries/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 7. Root Lodgings Collection
+    match /lodgings/{lodgingId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 8. Root Ideas Collection
+    match /ideas/{ideaId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 9. Root Packing Items Collection
+    match /packing_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 10. Root Expenses Collection
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 11. Root Audit Logs Collection (Immutable)
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // 12. Root Settlements Collection
+    match /settlements/{settlementId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 13. Root Settlement Adjustments Collection
+    match /settlement_adjustments/{adjustmentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 14. Root Shopping Lists & Items
+    match /shopping_lists/{listId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /shopping_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 15. Root Notifications Collection
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isAuthenticated();
+    }
+
+    // 16. Root Config Collection (Global settings & AI config)
+    match /config/{configDoc} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // 17. Root Mail Collection
+    match /mail/{mailId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
+
+    // 18. Privileged Notification Events Queue (GitHub Actions Worker)
+    match /notification_events/{eventId} {
+      // Clients may only create pending work items authored by themselves
+      allow create: if isAuthenticated()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.attempts == 0;
+      // Authors and members of the associated circle can view event status
+      allow read: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        (resource.data.circleId != null && isCircleMember(resource.data.circleId))
+      );
+      // Strictly prevent Flutter clients from updating status, claiming leases, or deleting events
+      allow update, delete: if false;
+    }
+
+    // 19. Notification Delivery Log (Deduplication Ledger & Anti-Irritation Audit)
+    match /notification_delivery_log/{logId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Strictly backend worker writes delivery logs to prevent user tampering
+      allow write: if false;
+    }
+  }
+}

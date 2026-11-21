@@ -281,8 +281,7 @@ as int,
 /// @nodoc
 mixin _$PollModel {
 
- String get id; String get tripId; String get creatorId; String get question; List<PollOption> get options; Map<String, List<int>> get votes;// userId -> list of optionIndices
- bool get allowMultipleSelections;@TimestampConverter() DateTime get createdAt; bool get isActive;@TimestampConverter() DateTime? get closedAt;
+ String get id; String get tripId; String get creatorId; String get question; List<PollOption> get options; Map<String, List<int>> get votes; bool get allowMultipleSelections;@TimestampConverter() DateTime get createdAt; bool get isActive;@TimestampConverter() DateTime? get closedAt; String get pollType; bool get isAnonymous;@TimestampConverter() DateTime? get deadline; String? get aiRecommendation; int? get winningOptionIndex; bool get convertedToAction;
 /// Create a copy of PollModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -295,16 +294,16 @@ $PollModelCopyWith<PollModel> get copyWith => _$PollModelCopyWithImpl<PollModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PollModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.creatorId, creatorId) || other.creatorId == creatorId)&&(identical(other.question, question) || other.question == question)&&const DeepCollectionEquality().equals(other.options, options)&&const DeepCollectionEquality().equals(other.votes, votes)&&(identical(other.allowMultipleSelections, allowMultipleSelections) || other.allowMultipleSelections == allowMultipleSelections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PollModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.creatorId, creatorId) || other.creatorId == creatorId)&&(identical(other.question, question) || other.question == question)&&const DeepCollectionEquality().equals(other.options, options)&&const DeepCollectionEquality().equals(other.votes, votes)&&(identical(other.allowMultipleSelections, allowMultipleSelections) || other.allowMultipleSelections == allowMultipleSelections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt)&&(identical(other.pollType, pollType) || other.pollType == pollType)&&(identical(other.isAnonymous, isAnonymous) || other.isAnonymous == isAnonymous)&&(identical(other.deadline, deadline) || other.deadline == deadline)&&(identical(other.aiRecommendation, aiRecommendation) || other.aiRecommendation == aiRecommendation)&&(identical(other.winningOptionIndex, winningOptionIndex) || other.winningOptionIndex == winningOptionIndex)&&(identical(other.convertedToAction, convertedToAction) || other.convertedToAction == convertedToAction));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,tripId,creatorId,question,const DeepCollectionEquality().hash(options),const DeepCollectionEquality().hash(votes),allowMultipleSelections,createdAt,isActive,closedAt);
+int get hashCode => Object.hash(runtimeType,id,tripId,creatorId,question,const DeepCollectionEquality().hash(options),const DeepCollectionEquality().hash(votes),allowMultipleSelections,createdAt,isActive,closedAt,pollType,isAnonymous,deadline,aiRecommendation,winningOptionIndex,convertedToAction);
 
 @override
 String toString() {
-  return 'PollModel(id: $id, tripId: $tripId, creatorId: $creatorId, question: $question, options: $options, votes: $votes, allowMultipleSelections: $allowMultipleSelections, createdAt: $createdAt, isActive: $isActive, closedAt: $closedAt)';
+  return 'PollModel(id: $id, tripId: $tripId, creatorId: $creatorId, question: $question, options: $options, votes: $votes, allowMultipleSelections: $allowMultipleSelections, createdAt: $createdAt, isActive: $isActive, closedAt: $closedAt, pollType: $pollType, isAnonymous: $isAnonymous, deadline: $deadline, aiRecommendation: $aiRecommendation, winningOptionIndex: $winningOptionIndex, convertedToAction: $convertedToAction)';
 }
 
 
@@ -315,7 +314,7 @@ abstract mixin class $PollModelCopyWith<$Res>  {
   factory $PollModelCopyWith(PollModel value, $Res Function(PollModel) _then) = _$PollModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String tripId, String creatorId, String question, List<PollOption> options, Map<String, List<int>> votes, bool allowMultipleSelections,@TimestampConverter() DateTime createdAt, bool isActive,@TimestampConverter() DateTime? closedAt
+ String id, String tripId, String creatorId, String question, List<PollOption> options, Map<String, List<int>> votes, bool allowMultipleSelections,@TimestampConverter() DateTime createdAt, bool isActive,@TimestampConverter() DateTime? closedAt, String pollType, bool isAnonymous,@TimestampConverter() DateTime? deadline, String? aiRecommendation, int? winningOptionIndex, bool convertedToAction
 });
 
 
@@ -332,7 +331,7 @@ class _$PollModelCopyWithImpl<$Res>
 
 /// Create a copy of PollModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tripId = null,Object? creatorId = null,Object? question = null,Object? options = null,Object? votes = null,Object? allowMultipleSelections = null,Object? createdAt = null,Object? isActive = null,Object? closedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? tripId = null,Object? creatorId = null,Object? question = null,Object? options = null,Object? votes = null,Object? allowMultipleSelections = null,Object? createdAt = null,Object? isActive = null,Object? closedAt = freezed,Object? pollType = null,Object? isAnonymous = null,Object? deadline = freezed,Object? aiRecommendation = freezed,Object? winningOptionIndex = freezed,Object? convertedToAction = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tripId: null == tripId ? _self.tripId : tripId // ignore: cast_nullable_to_non_nullable
@@ -344,7 +343,13 @@ as Map<String, List<int>>,allowMultipleSelections: null == allowMultipleSelectio
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,closedAt: freezed == closedAt ? _self.closedAt : closedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,pollType: null == pollType ? _self.pollType : pollType // ignore: cast_nullable_to_non_nullable
+as String,isAnonymous: null == isAnonymous ? _self.isAnonymous : isAnonymous // ignore: cast_nullable_to_non_nullable
+as bool,deadline: freezed == deadline ? _self.deadline : deadline // ignore: cast_nullable_to_non_nullable
+as DateTime?,aiRecommendation: freezed == aiRecommendation ? _self.aiRecommendation : aiRecommendation // ignore: cast_nullable_to_non_nullable
+as String?,winningOptionIndex: freezed == winningOptionIndex ? _self.winningOptionIndex : winningOptionIndex // ignore: cast_nullable_to_non_nullable
+as int?,convertedToAction: null == convertedToAction ? _self.convertedToAction : convertedToAction // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -429,10 +434,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tripId,  String creatorId,  String question,  List<PollOption> options,  Map<String, List<int>> votes,  bool allowMultipleSelections, @TimestampConverter()  DateTime createdAt,  bool isActive, @TimestampConverter()  DateTime? closedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String tripId,  String creatorId,  String question,  List<PollOption> options,  Map<String, List<int>> votes,  bool allowMultipleSelections, @TimestampConverter()  DateTime createdAt,  bool isActive, @TimestampConverter()  DateTime? closedAt,  String pollType,  bool isAnonymous, @TimestampConverter()  DateTime? deadline,  String? aiRecommendation,  int? winningOptionIndex,  bool convertedToAction)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PollModel() when $default != null:
-return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.options,_that.votes,_that.allowMultipleSelections,_that.createdAt,_that.isActive,_that.closedAt);case _:
+return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.options,_that.votes,_that.allowMultipleSelections,_that.createdAt,_that.isActive,_that.closedAt,_that.pollType,_that.isAnonymous,_that.deadline,_that.aiRecommendation,_that.winningOptionIndex,_that.convertedToAction);case _:
   return orElse();
 
 }
@@ -450,10 +455,10 @@ return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.optio
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tripId,  String creatorId,  String question,  List<PollOption> options,  Map<String, List<int>> votes,  bool allowMultipleSelections, @TimestampConverter()  DateTime createdAt,  bool isActive, @TimestampConverter()  DateTime? closedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String tripId,  String creatorId,  String question,  List<PollOption> options,  Map<String, List<int>> votes,  bool allowMultipleSelections, @TimestampConverter()  DateTime createdAt,  bool isActive, @TimestampConverter()  DateTime? closedAt,  String pollType,  bool isAnonymous, @TimestampConverter()  DateTime? deadline,  String? aiRecommendation,  int? winningOptionIndex,  bool convertedToAction)  $default,) {final _that = this;
 switch (_that) {
 case _PollModel():
-return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.options,_that.votes,_that.allowMultipleSelections,_that.createdAt,_that.isActive,_that.closedAt);case _:
+return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.options,_that.votes,_that.allowMultipleSelections,_that.createdAt,_that.isActive,_that.closedAt,_that.pollType,_that.isAnonymous,_that.deadline,_that.aiRecommendation,_that.winningOptionIndex,_that.convertedToAction);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -470,10 +475,10 @@ return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.optio
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tripId,  String creatorId,  String question,  List<PollOption> options,  Map<String, List<int>> votes,  bool allowMultipleSelections, @TimestampConverter()  DateTime createdAt,  bool isActive, @TimestampConverter()  DateTime? closedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String tripId,  String creatorId,  String question,  List<PollOption> options,  Map<String, List<int>> votes,  bool allowMultipleSelections, @TimestampConverter()  DateTime createdAt,  bool isActive, @TimestampConverter()  DateTime? closedAt,  String pollType,  bool isAnonymous, @TimestampConverter()  DateTime? deadline,  String? aiRecommendation,  int? winningOptionIndex,  bool convertedToAction)?  $default,) {final _that = this;
 switch (_that) {
 case _PollModel() when $default != null:
-return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.options,_that.votes,_that.allowMultipleSelections,_that.createdAt,_that.isActive,_that.closedAt);case _:
+return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.options,_that.votes,_that.allowMultipleSelections,_that.createdAt,_that.isActive,_that.closedAt,_that.pollType,_that.isAnonymous,_that.deadline,_that.aiRecommendation,_that.winningOptionIndex,_that.convertedToAction);case _:
   return null;
 
 }
@@ -485,7 +490,7 @@ return $default(_that.id,_that.tripId,_that.creatorId,_that.question,_that.optio
 @JsonSerializable()
 
 class _PollModel implements PollModel {
-  const _PollModel({required this.id, required this.tripId, required this.creatorId, required this.question, required final  List<PollOption> options, final  Map<String, List<int>> votes = const {}, this.allowMultipleSelections = false, @TimestampConverter() required this.createdAt, this.isActive = true, @TimestampConverter() this.closedAt}): _options = options,_votes = votes;
+  const _PollModel({required this.id, required this.tripId, required this.creatorId, required this.question, required final  List<PollOption> options, final  Map<String, List<int>> votes = const {}, this.allowMultipleSelections = false, @TimestampConverter() required this.createdAt, this.isActive = true, @TimestampConverter() this.closedAt, this.pollType = 'standard', this.isAnonymous = false, @TimestampConverter() this.deadline, this.aiRecommendation, this.winningOptionIndex, this.convertedToAction = false}): _options = options,_votes = votes;
   factory _PollModel.fromJson(Map<String, dynamic> json) => _$PollModelFromJson(json);
 
 @override final  String id;
@@ -506,11 +511,16 @@ class _PollModel implements PollModel {
   return EqualUnmodifiableMapView(_votes);
 }
 
-// userId -> list of optionIndices
 @override@JsonKey() final  bool allowMultipleSelections;
 @override@TimestampConverter() final  DateTime createdAt;
 @override@JsonKey() final  bool isActive;
 @override@TimestampConverter() final  DateTime? closedAt;
+@override@JsonKey() final  String pollType;
+@override@JsonKey() final  bool isAnonymous;
+@override@TimestampConverter() final  DateTime? deadline;
+@override final  String? aiRecommendation;
+@override final  int? winningOptionIndex;
+@override@JsonKey() final  bool convertedToAction;
 
 /// Create a copy of PollModel
 /// with the given fields replaced by the non-null parameter values.
@@ -525,16 +535,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PollModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.creatorId, creatorId) || other.creatorId == creatorId)&&(identical(other.question, question) || other.question == question)&&const DeepCollectionEquality().equals(other._options, _options)&&const DeepCollectionEquality().equals(other._votes, _votes)&&(identical(other.allowMultipleSelections, allowMultipleSelections) || other.allowMultipleSelections == allowMultipleSelections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PollModel&&(identical(other.id, id) || other.id == id)&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.creatorId, creatorId) || other.creatorId == creatorId)&&(identical(other.question, question) || other.question == question)&&const DeepCollectionEquality().equals(other._options, _options)&&const DeepCollectionEquality().equals(other._votes, _votes)&&(identical(other.allowMultipleSelections, allowMultipleSelections) || other.allowMultipleSelections == allowMultipleSelections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt)&&(identical(other.pollType, pollType) || other.pollType == pollType)&&(identical(other.isAnonymous, isAnonymous) || other.isAnonymous == isAnonymous)&&(identical(other.deadline, deadline) || other.deadline == deadline)&&(identical(other.aiRecommendation, aiRecommendation) || other.aiRecommendation == aiRecommendation)&&(identical(other.winningOptionIndex, winningOptionIndex) || other.winningOptionIndex == winningOptionIndex)&&(identical(other.convertedToAction, convertedToAction) || other.convertedToAction == convertedToAction));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,tripId,creatorId,question,const DeepCollectionEquality().hash(_options),const DeepCollectionEquality().hash(_votes),allowMultipleSelections,createdAt,isActive,closedAt);
+int get hashCode => Object.hash(runtimeType,id,tripId,creatorId,question,const DeepCollectionEquality().hash(_options),const DeepCollectionEquality().hash(_votes),allowMultipleSelections,createdAt,isActive,closedAt,pollType,isAnonymous,deadline,aiRecommendation,winningOptionIndex,convertedToAction);
 
 @override
 String toString() {
-  return 'PollModel(id: $id, tripId: $tripId, creatorId: $creatorId, question: $question, options: $options, votes: $votes, allowMultipleSelections: $allowMultipleSelections, createdAt: $createdAt, isActive: $isActive, closedAt: $closedAt)';
+  return 'PollModel(id: $id, tripId: $tripId, creatorId: $creatorId, question: $question, options: $options, votes: $votes, allowMultipleSelections: $allowMultipleSelections, createdAt: $createdAt, isActive: $isActive, closedAt: $closedAt, pollType: $pollType, isAnonymous: $isAnonymous, deadline: $deadline, aiRecommendation: $aiRecommendation, winningOptionIndex: $winningOptionIndex, convertedToAction: $convertedToAction)';
 }
 
 
@@ -545,7 +555,7 @@ abstract mixin class _$PollModelCopyWith<$Res> implements $PollModelCopyWith<$Re
   factory _$PollModelCopyWith(_PollModel value, $Res Function(_PollModel) _then) = __$PollModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String tripId, String creatorId, String question, List<PollOption> options, Map<String, List<int>> votes, bool allowMultipleSelections,@TimestampConverter() DateTime createdAt, bool isActive,@TimestampConverter() DateTime? closedAt
+ String id, String tripId, String creatorId, String question, List<PollOption> options, Map<String, List<int>> votes, bool allowMultipleSelections,@TimestampConverter() DateTime createdAt, bool isActive,@TimestampConverter() DateTime? closedAt, String pollType, bool isAnonymous,@TimestampConverter() DateTime? deadline, String? aiRecommendation, int? winningOptionIndex, bool convertedToAction
 });
 
 
@@ -562,7 +572,7 @@ class __$PollModelCopyWithImpl<$Res>
 
 /// Create a copy of PollModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tripId = null,Object? creatorId = null,Object? question = null,Object? options = null,Object? votes = null,Object? allowMultipleSelections = null,Object? createdAt = null,Object? isActive = null,Object? closedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? tripId = null,Object? creatorId = null,Object? question = null,Object? options = null,Object? votes = null,Object? allowMultipleSelections = null,Object? createdAt = null,Object? isActive = null,Object? closedAt = freezed,Object? pollType = null,Object? isAnonymous = null,Object? deadline = freezed,Object? aiRecommendation = freezed,Object? winningOptionIndex = freezed,Object? convertedToAction = null,}) {
   return _then(_PollModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,tripId: null == tripId ? _self.tripId : tripId // ignore: cast_nullable_to_non_nullable
@@ -574,7 +584,13 @@ as Map<String, List<int>>,allowMultipleSelections: null == allowMultipleSelectio
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,closedAt: freezed == closedAt ? _self.closedAt : closedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,pollType: null == pollType ? _self.pollType : pollType // ignore: cast_nullable_to_non_nullable
+as String,isAnonymous: null == isAnonymous ? _self.isAnonymous : isAnonymous // ignore: cast_nullable_to_non_nullable
+as bool,deadline: freezed == deadline ? _self.deadline : deadline // ignore: cast_nullable_to_non_nullable
+as DateTime?,aiRecommendation: freezed == aiRecommendation ? _self.aiRecommendation : aiRecommendation // ignore: cast_nullable_to_non_nullable
+as String?,winningOptionIndex: freezed == winningOptionIndex ? _self.winningOptionIndex : winningOptionIndex // ignore: cast_nullable_to_non_nullable
+as int?,convertedToAction: null == convertedToAction ? _self.convertedToAction : convertedToAction // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

@@ -15,8 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TripSummaryModel {
 
- String get tripId; double get totalExpenses; Map<String, double> get memberBalances;// uid -> net balance
- int get latestSettlementVersion; DateTime get lastUpdated;
+ String get tripId; double get totalExpenses; Map<String, double> get memberBalances; int get latestSettlementVersion; DateTime get lastUpdated;
 /// Create a copy of TripSummaryModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -226,7 +225,6 @@ class _TripSummaryModel implements TripSummaryModel {
   return EqualUnmodifiableMapView(_memberBalances);
 }
 
-// uid -> net balance
 @override final  int latestSettlementVersion;
 @override final  DateTime lastUpdated;
 

@@ -58,7 +58,7 @@ final class LiveMapControllerProvider
   }
 }
 
-String _$liveMapControllerHash() => r'b37a787395cc6cf328d1ff7beccf9c4d7133778e';
+String _$liveMapControllerHash() => r'bd9b5d6bab1ec25bd7e2c950624bfc2566c9e709';
 
 final class LiveMapControllerFamily extends $Family
     with
@@ -92,7 +92,7 @@ abstract class _$LiveMapController extends $Notifier<LiveMapState> {
   LiveMapState build(String tripId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<LiveMapState, LiveMapState>;
     final element =
         ref.element
@@ -102,6 +102,6 @@ abstract class _$LiveMapController extends $Notifier<LiveMapState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }

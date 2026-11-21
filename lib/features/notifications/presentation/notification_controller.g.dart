@@ -34,13 +34,13 @@ final class NotificationControllerProvider
 }
 
 String _$notificationControllerHash() =>
-    r'22fadc44b1cc26a81cd7ab99d048fb6a5deff68f';
+    r'9ef366466f160163818145384b4beac4ddb9a535';
 
 abstract class _$NotificationController extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<void>, void>;
     final element =
         ref.element
@@ -50,7 +50,7 @@ abstract class _$NotificationController extends $AsyncNotifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
@@ -136,3 +136,46 @@ final class UnreadNotificationCountProvider
 
 String _$unreadNotificationCountHash() =>
     r'b141f148010c268b94f20f01579a288a73fa1ffe';
+
+@ProviderFor(userNotificationPreferences)
+final userNotificationPreferencesProvider =
+    UserNotificationPreferencesProvider._();
+
+final class UserNotificationPreferencesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<NotificationPreferencesModel>,
+          NotificationPreferencesModel,
+          Stream<NotificationPreferencesModel>
+        >
+    with
+        $FutureModifier<NotificationPreferencesModel>,
+        $StreamProvider<NotificationPreferencesModel> {
+  UserNotificationPreferencesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userNotificationPreferencesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userNotificationPreferencesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<NotificationPreferencesModel> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<NotificationPreferencesModel> create(Ref ref) {
+    return userNotificationPreferences(ref);
+  }
+}
+
+String _$userNotificationPreferencesHash() =>
+    r'439b9a0b297ec1f3de86f8bfdf9200af27526dfb';

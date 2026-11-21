@@ -5,13 +5,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'core/theme/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/config/environment.dart';
+import 'core/ai/data/firebase_ai_config_repository.dart';
 import 'router.dart';
-import 'firebase_options_prod.dart';
+import 'firebase_options_prod.dart' as prod_options;
+import 'firebase_options_dev.dart' as dev_options;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
+
+import 'package:cocircle/core/services/push_notification_service.dart';
+import 'package:cocircle/features/auth/data/auth_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,56 +33,135 @@ void main() async {
     ),
   );
   
-  // Default to PROD if running main.dart directly
-  AppEnvironment.setup(
-    flavor: Flavor.prod,
-    packageName: 'in.mahato.cocircle',
-    appName: 'CoCircle',
-    googleServerClientId: '273341956-u3ub04qtsebrfs3e7ge17p1dj36af1ea.apps.googleusercontent.com',
-    defaultDatabaseUrl: 'https://cocircle-firebase-prod-default-rtdb.asia-southeast1.firebasedatabase.app',
-  );
+  // Dynamically detect environment from the running platform package
+  bool isDev = false;
+  try {
+    final packageInfo = await PackageInfo.fromPlatform();
+    isDev = packageInfo.packageName.contains('.dev');
+    debugPrint("Detected application package: ${packageInfo.packageName} (isDev: $isDev)");
+  } catch (e) {
+    debugPrint("Could not determine package info: $e, defaulting to dev in debug mode");
+    isDev = kDebugMode;
+  }
+
+  if (isDev) {
+    AppEnvironment.setup(
+      flavor: Flavor.dev,
+      packageName: 'in.mahato.cocircle.dev',
+      appName: 'CoCircle (Dev)',
+      googleServerClientId:
+          '1017871867803-msahbu6re9b86s8g8k31vtuotlh83vss.apps.googleusercontent.com',
+      defaultDatabaseUrl:
+          'https://cocircle-firebase-development-default-rtdb.asia-southeast1.firebasedatabase.app',
+    );
+  } else {
+    AppEnvironment.setup(
+      flavor: Flavor.prod,
+      packageName: 'in.mahato.cocircle',
+      appName: 'CoCircle',
+      googleServerClientId:
+          '273341956-u3ub04qtsebrfs3e7ge17p1dj36af1ea.apps.googleusercontent.com',
+      defaultDatabaseUrl:
+          'https://cocircle-firebase-prod-default-rtdb.asia-southeast1.firebasedatabase.app',
+    );
+  }
+
+  // Initialize Google Sign In (Required for 7.0.0+) immediately and independently
+  try {
+    await GoogleSignIn.instance.initialize(
+      serverClientId: AppEnvironment.googleServerClientId,
+    );
+    debugPrint("Google Sign In initialized for ${isDev ? 'DEV' : 'PROD'} with serverClientId: ${AppEnvironment.googleServerClientId}");
+  } catch (e) {
+    debugPrint("Google Sign In init failed: $e");
+  }
 
   // Initialize Firebase
   try {
-     await Firebase.initializeApp(
-       options: DefaultFirebaseOptions.currentPlatform,
-     );
+    final firebaseOptions = isDev
+        ? dev_options.DefaultFirebaseOptions.currentPlatform
+        : prod_options.DefaultFirebaseOptions.currentPlatform;
 
-     // Fetch dynamic database URL from config table
-     try {
-       final doc = await FirebaseFirestore.instance.collection('config').doc('settings').get();
-       final url = doc.data()?['databaseURL'] as String?;
-       if (url != null && url.isNotEmpty) {
-         AppEnvironment.databaseUrl = url;
-         debugPrint("Loaded RTDB URL dynamically: $url");
-       }
-     } catch (e) {
-       debugPrint("Could not load RTDB URL from Firestore: $e");
-     }
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: firebaseOptions,
+      );
+      debugPrint("Firebase initialized with project: ${firebaseOptions.projectId}");
+    } else {
+      debugPrint("Firebase default app already initialized");
+    }
 
-     // Initialize App Check (Hybrid: Debug for local, Play Integrity for prod)
-     await FirebaseAppCheck.instance.activate(
-      providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider(),
-      providerApple: kDebugMode ? const AppleDebugProvider() : const AppleDeviceCheckProvider(),
-    );
+    // Fetch dynamic database URL from config table
+    try {
+      final doc = await FirebaseFirestore.instance.collection('config').doc('settings').get();
+      final url = doc.data()?['databaseURL'] as String?;
+      if (url != null && url.isNotEmpty) {
+        AppEnvironment.databaseUrl = url;
+        debugPrint("Loaded RTDB URL dynamically: $url");
+      }
+    } catch (e) {
+      debugPrint("Could not load RTDB URL from Firestore: $e");
+    }
 
-     // Initialize Google Sign In (Required for 7.0.0+)
-     await GoogleSignIn.instance.initialize(
-       serverClientId: AppEnvironment.googleServerClientId,
-     );
-  } catch(e, stack) {
-     debugPrint("Firebase init failed: $e");
-     debugPrint("Stack trace: $stack");
+    // Initialize AI Config for DEV Firestore if missing
+    if (isDev) {
+      try {
+        await FirebaseAiConfigRepository().ensureDevAiConfigSeeded();
+        debugPrint("Seeded/Verified Firestore config/ai_config for DEV");
+      } catch (e) {
+        debugPrint("Could not seed AI config in DEV Firestore: $e");
+      }
+    }
+
+    // Initialize App Check (Hybrid: Debug for local, Play Integrity for prod)
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider(),
+        providerApple: kDebugMode ? const AppleDebugProvider() : const AppleDeviceCheckProvider(),
+      );
+    } catch (e) {
+      debugPrint("AppCheck activate error: $e");
+    }
+  } catch (e, stack) {
+    debugPrint("Firebase init failed: $e");
+    debugPrint("Stack trace: $stack");
   }
 
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final router = ref.read(routerProvider);
+      final user = ref.read(authStateChangesProvider).value;
+      PushNotificationService().initialize(
+        router: router,
+        currentUserId: user?.uid,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(authStateChangesProvider, (previous, next) {
+      final user = next.value;
+      if (user != null) {
+        PushNotificationService().syncDeviceToken(user.uid);
+      } else if (previous?.value != null) {
+        PushNotificationService().removeDeviceToken(previous!.value!.uid);
+      }
+    });
+
     final router = ref.watch(routerProvider);
     
     return MaterialApp.router(

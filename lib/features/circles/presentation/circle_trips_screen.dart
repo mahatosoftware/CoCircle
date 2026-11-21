@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:cocircle/l10n/app_localizations.dart';
 import 'package:cocircle/features/trips/domain/trip_model.dart';
 import 'package:cocircle/features/trips/presentation/trip_controller.dart';
-import 'circle_controller.dart';
 
 class CircleTripsScreen extends ConsumerStatefulWidget {
   final String circleId;

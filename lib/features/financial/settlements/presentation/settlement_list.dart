@@ -226,22 +226,22 @@ class SettlementList extends ConsumerWidget {
                 ),
               ),
             ),
-            //             if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
-            //               Padding(
-            //                 padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-            //                 child: SizedBox(
-            //                   width: double.infinity,
-            //                   child: OutlinedButton.icon(
-            //                     onPressed: () => _initiateUpiTransaction(context, t, toMember!, currency),
-            //                     icon: const Icon(Icons.account_balance_outlined, size: 18),
-            //                     label: const Text('Pay via UPI'),
-            //                     style: OutlinedButton.styleFrom(
-            //                       foregroundColor: Colors.green,
-            //                       side: const BorderSide(color: Colors.green),
-            //                     ),
-            //                   ),
-            //                 ),
-            //               ),
+            if (isPayer && toMember?.vpa != null && (currency.toUpperCase() == 'INR' || currency == '₹'))
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showUPIReviewSheet(context, t, toMember!, currency),
+                    icon: const Icon(Icons.account_balance_outlined, size: 18),
+                    label: const Text('Pay via UPI'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      side: const BorderSide(color: Colors.green),
+                    ),
+                  ),
+                ),
+              ),
             if (isPayer || isReceiver)
               SizedBox(
                 width: double.infinity,
@@ -253,6 +253,21 @@ class SettlementList extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            if (isReceiver)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () => _showWriteOffDialog(context, ref, t, fromName, toName),
+                    icon: const Icon(Icons.volunteer_activism_outlined, size: 16),
+                    label: Text('Waive / Forgive $currency${t.amount.toStringAsFixed(0)}'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF6366F1),
+                    ),
                   ),
                 ),
               ),
@@ -284,6 +299,67 @@ class SettlementList extends ConsumerWidget {
       trailing: Text(
         '$currency${expense.amount.toStringAsFixed(2)}',
         style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  void _showWriteOffDialog(
+    BuildContext context,
+    WidgetRef ref,
+    SettlementTransaction t,
+    String fromName,
+    String toName,
+  ) {
+    final reasonCtrl = TextEditingController(text: 'Voluntary waiver');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.volunteer_activism_rounded, color: Color(0xFF6366F1)),
+            SizedBox(width: 8),
+            Text('Waive Debt'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('You are voluntarily waiving $currency${t.amount.toStringAsFixed(2)} owed to you by $fromName.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Reason for write-off',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(settlementControllerProvider.notifier).recordWriteOff(
+                tripId: tripId,
+                creditorUid: t.toUid,
+                debtorUid: t.fromUid,
+                amount: t.amount,
+                reason: reasonCtrl.text.trim(),
+                context: context,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirm Waiver'),
+          ),
+        ],
       ),
     );
   }
@@ -455,15 +531,6 @@ class SettlementList extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  Future<void> _initiateUpiTransaction(
-    BuildContext context,
-    SettlementTransaction t,
-    UserModel receiver,
-    String currency,
-  ) async {
-    _showUPIReviewSheet(context, t, receiver, currency);
   }
 
   Future<void> _launchUPIIntent(

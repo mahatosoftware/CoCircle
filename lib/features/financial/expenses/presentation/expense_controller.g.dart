@@ -33,13 +33,13 @@ final class ExpenseControllerProvider
   ExpenseController create() => ExpenseController();
 }
 
-String _$expenseControllerHash() => r'193f6da4fdb14a3eebe8deb9e9befa8b93348c65';
+String _$expenseControllerHash() => r'57dadfe98cd49737e62b9f614b80a7117263afaa';
 
 abstract class _$ExpenseController extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<void>, void>;
     final element =
         ref.element
@@ -49,7 +49,7 @@ abstract class _$ExpenseController extends $AsyncNotifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

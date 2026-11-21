@@ -17,9 +17,9 @@ FirebaseDatabase firebaseDatabase(Ref ref) {
     final options = Firebase.app().options;
     
     // Safety Guard: Verify the dynamic URL matches the initialized project ID
-    if (resolvedUrl != null && options.projectId != null) {
+    if (resolvedUrl != null && options.projectId.isNotEmpty) {
       // Extract project identifier (e.g., 'cocircle-firebase-development' or 'cocircle-firebase-prod')
-      final projectId = options.projectId!;
+      final projectId = options.projectId;
       if (!resolvedUrl.contains(projectId)) {
         debugPrint("WARNING: Resolved databaseURL '$resolvedUrl' does not match initialized projectId '$projectId'. Falling back to Firebase options.");
         resolvedUrl = null; // force fallback

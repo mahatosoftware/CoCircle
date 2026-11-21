@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../core/config/map_tile_config.dart';
 import '../domain/map_repository.dart';
 
 part 'map_repository_impl.g.dart';
@@ -27,6 +28,16 @@ class MapRepositoryImpl implements MapRepository {
     final cachePath = Directory('${baseDir.path}/map_tiles');
     if (!await cachePath.exists()) {
       await cachePath.create(recursive: true);
+    } else {
+      // Purge any previously cached watermarked tiles if CARTO key is not configured
+      if (MapTileConfig.cartoApiKey.isEmpty) {
+        final legacyVoyager = Directory('${cachePath.path}/voyager');
+        if (await legacyVoyager.exists()) {
+          try {
+            await legacyVoyager.delete(recursive: true);
+          } catch (_) {}
+        }
+      }
     }
     _cacheDir = cachePath;
     return _cacheDir!;
@@ -60,7 +71,10 @@ class CachedTileProvider extends TileProvider {
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
     final url = getTileUrl(coordinates, options);
-    final file = File('${cacheDir.path}/${coordinates.z}/${coordinates.x}/${coordinates.y}.png');
+    final styleKey = url.contains('dark_all')
+        ? 'dark'
+        : (url.contains('light_all') ? 'positron' : (url.contains('voyager') ? 'voyager' : 'osm'));
+    final file = File('${cacheDir.path}/$styleKey/${coordinates.z}/${coordinates.x}/${coordinates.y}.png');
 
     if (file.existsSync()) {
       return FileImage(file);
@@ -106,15 +120,18 @@ class CachedNetworkTileImageProvider extends ImageProvider<CachedNetworkTileImag
       if (await key.file.exists()) {
         final bytes = await key.file.readAsBytes();
         final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-        return decode(buffer);
+        return await decode(buffer);
       }
 
-      final response = await http.get(Uri.parse(key.url));
+      final response = await http.get(
+        Uri.parse(key.url),
+        headers: {'User-Agent': MapTileConfig.userAgentPackageName},
+      );
       if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
         _saveTileToDisk(key.file, bytes);
         final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-        return decode(buffer);
+        return await decode(buffer);
       }
       throw Exception('Failed to load tile: status code ${response.statusCode}');
     } catch (e) {

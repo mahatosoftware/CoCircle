@@ -33,13 +33,13 @@ final class PollControllerProvider
   PollController create() => PollController();
 }
 
-String _$pollControllerHash() => r'a31c0df7a85e84d2e5b93cb038b654e2ce6d1e33';
+String _$pollControllerHash() => r'b87f9065a07ee82b07090f5806a85ab8f8ec132b';
 
 abstract class _$PollController extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<void>, void>;
     final element =
         ref.element
@@ -49,7 +49,7 @@ abstract class _$PollController extends $AsyncNotifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
