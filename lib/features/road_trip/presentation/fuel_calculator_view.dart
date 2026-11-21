@@ -161,13 +161,14 @@ class _FuelCalculatorViewState extends ConsumerState<FuelCalculatorView> {
 
                   // Fuel Type
                   DropdownButtonFormField<FuelType>(
+                    isExpanded: true,
                     initialValue: _selectedFuelType,
                     decoration: const InputDecoration(
                       labelText: 'Fuel Type',
                       border: OutlineInputBorder(),
                     ),
                     items: FuelType.values
-                        .map((f) => DropdownMenuItem(value: f, child: Text(f.name.toUpperCase())))
+                        .map((f) => DropdownMenuItem(value: f, child: Text(f.name.toUpperCase(), overflow: TextOverflow.ellipsis)))
                         .toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedFuelType = val);

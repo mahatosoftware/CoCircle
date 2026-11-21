@@ -500,16 +500,20 @@ class _DayWiseItineraryViewState extends ConsumerState<DayWiseItineraryView> {
                     // Option to link from route stops
                     if (route != null && route.stops.isNotEmpty) ...[
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: selectedStopId,
                         decoration: const InputDecoration(
                           labelText: 'Link from Route Stop (Optional)',
                           border: OutlineInputBorder(),
                         ),
                         items: [
-                          const DropdownMenuItem(value: null, child: Text('None (Custom Activity)')),
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('None (Custom Activity)', overflow: TextOverflow.ellipsis),
+                          ),
                           ...route.stops.map((s) => DropdownMenuItem(
                                 value: s.id,
-                                child: Text('${s.sequence}. ${s.name}'),
+                                child: Text('${s.sequence}. ${s.name}', overflow: TextOverflow.ellipsis),
                               )),
                         ],
                         onChanged: (val) {
@@ -541,15 +545,16 @@ class _DayWiseItineraryViewState extends ConsumerState<DayWiseItineraryView> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
+                            isExpanded: true,
                             initialValue: selectedCategory,
                             decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                             items: const [
-                              DropdownMenuItem(value: 'sightseeing', child: Text('Sightseeing')),
-                              DropdownMenuItem(value: 'dining', child: Text('Restaurant / Dining')),
-                              DropdownMenuItem(value: 'travel', child: Text('Travel / Transit')),
-                              DropdownMenuItem(value: 'lodging', child: Text('Hotel / Stay')),
-                              DropdownMenuItem(value: 'fuel', child: Text('Fuel / EV Charging')),
-                              DropdownMenuItem(value: 'adventure', child: Text('Adventure')),
+                              DropdownMenuItem(value: 'sightseeing', child: Text('Sightseeing', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'dining', child: Text('Restaurant / Dining', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'travel', child: Text('Travel / Transit', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'lodging', child: Text('Hotel / Stay', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'fuel', child: Text('Fuel / EV Charging', overflow: TextOverflow.ellipsis)),
+                              DropdownMenuItem(value: 'adventure', child: Text('Adventure', overflow: TextOverflow.ellipsis)),
                             ],
                             onChanged: (val) {
                               if (val != null) setSheetState(() => selectedCategory = val);

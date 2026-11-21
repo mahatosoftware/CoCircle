@@ -751,10 +751,11 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<StopType>(
+                            isExpanded: true,
                             initialValue: selectedType,
                             decoration: const InputDecoration(labelText: 'Stop Type', border: OutlineInputBorder()),
                             items: StopType.values
-                                .map((t) => DropdownMenuItem(value: t, child: Text(t.name.toUpperCase())))
+                                .map((t) => DropdownMenuItem(value: t, child: Text(t.name.toUpperCase(), overflow: TextOverflow.ellipsis)))
                                 .toList(),
                             onChanged: (val) {
                               if (val != null) setSheetState(() => selectedType = val);
@@ -764,10 +765,11 @@ class _RoutePlannerViewState extends ConsumerState<RoutePlannerView> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: DropdownButtonFormField<int>(
+                            isExpanded: true,
                             initialValue: selectedDay,
                             decoration: const InputDecoration(labelText: 'Itinerary Day', border: OutlineInputBorder()),
                             items: [1, 2, 3, 4, 5, 6, 7]
-                                .map((d) => DropdownMenuItem(value: d, child: Text('Day $d')))
+                                .map((d) => DropdownMenuItem(value: d, child: Text('Day $d', overflow: TextOverflow.ellipsis)))
                                 .toList(),
                             onChanged: (val) {
                               if (val != null) setSheetState(() => selectedDay = val);
