@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../viral_joining/data/guest_invite_service.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -230,19 +232,51 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildQuickButton(
-                                icon: Icons.person_add_rounded,
-                                label: 'Invite',
-                                isDark: isDark,
-                                onTap: () {
-                                  Clipboard.setData(ClipboardData(text: circle.code));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Invite code "${circle.code}" copied!'),
-                                      backgroundColor: AppPallete.primary,
-                                    ),
-                                  );
-                                },
+                              Builder(
+                                builder: (btnContext) => _buildQuickButton(
+                                  icon: Icons.person_add_rounded,
+                                  label: 'Invite',
+                                  isDark: isDark,
+                                  onTap: () async {
+                                    final box = btnContext.findRenderObject() as RenderBox?;
+                                    final origin = box != null && box.hasSize
+                                        ? box.localToGlobal(Offset.zero) & box.size
+                                        : null;
+
+                                    final code = circle.code.isNotEmpty ? circle.code : circle.id;
+                                    final activeTrip = tripsAsync.value?.where((t) => t.isActive).firstOrNull ?? tripsAsync.value?.firstOrNull;
+                                    final message = GuestInviteService.generateViralInviteMessage(
+                                      circleName: circle.name,
+                                      code: code,
+                                      tripName: activeTrip?.name,
+                                      location: activeTrip?.location,
+                                    );
+
+                                    await Clipboard.setData(ClipboardData(text: message));
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Invitation write-up & link copied to clipboard!'),
+                                          backgroundColor: AppPallete.primary,
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+
+                                    try {
+                                      await SharePlus.instance.share(
+                                        ShareParams(
+                                          text: message,
+                                          title: 'Join ${circle.name} on CoCircle',
+                                          subject: 'Join ${circle.name} on CoCircle',
+                                          sharePositionOrigin: origin,
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      debugPrint('Error sharing invite link: $e');
+                                    }
+                                  },
+                                ),
                               ),
                               const SizedBox(width: 10),
                               _buildQuickButton(
@@ -703,20 +737,44 @@ class _CircleDetailScreenState extends ConsumerState<CircleDetailScreen>
                   ),
                   child: const Icon(Icons.qr_code_rounded, color: AppPallete.indigo, size: 22),
                 ),
-                title: const Text('Invite Registered Member to Circle',
+                title: const Text('Invite Member to Circle',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                subtitle: Text('Share Circle Code: ${circle.code}',
+                subtitle: Text('Share invite link & code: ${circle.code}',
                     style: const TextStyle(fontSize: 12, color: AppPallete.gray)),
-                trailing: const Icon(Icons.copy_rounded, size: 18, color: AppPallete.indigo),
-                onTap: () {
+                trailing: const Icon(Icons.share_rounded, size: 18, color: AppPallete.indigo),
+                onTap: () async {
                   Navigator.pop(bottomSheetContext);
-                  Clipboard.setData(ClipboardData(text: circle.code));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Circle code "${circle.code}" copied to clipboard!'),
-                      backgroundColor: AppPallete.primary,
-                    ),
+                  final code = circle.code.isNotEmpty ? circle.code : circle.id;
+                  final activeTrip = trips.where((t) => t.isActive).firstOrNull ?? trips.firstOrNull;
+                  final message = GuestInviteService.generateViralInviteMessage(
+                    circleName: circle.name,
+                    code: code,
+                    tripName: activeTrip?.name,
+                    location: activeTrip?.location,
                   );
+
+                  await Clipboard.setData(ClipboardData(text: message));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Invitation write-up & link copied to clipboard!'),
+                        backgroundColor: AppPallete.primary,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+
+                  try {
+                    await SharePlus.instance.share(
+                      ShareParams(
+                        text: message,
+                        title: 'Join ${circle.name} on CoCircle',
+                        subject: 'Join ${circle.name} on CoCircle',
+                      ),
+                    );
+                  } catch (e) {
+                    debugPrint('Error sharing invite: $e');
+                  }
                 },
               ),
               const SizedBox(height: 12),

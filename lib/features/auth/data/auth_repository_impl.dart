@@ -91,11 +91,24 @@ class AuthRepositoryImpl implements AuthRepository {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) return null;
 
-    final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-    if (doc.exists && doc.data() != null) {
-      return UserModel.fromJson(doc.data()!);
-    }
-    return null;
+    try {
+      final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+      if (doc.exists && doc.data() != null) {
+        return UserModel.fromJson(doc.data()!);
+      }
+    } catch (_) {}
+
+    final fallbackName = (firebaseUser.email != null && firebaseUser.email!.isNotEmpty)
+        ? firebaseUser.email!.split('@').first
+        : 'User';
+    return UserModel(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      displayName: (firebaseUser.displayName != null && firebaseUser.displayName!.trim().isNotEmpty)
+          ? firebaseUser.displayName!
+          : fallbackName,
+      createdAt: DateTime.now(),
+    );
   }
 
   @override

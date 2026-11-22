@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'circle_controller.dart';
-import '../../auth/data/auth_repository_impl.dart';
-import '../../auth/domain/user_model.dart';
 import '../../trips/presentation/trip_controller.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
@@ -113,12 +111,9 @@ class _MyCirclesScreenState extends ConsumerState<MyCirclesScreen> {
             }
           });
 
-          return StreamBuilder<UserModel?>(
-            stream: ref.watch(authRepositoryProvider).authStateChanges,
-            builder: (context, snapshot) {
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                children: [
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            children: [
                   ...filteredCircles.map((circle) {
                     final tripsCount = tripsByCircle[circle.id] ?? 2;
                     final membersCount = circle.memberIds.length;
@@ -313,8 +308,6 @@ class _MyCirclesScreenState extends ConsumerState<MyCirclesScreen> {
                   const SizedBox(height: 24),
                 ],
               );
-            },
-          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error loading circles: $err')),

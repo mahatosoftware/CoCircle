@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'features/auth/domain/user_model.dart';
 import 'features/auth/data/auth_repository_impl.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/profile_screen.dart';
@@ -38,14 +40,50 @@ import 'features/auth/domain/provisioning_state.dart';
 import 'features/auth/presentation/provisioning_controller.dart';
 import 'features/auth/presentation/provisioning_retry_screen.dart';
 
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+
+  RouterNotifier(this._ref) {
+    _ref.listen<AsyncValue<UserModel?>>(
+      authStateChangesProvider,
+      (_, __) => notifyListeners(),
+    );
+    _ref.listen<AsyncValue<ProvisioningResult?>>(
+      provisioningStatusStreamProvider,
+      (_, __) => notifyListeners(),
+    );
+    _ref.listen<ProvisioningResult?>(
+      provisioningStateNotifierProvider,
+      (_, __) => notifyListeners(),
+    );
+  }
+}
+
+final routerNotifierProvider = Provider<RouterNotifier>((ref) {
+  final notifier = RouterNotifier(ref);
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateChangesProvider);
-  final provisioningResult = ref.watch(provisioningStatusStreamProvider).value ??
-      ref.watch(provisioningStateNotifierProvider);
+  final notifier = ref.watch(routerNotifierProvider);
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
+      // Normalize custom scheme deep links like cocircle://join/CODE
+      if (state.uri.host == 'join') {
+        final code = state.uri.path.replaceAll('/', '');
+        if (code.isNotEmpty) {
+          return '/join/$code';
+        }
+      }
+
+      final authState = ref.read(authStateChangesProvider);
+      final provisioningResult = ref.read(provisioningStatusStreamProvider).value ??
+          ref.read(provisioningStateNotifierProvider);
+
       if (authState.isLoading) return null;
 
       final isAuthenticated = authState.value != null;
@@ -71,6 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isAuthenticated && isLoginRoute) {
+        final from = state.uri.queryParameters['from'];
+        if (from != null && from.isNotEmpty) {
+          return from;
+        }
         return '/';
       }
 

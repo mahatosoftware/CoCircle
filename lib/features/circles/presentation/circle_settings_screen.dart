@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -24,28 +25,17 @@ class CircleSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final circleAsync = ref.watch(circleDetailsProvider(circleId));
     final l10n = AppLocalizations.of(context)!;
-    // getCurrentUser is Future. 
-    // I should probably use a FutureProvider for user or just use authStateChanges.
-    // Let's use authStateChanges which gives Stream<UserModel?>.
-    // Stream usage is tricky inside build without StreamBuilder/ref.watch logic for streams.
-    // Let's just use a simple FutureProvider for "currentUser" or better:
-    // The authRepositoryProvider has `getCurrentUser`. 
-    // Let's wrap user fetching in a provider or handle it in the body.
-    
+    final currentUser = ref.watch(authStateChangesProvider).value;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.circleSettingsTitle)),
       body: circleAsync.when(
         data: (circle) {
-           return StreamBuilder<UserModel?>(
-             stream: ref.watch(authRepositoryProvider).authStateChanges,
-             builder: (context, snapshot) {
-                final currentUser = snapshot.data;
-                final isUserAdmin = currentUser != null && circle.adminIds.contains(currentUser.uid);
-                
-                final membersAsync = ref.watch(circleMembersProvider(circle.memberIds));
-                final pendingAsync = ref.watch(circleMembersProvider(circle.pendingMemberIds));
+          final isUserAdmin = currentUser != null && circle.adminIds.contains(currentUser.uid);
+          final membersAsync = ref.watch(circleMembersProvider(circle.memberIds));
+          final pendingAsync = ref.watch(circleMembersProvider(circle.pendingMemberIds));
 
-                return SingleChildScrollView(
+          return SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -108,30 +98,62 @@ class CircleSettingsScreen extends ConsumerWidget {
                                 backgroundColor: Colors.white,
                               ),
                               const SizedBox(height: 24),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.share),
-                                  label: Text(l10n.shareInviteLink),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppPallete.primary,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                  ),
-                                  onPressed: () {
-                                    // ignore: deprecated_member_use
-                                    Share.share(
-                                      GuestInviteService.generateViralInviteMessage(
+                              Builder(
+                                builder: (btnContext) => SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    icon: const Icon(Icons.share),
+                                    label: Text(l10n.shareInviteLink),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppPallete.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    onPressed: () async {
+                                      // Calculate origin synchronously before any async gap
+                                      final box = btnContext.findRenderObject() as RenderBox?;
+                                      final origin = box != null && box.hasSize
+                                          ? box.localToGlobal(Offset.zero) & box.size
+                                          : null;
+
+                                      final code = circle.code.isNotEmpty ? circle.code : circle.id;
+                                      final message = GuestInviteService.generateViralInviteMessage(
                                         circleName: circle.name,
-                                        code: circle.code,
-                                      ),
-                                    );
-                                  },
+                                        code: code,
+                                      );
+
+                                      // Always copy full invitation write-up with link to clipboard as immediate fallback
+                                      await Clipboard.setData(ClipboardData(text: message));
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Invitation write-up & link copied to clipboard!'),
+                                            backgroundColor: AppPallete.primary,
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+
+                                      try {
+                                        await SharePlus.instance.share(
+                                          ShareParams(
+                                            text: message,
+                                            title: 'Join ${circle.name} on CoCircle',
+                                            subject: 'Join ${circle.name} on CoCircle',
+                                            sharePositionOrigin: origin,
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        debugPrint('Share invite link error: $e');
+                                      }
+                                    },
+                                  ),
                                 ),
                               ),
-                                if (isUserAdmin) ...[
-                                  const SizedBox(height: 12),
-                                  SizedBox(
+                              if (isUserAdmin) ...[
+                                const SizedBox(height: 12),
+                                Builder(
+                                  builder: (oneTimeBtnContext) => SizedBox(
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
                                       icon: const Icon(Icons.link),
@@ -140,50 +162,115 @@ class CircleSettingsScreen extends ConsumerWidget {
                                         padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),
                                       onPressed: () async {
+                                        final box = oneTimeBtnContext.findRenderObject() as RenderBox?;
+                                        final origin = box != null && box.hasSize
+                                            ? box.localToGlobal(Offset.zero) & box.size
+                                            : null;
+
                                         final code = await ref.read(circleControllerProvider.notifier).generateOneTimeCode(
                                           circleId: circle.id,
                                           context: context,
                                         );
                                         if (code != null) {
                                           final oneTimeLink = 'https://cocircle.mahato.in/join/$code';
-                                          // ignore: deprecated_member_use
-                                          Share.share(l10n.oneTimeInviteMessage(circle.name, code, oneTimeLink));
+                                          final oneTimeMessage = '🎉 Special one-time invite to join "${circle.name}" on CoCircle!\n\n'
+                                              'Tap the link to join directly:\n'
+                                              '$oneTimeLink\n\n'
+                                              '(Or enter code in the CoCircle app: $code)';
+
+                                          await Clipboard.setData(ClipboardData(text: oneTimeMessage));
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('One-time invitation write-up & link copied to clipboard!'),
+                                                backgroundColor: AppPallete.primary,
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+                                          }
+
+                                          try {
+                                            await SharePlus.instance.share(
+                                              ShareParams(
+                                                text: oneTimeMessage,
+                                                title: 'Join ${circle.name} on CoCircle',
+                                                subject: 'Join ${circle.name} on CoCircle',
+                                                sharePositionOrigin: origin,
+                                              ),
+                                            );
+                                          } catch (e) {
+                                            debugPrint('Share one-time link error: $e');
+                                          }
                                         }
                                       },
                                     ),
                                   ),
-                                  if (circle.oneTimeCodes.isNotEmpty) ...[
-                                    const SizedBox(height: 16),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(l10n.activeOneTimeInvites, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ...circle.oneTimeCodes.map((code) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 8.0),
-                                      child: Row(
-                                        children: [
-                                          Expanded(child: Text(code, style: const TextStyle(fontFamily: 'monospace'))),
-                                          IconButton(
+                                ),
+                                if (circle.oneTimeCodes.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(l10n.activeOneTimeInvites, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ...circle.oneTimeCodes.map((code) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: Text(code, style: const TextStyle(fontFamily: 'monospace'))),
+                                        Builder(
+                                          builder: (shareIconContext) => IconButton(
                                             icon: const Icon(Icons.share, size: 20),
-                                            onPressed: () {
+                                            onPressed: () async {
+                                              final box = shareIconContext.findRenderObject() as RenderBox?;
+                                              final origin = box != null && box.hasSize
+                                                  ? box.localToGlobal(Offset.zero) & box.size
+                                                  : null;
+
                                               final oneTimeLink = 'https://cocircle.mahato.in/join/$code';
-                                              // ignore: deprecated_member_use
-                                              Share.share(l10n.oneTimeInviteMessage(circle.name, code, oneTimeLink));
+                                              final oneTimeMessage = '🎉 Special one-time invite to join "${circle.name}" on CoCircle!\n\n'
+                                                  'Tap the link to join directly:\n'
+                                                  '$oneTimeLink\n\n'
+                                                  '(Or enter code in the CoCircle app: $code)';
+
+                                              await Clipboard.setData(ClipboardData(text: oneTimeMessage));
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Invitation write-up & link copied to clipboard!'),
+                                                    backgroundColor: AppPallete.primary,
+                                                    duration: Duration(seconds: 2),
+                                                  ),
+                                                );
+                                              }
+
+                                              try {
+                                                await SharePlus.instance.share(
+                                                  ShareParams(
+                                                    text: oneTimeMessage,
+                                                    title: 'Join ${circle.name} on CoCircle',
+                                                    subject: 'Join ${circle.name} on CoCircle',
+                                                    sharePositionOrigin: origin,
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                debugPrint('Share one-time item error: $e');
+                                              }
                                             },
                                           ),
-                                          IconButton(
-                                            icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                                            onPressed: () => ref.read(circleControllerProvider.notifier).deleteOneTimeCode(
-                                              circleId: circle.id, 
-                                              code: code, 
-                                              context: context
-                                            ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                                          onPressed: () => ref.read(circleControllerProvider.notifier).deleteOneTimeCode(
+                                            circleId: circle.id, 
+                                            code: code, 
+                                            context: context
                                           ),
-                                        ],
-                                      ),
-                                    )).toList(),
-                                  ],
+                                        ),
+                                      ],
+                                    ),
+                                  )).toList(),
+                                ],
                                 ],
                             ],
                           ),
@@ -471,8 +558,6 @@ class CircleSettingsScreen extends ConsumerWidget {
             ),
           );
         },
-      );
-    },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(l10n.errorWithDetails(e.toString()))),
       ),

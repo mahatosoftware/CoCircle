@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
@@ -355,7 +356,7 @@ class _MemoriesTabState extends ConsumerState<MemoriesTab> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () {
+                          onPressed: () async {
                             final shareText = '''
 📖 ${scrapbook.title}
 ${scrapbook.subtitle}
@@ -368,7 +369,26 @@ ${scrapbook.highlights.map((h) => "• $h").join("\n")}
 Shared with ❤️ from CoCircle
 https://cocircle.mahato.in
 ''';
-                            Share.share(shareText);
+                            await Clipboard.setData(ClipboardData(text: shareText));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Story copied to clipboard!'),
+                                  backgroundColor: Color(0xFF8B5CF6),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                            try {
+                              await SharePlus.instance.share(
+                                ShareParams(
+                                  text: shareText,
+                                  subject: scrapbook.title,
+                                ),
+                              );
+                            } catch (e) {
+                              debugPrint('Share memory error: $e');
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B5CF6),
@@ -630,7 +650,7 @@ https://cocircle.mahato.in
                                               color: isLiked ? Colors.red : Colors.grey,
                                               size: 20,
                                             ),
-                                            onPressed: () {
+                                            onPressed: () async {
                                               if (currentUserId != null) {
                                                 ref.read(memoryRepositoryProvider).toggleLike(
                                                   widget.tripId,

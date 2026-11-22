@@ -195,21 +195,26 @@ class GuestInviteService {
     String? datesString,
   }) {
     final inviteLink = 'https://cocircle.mahato.in/join/$code';
-    final details = [
+    final detailsList = [
       if (tripName != null && tripName.isNotEmpty) '✈️ Trip: $tripName',
       if (location != null && location.isNotEmpty) '📍 Destination: $location',
       if (datesString != null && datesString.isNotEmpty) '🗓️ Dates: $datesString',
-    ].join('\n');
+    ];
 
-    return '''
-🎉 You're invited to join "$circleName" on CoCircle!
+    final buffer = StringBuffer();
+    buffer.writeln('🎉 You\'re invited to join "$circleName" on CoCircle!');
+    if (detailsList.isNotEmpty) {
+      buffer.writeln();
+      for (final detail in detailsList) {
+        buffer.writeln(detail);
+      }
+    }
+    buffer.writeln();
+    buffer.writeln('🌟 Preview our itinerary, vote on hotel & activity polls, and track expenses together:');
+    buffer.writeln(inviteLink);
+    buffer.writeln();
+    buffer.write('(Or join in the CoCircle app using code: $code)');
 
-$details
-
-🌟 Preview our itinerary, vote on hotel & activity polls, and track expenses together:
-$inviteLink
-
-(Or join in the CoCircle app using code: $code)
-''';
+    return buffer.toString();
   }
 }

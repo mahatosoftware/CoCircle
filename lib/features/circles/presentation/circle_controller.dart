@@ -49,67 +49,123 @@ class CircleController extends _$CircleController {
     );
   }
 
-  Future<void> joinCircleByCode({required String code, required BuildContext context}) async {
+  Future<void> joinCircleByCode({
+    required String code,
+    required BuildContext context,
+    bool directJoin = false,
+  }) async {
     state = const AsyncLoading();
-    final user = await ref.read(authRepositoryProvider).getCurrentUser();
+    final authRepo = ref.read(authRepositoryProvider);
+    final circleRepo = ref.read(circleRepositoryProvider);
+
+    final user = await authRepo.getCurrentUser();
     if (user == null) {
       state = AsyncError('User not logged in', StackTrace.current);
+      if (context.mounted) {
+        showSnackBar(context, 'Please log in to join this circle.');
+      }
       return;
     }
 
     // 1. Find circle by code
-    final circleRes = await ref.read(circleRepositoryProvider).getCircleByCode(code.toUpperCase());
+    final cleanCode = code.trim().toUpperCase();
+    final circleRes = await circleRepo.getCircleByCode(cleanCode);
     
     await circleRes.fold(
       (l) async {
         state = AsyncError(l.message, StackTrace.current);
-        showSnackBar(context, l.message);
+        if (context.mounted) {
+          showSnackBar(context, l.message);
+        }
       },
       (circle) async {
-        // 2. Check if already member or pending
+        // 2. Check if already member
         if (circle.memberIds.contains(user.uid)) {
            state = const AsyncData(null);
-           showSnackBar(context, 'You are already a member of this circle.');
+           if (context.mounted) {
+             showSnackBar(context, 'You are already a member of this circle.');
+             context.go('/circle/${circle.id}');
+           }
            return;
         }
         
         // 3. Check if one-time code
-        final isOneTime = circle.oneTimeCodes.contains(code.toUpperCase());
+        final isOneTime = circle.oneTimeCodes.contains(cleanCode);
         
         if (isOneTime) {
-           final joinRes = await ref.read(circleRepositoryProvider).joinWithOneTimeCode(circle.id, user.uid, code.toUpperCase());
+           final joinRes = await circleRepo.joinWithOneTimeCode(circle.id, user.uid, cleanCode);
            joinRes.fold(
              (l) {
                state = AsyncError(l.message, StackTrace.current);
-               showSnackBar(context, l.message);
+               if (context.mounted) {
+                 showSnackBar(context, l.message);
+               }
              },
              (r) {
                state = const AsyncData(null);
-               showSnackBar(context, 'Joined ${circle.name} successfully!');
-               context.pop();
+               if (context.mounted) {
+                 showSnackBar(context, 'Joined ${circle.name} successfully!');
+                 context.go('/circle/${circle.id}');
+               }
              }
            );
            return;
         }
 
+        // 4. Direct join (e.g. from invitation link)
+        if (directJoin) {
+          final joinRes = await circleRepo.joinCircle(circle.id, user.uid);
+          joinRes.fold(
+            (l) {
+              state = AsyncError(l.message, StackTrace.current);
+              if (context.mounted) {
+                showSnackBar(context, l.message);
+              }
+            },
+            (r) {
+              state = const AsyncData(null);
+              if (context.mounted) {
+                showSnackBar(context, 'Joined ${circle.name} successfully!');
+                context.go('/circle/${circle.id}');
+              }
+            },
+          );
+          return;
+        }
+
         if (circle.pendingMemberIds.contains(user.uid)) {
            state = const AsyncData(null);
-           showSnackBar(context, 'Request already sent. Waiting for approval.');
+           if (context.mounted) {
+             showSnackBar(context, 'Request already sent. Waiting for approval.');
+             if (context.canPop()) {
+               context.pop();
+             } else {
+               context.go('/circles');
+             }
+           }
            return;
         }
 
-        // 4. Request Join (Regular code)
-        final joinRes = await ref.read(circleRepositoryProvider).requestJoin(circle.id, user.uid);
+        // 5. Request Join (Regular code entered manually)
+        final joinRes = await circleRepo.requestJoin(circle.id, user.uid);
         
         joinRes.fold(
           (l) {
             state = AsyncError(l.message, StackTrace.current);
-            showSnackBar(context, l.message);
+            if (context.mounted) {
+              showSnackBar(context, l.message);
+            }
           },
           (r) {
             state = const AsyncData(null);
-            showSnackBar(context, 'Request sent to ${circle.name}. Waiting for approval.');
-            context.pop(); 
+            if (context.mounted) {
+              showSnackBar(context, 'Request sent to ${circle.name}. Waiting for approval.');
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/circles');
+              }
+            }
           }
         );
       },
@@ -200,12 +256,17 @@ class CircleController extends _$CircleController {
 
 @riverpod
 Stream<List<CircleModel>> userCircles(Ref ref) {
-  return ref.watch(authRepositoryProvider).authStateChanges.asyncExpand((user) {
-    if (user == null) {
-      return Stream.value([]);
-    }
-    return ref.watch(circleRepositoryProvider).getUserCirclesStream(user.uid);
-  });
+  final userAsync = ref.watch(authStateChangesProvider);
+  return userAsync.when(
+    data: (user) {
+      if (user == null) {
+        return Stream.value([]);
+      }
+      return ref.watch(circleRepositoryProvider).getUserCirclesStream(user.uid);
+    },
+    loading: () => const Stream.empty(),
+    error: (err, stack) => Stream.error(err, stack),
+  );
 }
 
 @riverpod

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_pallete.dart';
@@ -70,7 +71,7 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () {
+            onPressed: () async {
               final items = itemsStream.value;
               if (items == null || items.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -95,8 +96,24 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
                 final checkbox = item.isCompleted ? '✅' : '⬜️';
                 buffer.writeln('$checkbox ${item.title} $quantityStr'.trim());
               }
-              // ignore: deprecated_member_use
-              Share.share(buffer.toString());
+              final text = buffer.toString();
+              await Clipboard.setData(ClipboardData(text: text));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Shopping list copied to clipboard!'),
+                    backgroundColor: AppPallete.primary,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+              try {
+                await SharePlus.instance.share(
+                  ShareParams(text: text, subject: _currentList.name),
+                );
+              } catch (e) {
+                debugPrint('Share shopping list error: $e');
+              }
             },
           ),
           IconButton(
@@ -198,7 +215,7 @@ class _ShoppingListDetailScreenState extends ConsumerState<ShoppingListDetailScr
                 subtitle: subtitleWidget,
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.grey),
-                  onPressed: () {
+                  onPressed: () async {
                     ref.read(shoppingItemControllerProvider.notifier).deleteItem(
                       itemId: item.id,
                       context: context,

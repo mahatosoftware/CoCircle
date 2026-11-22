@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import '../../auth/data/auth_repository_impl.dart';
 import '../../circles/presentation/circle_controller.dart';
 import '../data/guest_invite_service.dart';
 
@@ -13,7 +13,8 @@ class GuestGroupPreviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final previewAsync = ref.watch(guestPreviewProvider(code));
-    final authUser = FirebaseAuth.instance.currentUser;
+    final authUser = ref.watch(authStateChangesProvider).value;
+    final isLoading = ref.watch(circleControllerProvider).isLoading;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -299,23 +300,32 @@ class GuestGroupPreviewScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () {
+                        onPressed: isLoading ? null : () {
                           if (authUser != null) {
-                            // Already authenticated - execute join
+                            // Already authenticated - execute direct join
                             ref.read(circleControllerProvider.notifier).joinCircleByCode(
                               code: code,
                               context: context,
+                              directJoin: true,
                             );
                           } else {
                             // Guide guest to log in / sign up and then return to join
-                            context.push('/login');
+                            context.push('/login?from=/join/$code');
                           }
                         },
-                        icon: const Icon(Icons.group_add),
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.group_add),
                         label: Text(
-                          authUser != null
-                              ? 'Join "${preview.circleName}"'
-                              : 'Sign in to Join "${preview.circleName}"',
+                          isLoading
+                              ? 'Joining...'
+                              : (authUser != null
+                                  ? 'Join "${preview.circleName}"'
+                                  : 'Sign in to Join "${preview.circleName}"'),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),

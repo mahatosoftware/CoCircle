@@ -15,6 +15,7 @@ abstract interface class CircleRepository {
   Stream<List<CircleModel>> getUserCirclesStream(String userId);
   Future<Either<Failure, CircleModel>> getCircleById(String circleId);
   Future<Either<Failure, CircleModel>> getCircleByCode(String code);
+  Future<Either<Failure, void>> joinCircle(String circleId, String userId);
   Future<Either<Failure, void>> requestJoin(String circleId, String userId);
   Future<Either<Failure, void>> joinWithOneTimeCode(String circleId, String userId, String code);
   Future<Either<Failure, String>> generateOneTimeCode(String circleId);

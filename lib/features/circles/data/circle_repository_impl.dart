@@ -135,6 +135,19 @@ class CircleRepositoryImpl implements CircleRepository {
   }
 
   @override
+  Future<Either<Failure, void>> joinCircle(String circleId, String userId) async {
+    try {
+      await _circles.doc(circleId).update({
+        'memberIds': FieldValue.arrayUnion([userId]),
+        'pendingMemberIds': FieldValue.arrayRemove([userId]),
+      });
+      return right(null);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> requestJoin(String circleId, String userId) async {
      try {
        await _circles.doc(circleId).update({
@@ -300,8 +313,10 @@ class CircleRepositoryImpl implements CircleRepository {
   @override
   Stream<CircleModel?> getCircleStream(String circleId) {
     return _circles.doc(circleId).snapshots().map((doc) {
-      if (!doc.exists) return null;
-      return CircleModel.fromJson(doc.data()!);
+      if (!doc.exists || doc.data() == null) return null;
+      final data = Map<String, dynamic>.from(doc.data()!);
+      data['id'] = doc.id;
+      return CircleModel.fromJson(data);
     });
   }
 }

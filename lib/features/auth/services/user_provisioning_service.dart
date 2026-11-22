@@ -110,6 +110,13 @@ class UserProvisioningService {
     int retryCount = 0,
   }) {
     final uid = user.uid;
+    if (lastResult != null &&
+        lastResult!.isCompleted &&
+        lastResult!.user?.uid == uid &&
+        retryCount == 0) {
+      return Future.value(lastResult!);
+    }
+
     if (_inFlight.containsKey(uid)) {
       _log(
         stage: 'IN_FLIGHT_ATTACH',
